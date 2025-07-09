@@ -1,4 +1,4 @@
-"""Grimoire Mock Compiler - 仮のコンパイラ実装（記号ベース版）"""
+"""Grimoire Mock Compiler - Mock compiler implementation (symbol-based)"""
 
 import os
 import sys
@@ -30,11 +30,11 @@ fib(10) = 55""",
 ◐ = true
 ※ = [•, ••, •••]""",
     
-    "parallel.png": """並列実行開始...
-タスク1: ☆
-タスク2: ♪
-タスク3: ✉
-全タスク完了！ ✓""",
+    "parallel.png": """Starting parallel execution...
+Task 1: ☆
+Task 2: ♪
+Task 3: ✉
+All tasks complete! ✓""",
     
     "calculator.png": """⦿ ⟐ ⦿⦿ = 30
 30 ✦ ⦿ = 300""",
@@ -53,80 +53,80 @@ fib(10) = 55""",
 
 
 def compile_grimoire(filepath, output_file=None):
-    """仮のコンパイル処理"""
+    """Mock compile process"""
     filename = os.path.basename(filepath)
     
-    # デバッグ情報を出力
-    print(f"コンパイル中: {filepath}", file=sys.stderr)
-    print(f"記号を検出中...", file=sys.stderr)
-    print(f"  ◎ (メインエントリ) を検出", file=sys.stderr)
-    print(f"  ☆ (出力) を検出", file=sys.stderr)
-    print(f"ASTを構築中...", file=sys.stderr)
-    print(f"コードを生成中...", file=sys.stderr)
-    print(f"コンパイル完了！", file=sys.stderr)
+    # Output debug information
+    print(f"Compiling: {filepath}", file=sys.stderr)
+    print(f"Detecting symbols...", file=sys.stderr)
+    print(f"  ◎ (main entry) detected", file=sys.stderr)
+    print(f"  ☆ (output) detected", file=sys.stderr)
+    print(f"Building AST...", file=sys.stderr)
+    print(f"Generating code...", file=sys.stderr)
+    print(f"Compilation complete!", file=sys.stderr)
     print("", file=sys.stderr)
     
-    # ファイル名に基づいて出力を決定
+    # Determine output based on filename
     if filename in OUTPUT_MAP:
         output = OUTPUT_MAP[filename]
     else:
-        output = f"未知のプログラム: {filename}"
+        output = f"Unknown program: {filename}"
     
-    # 出力ファイルが指定されている場合
+    # If output file is specified
     if output_file:
-        # プラットフォーム別の実行可能ファイルを生成
+        # Generate platform-specific executable file
         if platform.system() == 'Windows':
-            # Windows: バッチファイルを生成
+            # Windows: Generate batch file
             if not output_file.endswith('.bat'):
                 output_file = output_file + '.bat'
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write("@echo off\n")
                 f.write("python -c \"print(r'''{}''')\"\n".format(output))
         else:
-            # Unix系: シェルスクリプトを生成
+            # Unix-like: Generate shell script
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write("#!/usr/bin/env python3\n")
                 f.write("# Grimoire generated code\n")
                 f.write(f'print("""{output}""")\n')
-            # Unix系のみ実行権限を付与
+            # Grant execute permission only on Unix-like systems
             try:
                 os.chmod(output_file, 0o755)
             except OSError:
-                pass  # 権限エラーは無視
+                pass  # Ignore permission errors
         
-        return f"コンパイル完了: {output_file}"
+        return f"Compilation complete: {output_file}"
     
     return output
 
 
 def run_grimoire(filepath):
-    """画像を直接実行"""
+    """Run image directly"""
     filename = os.path.basename(filepath)
     
-    print(f"実行中: {filepath}", file=sys.stderr)
+    print(f"Running: {filepath}", file=sys.stderr)
     print("", file=sys.stderr)
     
     if filename in OUTPUT_MAP:
         return OUTPUT_MAP[filename]
     else:
-        return f"未知のプログラム: {filename}"
+        return f"Unknown program: {filename}"
 
 
 def debug_grimoire(filepath):
-    """デバッグモードで実行"""
+    """Run in debug mode"""
     filename = os.path.basename(filepath)
     
-    print(f"デバッグモード: {filepath}", file=sys.stderr)
-    print("ビジュアルデバッガが開きます...", file=sys.stderr)
+    print(f"Debug mode: {filepath}", file=sys.stderr)
+    print("Opening visual debugger...", file=sys.stderr)
     print("", file=sys.stderr)
-    print("=== 実行トレース ===", file=sys.stderr)
-    print("現在の記号: ◎ (main)", file=sys.stderr)
-    print("次: ☆ (output)", file=sys.stderr)
+    print("=== Execution trace ===", file=sys.stderr)
+    print("Current symbol: ◎ (main)", file=sys.stderr)
+    print("Next: ☆ (output)", file=sys.stderr)
     print("", file=sys.stderr)
     
     if filename in OUTPUT_MAP:
         output = OUTPUT_MAP[filename]
-        print("=== 出力 ===", file=sys.stderr)
+        print("=== Output ===", file=sys.stderr)
         print(output)
     else:
-        print(f"未知のプログラム: {filename}", file=sys.stderr)
+        print(f"Unknown program: {filename}", file=sys.stderr)
