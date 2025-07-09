@@ -31,3 +31,18 @@ Thumbs.db
 *.tmp
 *.temp
 /tmp/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+.mypy_cache/
+.ruff_cache/
+
+# Generated files
+fibonacci_output.py
