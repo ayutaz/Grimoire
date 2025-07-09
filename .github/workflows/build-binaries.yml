@@ -44,7 +44,7 @@ jobs:
     - name: Install system dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        brew install python-tk
+        brew install python-tk || true
 
     - name: Install Python dependencies
       run: |
@@ -53,12 +53,25 @@ jobs:
         pip install -e .
         pip install pyinstaller
 
-    - name: Debug - List files
+    - name: Debug - List files (Unix)
+      if: matrix.os != 'windows-latest'
       run: |
         echo "Current directory:"
         pwd
         echo "Files in root:"
         ls -la
+        echo "Python path:"
+        python -c "import sys; print(sys.path)"
+        echo "Installed packages:"
+        pip list
+
+    - name: Debug - List files (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        echo "Current directory:"
+        pwd
+        echo "Files in root:"
+        dir
         echo "Python path:"
         python -c "import sys; print(sys.path)"
         echo "Installed packages:"
