@@ -1,62 +1,62 @@
-# Grimoire - The Hand-Drawn Programming Language
+# Grimoire - 手描きプログラミング言語
 
-> "Every Program is a Spell"
+> 「すべてのプログラムは魔法である」
 
-Grimoire is an experimental programming language where code is written by drawing magic circles. Programs are created through hand-drawn geometric patterns that are compiled via image recognition.
+Grimoireは、魔法陣を描くことでコードを書く実験的なプログラミング言語です。手描きの幾何学パターンを画像認識によってコンパイルし、実行可能なプログラムを作成します。
 
-## 🌟 Features
+## 🌟 特徴
 
-- **Visual Programming**: Write code by drawing magic circles, runes, and geometric patterns
-- **Image Recognition**: Compile hand-drawn or digital images into executable programs
-- **Symbolic Logic**: Each shape and symbol has semantic meaning
-- **Topology-Based Flow**: Program flow is determined by the connections between shapes
+- **ビジュアルプログラミング**: 魔法陣、ルーン、幾何学パターンを描いてコーディング
+- **画像認識**: 手描きまたはデジタル画像を実行可能プログラムにコンパイル
+- **記号論理**: 各図形とシンボルには意味がある
+- **トポロジーベースのフロー**: プログラムフローは図形間の接続で決定
 
-## 📚 Documentation
+## 📚 ドキュメント
 
-- [Language Specification](docs/language-spec.md)
-- [Compiler Architecture](docs/compiler-spec.md)
-- [Tutorial](docs/tutorial.md)
-- [Examples](examples/)
+- [言語仕様](docs/language-spec-ja.md)
+- [コンパイラアーキテクチャ](docs/compiler-spec-ja.md)
+- [チュートリアル](docs/tutorial-ja.md)
+- [サンプル](examples/)
 
-## 🚀 Quick Start
+## 🚀 クイックスタート
 
 ```bash
-# Compile a Grimoire program
+# Grimoireプログラムをコンパイル
 grimoire compile circle.png -o circle.exe
 
-# Run with interpreter
+# インタプリタで実行
 grimoire run circle.png
 
-# Debug mode with visual feedback
+# ビジュアルフィードバック付きデバッグモード
 grimoire debug circle.png
 ```
 
-## 📋 Requirements
+## 📋 必要条件
 
-- Image files: PNG, JPG, or hand-drawn scans
-- Minimum resolution: 300x300 pixels
-- Clear, high-contrast drawings recommended
+- 画像ファイル: PNG、JPG、または手描きスキャン
+- 最小解像度: 300x300ピクセル
+- 明確で高コントラストの描画を推奨
 
-## 🔮 Example
+## 🔮 例
 
-A simple "Hello World" in Grimoire:
+Grimoireでの簡単な「Hello World」:
 
 ```
-    ○ (main circle)
+    ◎ (メイン円)
     |
-    □ (output box)
+    ☆ (出力)
     |
-"Hello World" (text in quotes)
+"Hello World" (引用符内のテキスト)
 ```
 
-## 📖 License
+## 📖 ライセンス
 
-MIT License - See [LICENSE](LICENSE) file for details
+MITライセンス - 詳細は[LICENSE](LICENSE)ファイルを参照
 
-## 🤝 Contributing
+## 🤝 貢献
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) first.
+貢献を歓迎します！まず[貢献ガイド](CONTRIBUTING.md)をお読みください。
 
 ---
 
-*"Draw Your Logic, Run Your Magic"*
+*「ロジックを描き、魔法を実行せよ」*
