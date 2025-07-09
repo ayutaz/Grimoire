@@ -30,10 +30,17 @@ def compile(image_file, output):
 
 @cli.command()
 @click.argument('image_file', type=click.Path(exists=True))
-def run(image_file):
+@click.option('--mode', type=click.Choice(['traditional', 'ai', 'hybrid']), default='traditional', help='Execution mode')
+def run(image_file, mode):
     """Run a magic circle image directly"""
     try:
-        result = run_grimoire(image_file)
+        if mode == 'traditional':
+            result = run_grimoire(image_file)
+        else:
+            # AI mode or hybrid mode
+            from .ai_compiler import HybridCompiler
+            compiler = HybridCompiler()
+            result = compiler.compile(image_file, mode=mode)
         click.echo(result)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
