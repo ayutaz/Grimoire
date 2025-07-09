@@ -4,7 +4,7 @@
 1. [概要](#overview)
 2. [コンパイルパイプライン](#compilation-pipeline)
 3. [画像認識ステージ](#image-recognition)
-4. [シンボル抽出](#symbol-extraction)
+4. [シンボル認識](#symbol-recognition)
 5. [トポロジー解析](#topology-analysis)
 6. [AST生成](#ast-generation)
 7. [型推論](#type-inference)
@@ -15,12 +15,12 @@
 
 ## 概要 {#overview}
 
-Grimoireコンパイラは、手描きの魔法陣を実行可能プログラムに変換します。コンピュータビジョン、記号解析、従来のコンパイル技術を組み合わせた多段階パイプラインを使用します。
+Grimoireコンパイラは、純粋にシンボルベースの魔法陣を実行可能プログラムに変換します。コンピュータビジョン、パターン認識、従来のコンパイル技術を組み合わせた多段階パイプラインを使用します。テキストは一切使用せず、図形の形状、内部パターン、配置のみで全ての意味を表現します。
 
 ### コンパイラコンポーネント
 ```
 ┌─────────────┐     ┌──────────────┐     ┌──────────────┐
-│画像入力     │ --> │CV処理        │ --> │シンボル抽出  │
+│画像入力     │ --> │CV処理        │ --> │シンボル認識  │
 └─────────────┘     └──────────────┘     └──────────────┘
                            |
                            v
@@ -38,11 +38,11 @@ Grimoireコンパイラは、手描きの魔法陣を実行可能プログラム
 4. 二値化処理
 5. エッジ検出
 
-### ステージ2: 図形認識
-1. 輪郭検出
-2. 機械学習による図形分類
-3. シンボル境界抽出
-4. テキスト認識（OCR）
+### ステージ2: シンボル認識
+1. 輪郭検出と図形分類
+2. 内部パターン認識
+3. ドット配列解析（数値用）
+4. 演算子シンボルマッチング
 
 ### ステージ3: 意味解析
 1. トポロジーグラフ構築
@@ -91,57 +91,116 @@ def detect_shapes(contours):
         # 頂点数で分類
         vertices = len(approx)
         if vertices == 3:
-            shape_type = "三角形"
+            shape_type = "triangle"  # 条件分岐
         elif vertices == 4:
-            shape_type = "四角形"
+            shape_type = "square"    # 変数/データ
         elif vertices == 5:
-            shape_type = "五角形"
+            shape_type = "pentagon"  # ループ
         elif vertices == 6:
-            shape_type = "六角形"
+            shape_type = "hexagon"   # 並列処理
         elif vertices > 6:
             # 円判定
             area = cv2.contourArea(contour)
             perimeter = cv2.arcLength(contour, True)
             circularity = 4 * np.pi * area / (perimeter ** 2)
             if circularity > 0.8:
-                shape_type = "円"
+                shape_type = "circle"  # 関数/スコープ
             else:
-                shape_type = "星" if self.is_star(approx) else "多角形"
+                shape_type = "star" if self.is_star(approx) else "polygon"
                 
         shapes.append(Shape(shape_type, contour, approx))
     return shapes
 ```
 
-## シンボル抽出 {#symbol-extraction}
+## シンボル認識 {#symbol-recognition}
 
-### シンボル認識パイプライン
-1. **分離**: 図形からシンボル領域を抽出
-2. **正規化**: 標準方向にスケール・回転
-3. **特徴抽出**: 
-   - 幾何学的特徴（角度、曲線）
-   - トポロジカル特徴（穴、交差）
-   - 統計的特徴（モーメント、分布）
-4. **分類**: ニューラルネットワークまたはテンプレートマッチング
+### 純粋シンボル認識パイプライン
 
-### カスタムシンボル学習
+#### 1. 基本図形の意味
+- **円**: 関数定義、スコープ境界
+- **四角形**: 変数、データ格納
+- **三角形**: 条件分岐、フロー制御
+- **五角形**: ループ構造
+- **六角形**: 並列処理、非同期操作
+- **星形**: 外部参照、インポート
+
+#### 2. 内部パターン認識
 ```python
-class SymbolRecognizer:
+class InternalPatternRecognizer:
+    def recognize_pattern(self, shape_image):
+        # 図形内部のパターンを分析
+        internal_region = self.extract_internal_region(shape_image)
+        
+        # パターンタイプを判定
+        if self.has_dots(internal_region):
+            return self.parse_dot_pattern(internal_region)
+        elif self.has_geometric_pattern(internal_region):
+            return self.parse_geometric_pattern(internal_region)
+        elif self.has_line_pattern(internal_region):
+            return self.parse_line_pattern(internal_region)
+        else:
+            return "empty"  # 空のシンボル
+```
+
+#### 3. ドット配列による数値表現
+```python
+def parse_dot_pattern(dot_region):
+    """3x3グリッドのドット配列を数値に変換"""
+    grid = self.extract_3x3_grid(dot_region)
+    
+    # 各セルのドット有無をビットとして解釈
+    value = 0
+    for row in range(3):
+        for col in range(3):
+            if grid[row][col]:  # ドットが存在
+                bit_position = row * 3 + col
+                value |= (1 << bit_position)
+    
+    return {"type": "number", "value": value}
+```
+
+#### 4. 演算子シンボル認識
+```python
+class OperatorRecognizer:
     def __init__(self):
-        self.model = self.load_pretrained_model()
-        self.custom_symbols = {}
+        self.operators = {
+            "plus": self.create_plus_pattern(),      # +形状
+            "minus": self.create_minus_pattern(),    # -形状
+            "multiply": self.create_x_pattern(),     # ×形状
+            "divide": self.create_slash_pattern(),   # /形状
+            "equal": self.create_equal_pattern(),    # =形状
+            "greater": self.create_gt_pattern(),     # >形状
+            "less": self.create_lt_pattern(),        # <形状
+            "and": self.create_and_pattern(),        # ∧形状
+            "or": self.create_or_pattern(),          # ∨形状
+            "not": self.create_not_pattern()         # ¬形状
+        }
     
-    def add_custom_symbol(self, image, meaning):
-        features = self.extract_features(image)
-        self.custom_symbols[meaning] = features
+    def recognize_operator(self, symbol_region):
+        for op_name, pattern in self.operators.items():
+            if self.match_pattern(symbol_region, pattern):
+                return {"type": "operator", "operation": op_name}
+        return None
+```
+
+#### 5. データ型パターン
+```python
+def recognize_type_pattern(shape):
+    """図形の輪郭スタイルから型を判定"""
+    contour_style = self.analyze_contour_style(shape)
     
-    def recognize(self, symbol_image):
-        # まず標準シンボルを試す
-        prediction = self.model.predict(symbol_image)
-        if prediction.confidence > 0.8:
-            return prediction.symbol
-            
-        # カスタムシンボルにフォールバック
-        return self.match_custom_symbol(symbol_image)
+    if contour_style == "solid":
+        return "integer"
+    elif contour_style == "dashed":
+        return "float"
+    elif contour_style == "dotted":
+        return "string"
+    elif contour_style == "double":
+        return "boolean"
+    elif contour_style == "wavy":
+        return "array"
+    else:
+        return "any"
 ```
 
 ## トポロジー解析 {#topology-analysis}
@@ -167,237 +226,250 @@ class TopologyGraph:
                         self.edges[(shape1.id, shape2.id)] = connection
 ```
 
-### 接続検出
-- **直接接触**: 図形が境界を共有
-- **線接続**: 図形間の明示的な線
-- **包含**: 一つの図形が別の図形内部
-- **近接**: 暗黙的接続を持つ近い図形
-
-### フロー解析
+### 接続タイプとフロー方向
 ```python
-def analyze_flow(topology):
-    # フロー方向を検出：
-    # 1. 矢印の方向
-    # 2. 時計回り/反時計回りパターン
-    # 3. 数値注釈
-    # 4. デフォルトは上から下、左から右
+def detect_connection_type(shape1, shape2):
+    """接続線のパターンから接続タイプを判定"""
+    line = self.extract_connecting_line(shape1, shape2)
     
-    flow_graph = FlowGraph()
-    for edge in topology.edges:
-        direction = infer_direction(edge)
-        flow_graph.add_directed_edge(edge.source, edge.target, direction)
+    if not line:
+        return None
     
-    return flow_graph
+    # 線のスタイルを分析
+    if self.is_arrow_line(line):
+        return {"type": "directional", "direction": self.get_arrow_direction(line)}
+    elif self.is_dashed_line(line):
+        return {"type": "conditional", "condition": self.extract_condition_symbol(line)}
+    elif self.is_double_line(line):
+        return {"type": "bidirectional"}
+    else:
+        return {"type": "simple"}
 ```
 
 ## AST生成 {#ast-generation}
 
-### ASTノードタイプ
+### シンボルベースASTノード
 ```python
 class ASTNode:
-    pass
-
-class ProgramNode(ASTNode):
-    def __init__(self, main_circle, functions, globals):
-        self.main = main_circle
-        self.functions = functions
-        self.globals = globals
+    def __init__(self, symbol_shape):
+        self.shape = symbol_shape
+        self.internal_pattern = symbol_shape.internal_pattern
 
 class CircleNode(ASTNode):  # 関数/スコープ
-    def __init__(self, name, params, body):
-        self.name = name
-        self.params = params
-        self.body = body
+    def __init__(self, shape, inner_symbols, connections):
+        super().__init__(shape)
+        self.inner_symbols = inner_symbols  # 内部のシンボル群
+        self.connections = connections      # 接続情報
 
-class SquareNode(ASTNode):  # 変数
-    def __init__(self, name, type, value):
-        self.name = name
-        self.type = type
-        self.value = value
+class SquareNode(ASTNode):  # 変数/データ
+    def __init__(self, shape, dot_pattern=None):
+        super().__init__(shape)
+        self.value = self.parse_dots(dot_pattern) if dot_pattern else None
+        self.type = self.infer_type_from_outline(shape)
 
 class TriangleNode(ASTNode):  # 条件分岐
-    def __init__(self, condition, true_branch, false_branch):
-        self.condition = condition
-        self.true_branch = true_branch
-        self.false_branch = false_branch
+    def __init__(self, shape, condition_symbol, branches):
+        super().__init__(shape)
+        self.condition = condition_symbol
+        self.true_branch = branches.get('true')
+        self.false_branch = branches.get('false')
+
+class PentagonNode(ASTNode):  # ループ
+    def __init__(self, shape, loop_body):
+        super().__init__(shape)
+        self.body = loop_body
+        self.iteration_pattern = self.extract_iteration_pattern(shape)
+
+class HexagonNode(ASTNode):  # 並列処理
+    def __init__(self, shape, parallel_tasks):
+        super().__init__(shape)
+        self.tasks = parallel_tasks
 ```
 
-### AST構築アルゴリズム
+### シンボルからASTへの変換
 ```python
-def build_ast(topology, symbols):
-    # 1. メインエントリーポイントを見つける
-    main = find_main_circle(topology)
+def symbol_to_ast(symbol, topology):
+    """純粋シンボルをASTノードに変換"""
+    shape_type = symbol.shape_type
     
-    # 2. 関数定義を構築
-    functions = []
-    for circle in topology.get_circles():
-        if circle != main:
-            func_ast = build_function_ast(circle, topology)
-            functions.append(func_ast)
+    if shape_type == "circle":
+        inner_symbols = topology.get_contained_symbols(symbol)
+        connections = topology.get_connections(symbol)
+        return CircleNode(symbol, inner_symbols, connections)
     
-    # 3. メイン実行フローを構築
-    main_ast = build_execution_ast(main, topology)
+    elif shape_type == "square":
+        dot_pattern = symbol.internal_pattern
+        return SquareNode(symbol, dot_pattern)
     
-    return ProgramNode(main_ast, functions, globals)
+    elif shape_type == "triangle":
+        condition = extract_condition_symbol(symbol)
+        branches = topology.get_branches(symbol)
+        return TriangleNode(symbol, condition, branches)
+    
+    elif shape_type == "pentagon":
+        body = topology.get_loop_body(symbol)
+        return PentagonNode(symbol, body)
+    
+    elif shape_type == "hexagon":
+        tasks = topology.get_parallel_tasks(symbol)
+        return HexagonNode(symbol, tasks)
 ```
 
 ## 型推論 {#type-inference}
 
-### 型推論ルール
-1. **図形ベース推論**: 四角の輪郭スタイルが型を示す
-2. **演算子ベース推論**: 接続された演算子が型を制約
-3. **フローベース推論**: 型は接続を通じて伝播
-4. **注釈ベース**: 明示的な型シンボルが推論を上書き
-
-### 型推論アルゴリズム
+### シンボルベース型推論
 ```python
-class TypeInferencer:
-    def infer_types(self, ast):
-        # 制約グラフを構築
-        constraints = self.collect_constraints(ast)
+class SymbolTypeInferencer:
+    def infer_type(self, symbol):
+        # 1. 輪郭スタイルから基本型を推論
+        outline_type = self.infer_from_outline(symbol.outline_style)
         
-        # 単一化で制約を解決
-        substitutions = self.unify(constraints)
+        # 2. 内部パターンから詳細型を推論
+        if symbol.has_wavy_interior():
+            return ArrayType(outline_type)
+        elif symbol.has_grid_pattern():
+            return MatrixType(outline_type)
+        elif symbol.has_nested_shape():
+            return ObjectType(self.analyze_nested_structure(symbol))
         
-        # ASTに型を適用
-        typed_ast = self.apply_types(ast, substitutions)
+        return outline_type
+    
+    def propagate_types(self, ast, topology):
+        """接続を通じて型を伝播"""
+        type_constraints = []
         
-        # 競合をチェック
-        self.verify_types(typed_ast)
+        # 接続された図形間で型制約を収集
+        for connection in topology.connections:
+            source_type = self.infer_type(connection.source)
+            target_type = self.infer_type(connection.target)
+            
+            # 演算子による型制約
+            if connection.has_operator():
+                constraint = self.operator_constraint(
+                    connection.operator,
+                    source_type,
+                    target_type
+                )
+                type_constraints.append(constraint)
         
-        return typed_ast
+        # 制約を解決
+        return self.solve_constraints(type_constraints)
 ```
 
 ## コード生成 {#code-generation}
 
-### バックエンドオプション
-
-#### 1. Cバックエンド
+### シンボルから実行可能コードへの変換
 ```python
-class CCodeGenerator:
+class SymbolCodeGenerator:
     def generate(self, ast):
-        self.emit("#include <stdio.h>")
-        self.emit("#include <stdlib.h>")
+        """ASTから実行可能コードを生成"""
+        code = []
         
-        # 関数宣言を生成
-        for func in ast.functions:
-            self.generate_function_decl(func)
+        # メインサークルを見つける
+        main_circle = self.find_main_circle(ast)
         
-        # mainを生成
-        self.emit("int main() {")
-        self.generate_statements(ast.main.body)
-        self.emit("return 0;")
-        self.emit("}")
-```
-
-#### 2. LLVMバックエンド
-```python
-class LLVMCodeGenerator:
-    def __init__(self):
-        self.module = llvm.Module()
-        self.builder = llvm.Builder()
+        # 各シンボルをコードに変換
+        for node in ast.traverse():
+            if isinstance(node, CircleNode):
+                code.append(self.generate_function(node))
+            elif isinstance(node, SquareNode):
+                code.append(self.generate_variable(node))
+            elif isinstance(node, TriangleNode):
+                code.append(self.generate_conditional(node))
+            elif isinstance(node, PentagonNode):
+                code.append(self.generate_loop(node))
+            elif isinstance(node, HexagonNode):
+                code.append(self.generate_parallel(node))
+        
+        return '\n'.join(code)
     
-    def generate(self, ast):
-        # LLVM IRを生成
-        for func in ast.functions:
-            self.generate_function(func)
-        
-        # mainを生成
-        main_func = self.module.add_function("main", ...)
-        self.generate_main(ast.main)
+    def generate_variable(self, square_node):
+        """ドットパターンから値を生成"""
+        if square_node.value is not None:
+            # ドット配列を数値に変換
+            value = self.dots_to_value(square_node.value)
+            return f"var_{square_node.id} = {value}"
+        else:
+            return f"var_{square_node.id} = null"
 ```
 
-#### 3. バイトコードバックエンド
+### 演算子シンボルの変換
 ```python
-class BytecodeGenerator:
-    def generate(self, ast):
-        bytecode = []
-        
-        # 命令を生成
-        for node in ast.walk():
-            instructions = self.generate_instructions(node)
-            bytecode.extend(instructions)
-        
-        return GrimoireBytecode(bytecode)
+def translate_operator_symbol(operator_shape):
+    """演算子シンボルを実際の演算に変換"""
+    operator_map = {
+        "plus_shape": "+",
+        "minus_shape": "-",
+        "x_shape": "*",
+        "slash_shape": "/",
+        "equal_shape": "==",
+        "greater_shape": ">",
+        "less_shape": "<",
+        "and_shape": "&&",
+        "or_shape": "||",
+        "not_shape": "!"
+    }
+    
+    pattern = recognize_operator_pattern(operator_shape)
+    return operator_map.get(pattern, "unknown_op")
 ```
 
 ## 最適化 {#optimization}
 
 ### 視覚的最適化ヒント
 - **線の太さ**: ホットパスを示す
-- **色の濃度**: 最適化レベルを示唆
+- **図形の塗りつぶし密度**: 最適化レベルを示唆
 - **重なる図形**: インライン化を有効に
-
-### 最適化パス
-1. **デッドシェイプ除去**: 到達不可能な図形を削除
-2. **シェイプ融合**: 隣接する操作を結合
-3. **ループ展開**: 五角形の注釈に基づく
-4. **並列検出**: 六角形パターンをスレッドプールへ
+- **図形のグループ化**: ベクトル化可能な操作
 
 ## エラー処理 {#error-handling}
 
-### コンパイルエラー
+### シンボル認識エラー
 ```python
-class GrimoireError:
-    def __init__(self, shape, message, suggestion=None):
+class SymbolError:
+    def __init__(self, shape, error_type):
         self.shape = shape
+        self.error_type = error_type
         self.location = shape.bounding_box
-        self.message = message
-        self.suggestion = suggestion
     
-    def visualize(self, image):
-        # 元画像にエラーハイライトを描画
-        cv2.rectangle(image, self.location, (0, 0, 255), 3)
-        # エラーメッセージを追加
-        cv2.putText(image, self.message, ...)
+    def get_error_message(self):
+        errors = {
+            "ambiguous_shape": "曖昧な図形：頂点数が不明確",
+            "incomplete_circle": "不完全な円：閉じていない",
+            "invalid_dots": "無効なドットパターン：3x3グリッドに収まらない",
+            "unknown_operator": "認識できない演算子シンボル",
+            "conflicting_connections": "矛盾する接続：複数の出力",
+            "isolated_symbol": "孤立したシンボル：接続なし"
+        }
+        return errors.get(self.error_type, "不明なエラー")
 ```
-
-### エラータイプ
-1. **図形認識エラー**
-   - 曖昧な図形
-   - 不完全な円
-   - 重複の競合
-
-2. **意味エラー**
-   - 切断されたコンポーネント
-   - 型の不一致
-   - 未定義シンボル
-
-3. **論理エラー**
-   - 出口のない無限ループ
-   - 到達不可能なコード
-   - 循環依存
 
 ## デバッグサポート {#debug-support}
 
-### デバッグ情報生成
+### ビジュアルデバッグ
 ```python
-class DebugInfo:
-    def __init__(self):
-        self.shape_to_line = {}  # 図形を生成コード行にマップ
-        self.breakpoints = []    # ブレークポイントとしてマークされた図形
-        self.watches = []        # ウォッチ用にマークされた図形
+class VisualDebugger:
+    def __init__(self, original_image):
+        self.image = original_image.copy()
+        self.execution_state = {}
     
-    def generate_sourcemap(self, shapes, generated_code):
-        # 視覚的コードとテキストコード間の双方向マッピングを作成
-        pass
-```
-
-### ビジュアルデバッガ統合
-1. **実行可視化**: 現在実行中の図形をハイライト
-2. **変数検査**: 図形の近くに値を表示
-3. **ステップ実行**: 図形ごとの実行
-4. **タイムトラベルデバッグ**: 実行を視覚的に再生
-
-### デバッグコンパイルモード
-```bash
-grimoire compile --debug circle.png
-# 生成物:
-# - circle.grim.debug (デバッグシンボル)
-# - circle.grim.map (図形からコードへのマッピング)
-# - circle.grim.trace (実行トレースフォーマット)
+    def highlight_current_symbol(self, symbol):
+        """現在実行中のシンボルをハイライト"""
+        cv2.drawContours(self.image, [symbol.contour], -1, (0, 255, 0), 3)
+    
+    def show_symbol_value(self, symbol, value):
+        """シンボルの現在値を表示（ドットパターンで）"""
+        dot_pattern = self.value_to_dots(value)
+        self.draw_dot_pattern_near_symbol(symbol, dot_pattern)
+    
+    def trace_execution_path(self, path):
+        """実行パスを矢印で可視化"""
+        for i in range(len(path) - 1):
+            start = path[i].center
+            end = path[i + 1].center
+            cv2.arrowedLine(self.image, start, end, (255, 0, 0), 2)
 ```
 
 ---
 
-*この仕様はGrimoireコンパイラの技術的アーキテクチャを定義します。*
+*この仕様はGrimoireコンパイラの純粋シンボルベースアーキテクチャを定義します。テキストは一切使用せず、図形とパターンのみで全ての計算を表現します。*
