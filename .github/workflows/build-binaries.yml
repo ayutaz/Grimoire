@@ -41,6 +41,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y python3-opencv libgl1-mesa-glx
 
+    - name: Install system dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install python-tk
+
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
@@ -59,9 +64,15 @@ jobs:
         echo "Installed packages:"
         pip list
 
-    - name: Build with PyInstaller
+    - name: Build with PyInstaller (Unix)
+      if: matrix.os != 'windows-latest'
       run: |
-        pyinstaller --onefile --name grimoire --paths src --hidden-import PIL._tkinter_finder --hidden-import pkg_resources.py2_warn --distpath dist src/grimoire/cli.py
+        pyinstaller --onefile --name grimoire --paths src --add-data "src/grimoire/*.py:grimoire" --hidden-import PIL._tkinter_finder --hidden-import pkg_resources.py2_warn --distpath dist src/grimoire/cli.py
+
+    - name: Build with PyInstaller (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        pyinstaller --onefile --name grimoire --paths src --add-data "src/grimoire/*.py;grimoire" --hidden-import PIL._tkinter_finder --hidden-import pkg_resources.py2_warn --distpath dist src/grimoire/cli.py
 
     - name: Check build output (Unix)
       if: matrix.os != 'windows-latest'
@@ -78,6 +89,18 @@ jobs:
         dir dist
         echo "Files:"
         Get-ChildItem -Path dist
+
+    - name: Test binary (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        ./dist/grimoire --help
+        echo "Binary test passed!"
+
+    - name: Test binary (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        ./dist/grimoire.exe --help
+        echo "Binary test passed!"
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
