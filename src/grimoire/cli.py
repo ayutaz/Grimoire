@@ -3,7 +3,7 @@
 import click
 import sys
 from pathlib import Path
-from .mock_compiler import compile_grimoire, run_grimoire, debug_grimoire
+from .compiler import compile_grimoire, run_grimoire, debug_grimoire
 
 
 @click.group()
