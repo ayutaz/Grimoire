@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Grimoireサンプル画像生成スクリプト - 記号ベース版
+Grimoireサンプル画像生成スクリプト - 魔法陣スタイル版
 
 このスクリプトは、Grimoire言語の記号ベースプログラムの
-サンプル画像を生成します。
+サンプル画像を魔法陣形式で生成します。
 """
 
 from PIL import Image, ImageDraw, ImageFont
@@ -21,15 +21,19 @@ class Colors:
     BACKGROUND = 'white'
     FOREGROUND = 'black'
     LINE_WIDTH = 3
+    OUTER_CIRCLE_WIDTH = 5
     
 # 図形のサイズ定数
 class Sizes:
-    CIRCLE_RADIUS = 40
-    SQUARE_SIZE = 40
-    STAR_SIZE = 35
-    TRIANGLE_SIZE = 40
-    PENTAGON_SIZE = 40
-    HEXAGON_SIZE = 50
+    CANVAS_SIZE = 600  # 正方形のキャンバス
+    OUTER_RADIUS = 250  # 外周円の半径
+    INNER_RADIUS = 200  # 内部要素の配置可能半径
+    CIRCLE_RADIUS = 30
+    SQUARE_SIZE = 35
+    STAR_SIZE = 30
+    TRIANGLE_SIZE = 35
+    PENTAGON_SIZE = 35
+    HEXAGON_SIZE = 40
     DOT_RADIUS = 3
     PATTERN_SPACING = 6
 
@@ -50,6 +54,58 @@ class PatternType(Enum):
     HALF_CIRCLE = "half_circle" # ブール型（◐）
     STARS = "stars"            # 配列型（※）
     GRID = "grid"              # マップ型（⊞）
+
+class MagicCircleDrawer:
+    """魔法陣描画を担当するクラス"""
+    
+    def __init__(self, size: int = Sizes.CANVAS_SIZE):
+        self.size = size
+        self.center = Point(size // 2, size // 2)
+        self.img = Image.new('RGB', (size, size), Colors.BACKGROUND)
+        self.draw = ImageDraw.Draw(self.img)
+        
+    def draw_outer_circle(self, double: bool = False):
+        """外周円を描画（必須要素）"""
+        x, y = self.center.to_tuple()
+        radius = Sizes.OUTER_RADIUS
+        
+        if double:
+            # 二重円（メインエントリ）
+            self.draw.ellipse(
+                [x-radius-5, y-radius-5, x+radius+5, y+radius+5], 
+                outline=Colors.FOREGROUND, 
+                width=Colors.OUTER_CIRCLE_WIDTH
+            )
+            self.draw.ellipse(
+                [x-radius, y-radius, x+radius, y+radius], 
+                outline=Colors.FOREGROUND, 
+                width=Colors.OUTER_CIRCLE_WIDTH
+            )
+        else:
+            # 通常の外周円
+            self.draw.ellipse(
+                [x-radius, y-radius, x+radius, y+radius], 
+                outline=Colors.FOREGROUND, 
+                width=Colors.OUTER_CIRCLE_WIDTH
+            )
+    
+    def get_position_on_circle(self, angle: float, radius: float) -> Point:
+        """円周上の位置を計算"""
+        x = self.center.x + radius * math.cos(angle)
+        y = self.center.y + radius * math.sin(angle)
+        return Point(x, y)
+    
+    def draw_radial_lines(self, count: int):
+        """放射状の線を描画"""
+        for i in range(count):
+            angle = (i * 360 / count - 90) * math.pi / 180
+            start = self.get_position_on_circle(angle, 50)
+            end = self.get_position_on_circle(angle, Sizes.INNER_RADIUS)
+            self.draw.line(
+                [start.to_tuple(), end.to_tuple()], 
+                fill=Colors.FOREGROUND, 
+                width=2
+            )
 
 class ShapeDrawer:
     """図形描画を担当するクラス"""
@@ -215,31 +271,26 @@ class ShapeDrawer:
                 fill=Colors.FOREGROUND, 
                 width=width
             )
-        elif style == "dashed":
-            self._draw_dashed_line(start, end, width)
+        elif style == "curved":
+            # 曲線的な接続（ベジエ曲線の簡易版）
+            self._draw_curved_line(start, end, width)
     
-    def _draw_dashed_line(self, start: Point, end: Point, width: int):
-        """破線を描画"""
-        x1, y1 = start.to_tuple()
-        x2, y2 = end.to_tuple()
-        length = math.sqrt((x2-x1)**2 + (y2-y1)**2)
-        dash_len = 10
-        gap_len = 5
+    def _draw_curved_line(self, start: Point, end: Point, width: int):
+        """曲線を描画"""
+        # 制御点を計算
+        mid_x = (start.x + end.x) / 2
+        mid_y = (start.y + end.y) / 2
         
-        if length > 0:
-            dashes = int(length / (dash_len + gap_len))
-            for i in range(dashes):
-                t1 = i * (dash_len + gap_len) / length
-                t2 = min((i * (dash_len + gap_len) + dash_len) / length, 1)
-                px1 = x1 + t1 * (x2 - x1)
-                py1 = y1 + t1 * (y2 - y1)
-                px2 = x1 + t2 * (x2 - x1)
-                py2 = y1 + t2 * (y2 - y1)
-                self.draw.line(
-                    [(px1, py1), (px2, py2)], 
-                    fill=Colors.FOREGROUND, 
-                    width=width
-                )
+        # 簡易的な曲線を複数の線分で近似
+        points = []
+        for t in range(0, 11):
+            t = t / 10.0
+            x = (1-t)**2 * start.x + 2*(1-t)*t * mid_x + t**2 * end.x
+            y = (1-t)**2 * start.y + 2*(1-t)*t * (mid_y - 30) + t**2 * end.y
+            points.append((x, y))
+        
+        for i in range(len(points) - 1):
+            self.draw.line([points[i], points[i+1]], fill=Colors.FOREGROUND, width=width)
 
 class NumericSymbols:
     """数値記号を描画するクラス"""
@@ -294,197 +345,238 @@ class OperatorSymbols:
                 font=self.font
             )
 
-class ProgramGenerator:
-    """プログラム画像を生成するクラス"""
-    
-    def __init__(self, width: int = 600, height: int = 400):
-        self.img = Image.new('RGB', (width, height), Colors.BACKGROUND)
-        self.draw = ImageDraw.Draw(self.img)
-        self.drawer = ShapeDrawer(self.draw)
-        self.numbers = NumericSymbols(self.drawer)
-        self.operators = OperatorSymbols(self.draw)
-    
-    def save(self, filename: str):
-        """画像を保存"""
-        filepath = os.path.join(OUTPUT_DIR, filename)
-        self.img.save(filepath)
-        return filepath
-
 def create_hello_world() -> Image.Image:
-    """Hello World相当（星を表示）"""
-    gen = ProgramGenerator(400, 300)
+    """Hello World相当（星を表示）- 魔法陣スタイル"""
+    magic = MagicCircleDrawer()
+    drawer = ShapeDrawer(magic.draw)
     
-    # メインエントリ（二重円）
-    gen.drawer.circle(Point(200, 100), Sizes.CIRCLE_RADIUS, double=True)
+    # 外周円（二重円でメインエントリを示す）
+    magic.draw_outer_circle(double=True)
     
-    # 接続線
-    gen.drawer.connection(Point(200, 140), Point(200, 200))
+    # 中心に星を配置
+    drawer.star(magic.center, Sizes.STAR_SIZE)
     
-    # 出力星
-    gen.drawer.star(Point(200, 200), Sizes.STAR_SIZE)
-    
-    return gen.img
+    return magic.img
 
 def create_fibonacci() -> Image.Image:
-    """フィボナッチプログラム（記号版）"""
-    gen = ProgramGenerator(600, 700)
+    """フィボナッチプログラム - 魔法陣スタイル"""
+    magic = MagicCircleDrawer()
+    drawer = ShapeDrawer(magic.draw)
+    numbers = NumericSymbols(drawer)
+    operators = OperatorSymbols(magic.draw)
     
-    # 関数定義円
-    gen.drawer.circle(Point(300, 100), Sizes.CIRCLE_RADIUS)
+    # 外周円
+    magic.draw_outer_circle()
     
-    # パラメータ（整数型）
-    gen.drawer.square(Point(400, 100), Sizes.SQUARE_SIZE, PatternType.DOT)
-    gen.drawer.connection(Point(340, 100), Point(380, 100))
+    # 中心に関数円
+    drawer.circle(magic.center, Sizes.CIRCLE_RADIUS)
     
-    # 条件分岐
-    gen.drawer.triangle(Point(300, 200), Sizes.TRIANGLE_SIZE)
-    gen.drawer.connection(Point(300, 140), Point(300, 170))
+    # パラメータ（上部）
+    param_pos = Point(magic.center.x, magic.center.y - 80)
+    drawer.square(param_pos, Sizes.SQUARE_SIZE, PatternType.DOT)
+    drawer.connection(Point(magic.center.x, magic.center.y - 30), param_pos)
+    
+    # 条件分岐（中央やや下）
+    triangle_pos = Point(magic.center.x, magic.center.y + 40)
+    drawer.triangle(triangle_pos, Sizes.TRIANGLE_SIZE)
     
     # 条件記号
-    gen.operators.draw_operator(Point(270, 195), "≤")
-    gen.numbers.draw_dots(Point(300, 200), 1)
+    operators.draw_operator(Point(triangle_pos.x - 20, triangle_pos.y), "≤")
+    numbers.draw_dots(Point(triangle_pos.x + 20, triangle_pos.y), 1)
     
-    # true分岐
-    gen.drawer.connection(Point(270, 220), Point(200, 300))
-    gen.drawer.star(Point(200, 300), 25)
+    # 左側：直接返す
+    left_pos = Point(magic.center.x - 100, magic.center.y + 120)
+    drawer.star(left_pos, 20)
+    drawer.connection(Point(triangle_pos.x - 20, triangle_pos.y + 20), left_pos, "curved")
     
-    # false分岐（再帰）
-    gen.drawer.connection(Point(330, 220), Point(400, 300))
+    # 右側：再帰計算
+    right_pos1 = Point(magic.center.x + 60, magic.center.y + 100)
+    right_pos2 = Point(magic.center.x + 120, magic.center.y + 100)
     
-    # 再帰呼び出し
-    gen.drawer.circle(Point(350, 350), 25)
-    gen.operators.draw_operator(Point(340, 345), "-")
-    gen.numbers.draw_dots(Point(360, 350), 1)
+    drawer.circle(right_pos1, 20)
+    operators.draw_operator(Point(right_pos1.x, right_pos1.y - 30), "-")
+    numbers.draw_dots(Point(right_pos1.x, right_pos1.y + 25), 1)
     
-    gen.drawer.circle(Point(450, 350), 25)
-    gen.operators.draw_operator(Point(440, 345), "-")
-    gen.numbers.draw_dots(Point(460, 350), 2)
+    drawer.circle(right_pos2, 20)
+    operators.draw_operator(Point(right_pos2.x, right_pos2.y - 30), "-")
+    numbers.draw_dots(Point(right_pos2.x, right_pos2.y + 25), 2)
     
-    # 加算
-    gen.drawer.connection(Point(350, 375), Point(400, 420))
-    gen.drawer.connection(Point(450, 375), Point(400, 420))
-    gen.operators.draw_operator(Point(395, 415), "+")
+    # 加算と出力
+    add_pos = Point(magic.center.x + 90, magic.center.y + 160)
+    operators.draw_operator(add_pos, "+")
     
-    # 出力
-    gen.drawer.connection(Point(400, 440), Point(400, 480))
-    gen.drawer.star(Point(400, 500), 25)
+    output_pos = Point(magic.center.x, magic.center.y + 180)
+    drawer.star(output_pos, 20)
     
-    # メインエントリ
-    gen.drawer.circle(Point(300, 600), Sizes.CIRCLE_RADIUS, double=True)
+    # 接続線
+    drawer.connection(Point(triangle_pos.x + 20, triangle_pos.y + 20), right_pos1, "curved")
+    drawer.connection(right_pos1, add_pos)
+    drawer.connection(right_pos2, add_pos)
+    drawer.connection(add_pos, output_pos)
     
-    return gen.img
+    return magic.img
 
 def create_variables() -> Image.Image:
-    """変数の例（記号版）"""
-    gen = ProgramGenerator(500, 600)
+    """変数の例 - 魔法陣スタイル"""
+    magic = MagicCircleDrawer()
+    drawer = ShapeDrawer(magic.draw)
+    numbers = NumericSymbols(drawer)
+    operators = OperatorSymbols(magic.draw)
     
-    # メインエントリ
-    gen.drawer.circle(Point(250, 80), Sizes.CIRCLE_RADIUS, double=True)
+    # 外周円
+    magic.draw_outer_circle()
     
-    y_pos = 180
+    # 中心に向かって放射状に配置
+    angles = [0, 72, 144, 216, 288]  # 五芒星の頂点
+    radius = 120
     
-    # 整数変数
-    gen.drawer.connection(Point(250, 120), Point(250, y_pos - 20))
-    gen.drawer.square(Point(250, y_pos), Sizes.SQUARE_SIZE, PatternType.DOT)
-    gen.operators.draw_operator(Point(300, y_pos - 10), "=")
-    gen.numbers.draw_dots(Point(340, y_pos), 5)
+    # 各データ型を配置
+    patterns = [
+        PatternType.DOT,      # 整数
+        PatternType.DOUBLE_DOT,  # 浮動小数点
+        PatternType.LINES,    # 文字列
+        PatternType.HALF_CIRCLE,  # ブール
+        PatternType.STARS     # 配列
+    ]
     
-    # 浮動小数点変数
-    y_pos += 80
-    gen.drawer.connection(Point(250, y_pos - 60), Point(250, y_pos - 20))
-    gen.drawer.square(Point(250, y_pos), Sizes.SQUARE_SIZE, PatternType.DOUBLE_DOT)
+    for i, (angle, pattern) in enumerate(zip(angles, patterns)):
+        angle_rad = (angle - 90) * math.pi / 180
+        pos = magic.get_position_on_circle(angle_rad, radius)
+        drawer.square(pos, Sizes.SQUARE_SIZE, pattern)
+        
+        # 中心から放射状の線
+        drawer.connection(magic.center, pos)
+        
+        # 値を表示（整数型の例）
+        if pattern == PatternType.DOT:
+            value_pos = magic.get_position_on_circle(angle_rad, radius + 50)
+            operators.draw_operator(Point(value_pos.x - 10, value_pos.y), "=")
+            numbers.draw_dots(Point(value_pos.x + 10, value_pos.y), 5)
     
-    # 文字列変数
-    y_pos += 80
-    gen.drawer.connection(Point(250, y_pos - 60), Point(250, y_pos - 20))
-    gen.drawer.square(Point(250, y_pos), Sizes.SQUARE_SIZE, PatternType.LINES)
+    # 中心に小さな円
+    drawer.circle(magic.center, 20)
     
-    # ブール変数（true）
-    y_pos += 80
-    gen.drawer.connection(Point(250, y_pos - 60), Point(250, y_pos - 20))
-    gen.drawer.square(Point(250, y_pos), Sizes.SQUARE_SIZE, PatternType.HALF_CIRCLE)
-    
-    # 配列
-    y_pos += 80
-    gen.drawer.connection(Point(250, y_pos - 60), Point(250, y_pos - 20))
-    gen.drawer.square(Point(250, y_pos), Sizes.SQUARE_SIZE, PatternType.STARS)
-    
-    return gen.img
+    return magic.img
 
 def create_parallel() -> Image.Image:
-    """並列処理の例（記号版）"""
-    gen = ProgramGenerator(600, 500)
+    """並列処理の例 - 魔法陣スタイル"""
+    magic = MagicCircleDrawer()
+    drawer = ShapeDrawer(magic.draw)
+    operators = OperatorSymbols(magic.draw)
     
-    # メインエントリ
-    gen.drawer.circle(Point(300, 80), Sizes.CIRCLE_RADIUS, double=True)
+    # 外周円
+    magic.draw_outer_circle()
     
-    # 六角形（並列処理）
-    gen.drawer.hexagon(Point(300, 180), Sizes.HEXAGON_SIZE)
-    gen.drawer.connection(Point(300, 120), Point(300, 130))
+    # 中心に六角形（並列処理）
+    drawer.hexagon(magic.center, Sizes.HEXAGON_SIZE)
     
-    # 並列タスク
-    gen.drawer.connection(Point(250, 200), Point(150, 280))
-    gen.drawer.circle(Point(150, 280), 30)
-    gen.drawer.connection(Point(150, 310), Point(150, 340))
-    gen.drawer.star(Point(150, 340), 20)
+    # 6つの頂点に向けて配置
+    tasks = ["☆", "♪", "✉", "☀", "☾", "✓"]
+    for i in range(6):
+        angle = (i * 60) * math.pi / 180
+        
+        # タスク円を配置
+        task_pos = magic.get_position_on_circle(angle, 120)
+        drawer.circle(task_pos, 25)
+        
+        # タスクのシンボル
+        symbol_pos = magic.get_position_on_circle(angle, 160)
+        operators.draw_operator(symbol_pos, tasks[i])
+        
+        # 中心から接続
+        drawer.connection(magic.center, task_pos)
     
-    gen.drawer.connection(Point(300, 230), Point(300, 280))
-    gen.drawer.circle(Point(300, 280), 30)
-    gen.drawer.connection(Point(300, 310), Point(300, 340))
-    gen.operators.draw_operator(Point(290, 330), "♪")
-    
-    gen.drawer.connection(Point(350, 200), Point(450, 280))
-    gen.drawer.circle(Point(450, 280), 30)
-    gen.drawer.connection(Point(450, 310), Point(450, 340))
-    gen.operators.draw_operator(Point(440, 330), "✉")
-    
-    # 結合
-    gen.drawer.connection(Point(150, 360), Point(250, 400))
-    gen.drawer.connection(Point(300, 360), Point(300, 400))
-    gen.drawer.connection(Point(450, 360), Point(350, 400))
-    
-    # 下の六角形（同期）
-    gen.drawer.hexagon(Point(300, 420), Sizes.HEXAGON_SIZE)
-    
-    # 完了マーク
-    gen.drawer.connection(Point(300, 470), Point(300, 500))
-    gen.operators.draw_operator(Point(290, 490), "✓")
-    
-    return gen.img
+    return magic.img
 
 def create_calculator() -> Image.Image:
-    """計算プログラム（記号版）"""
-    gen = ProgramGenerator(400, 400)
+    """計算プログラム - 魔法陣スタイル"""
+    magic = MagicCircleDrawer()
+    drawer = ShapeDrawer(magic.draw)
+    numbers = NumericSymbols(drawer)
+    operators = OperatorSymbols(magic.draw)
     
-    # メインエントリ
-    gen.drawer.circle(Point(200, 80), Sizes.CIRCLE_RADIUS, double=True)
-    gen.drawer.connection(Point(200, 120), Point(200, 180))
+    # 外周円（二重円でメインエントリ）
+    magic.draw_outer_circle(double=True)
     
-    # 変数a（整数型、値10）
-    gen.drawer.square(Point(150, 180), 35, PatternType.DOT)
-    gen.operators.draw_operator(Point(130, 210), "=")
-    gen.numbers.draw_dots(Point(150, 220), 10)
+    # 上部に2つの変数
+    var1_pos = Point(magic.center.x - 60, magic.center.y - 100)
+    var2_pos = Point(magic.center.x + 60, magic.center.y - 100)
     
-    # 変数b（整数型、値20）
-    gen.drawer.square(Point(250, 180), 35, PatternType.DOT)
-    gen.operators.draw_operator(Point(230, 210), "=")
-    gen.numbers.draw_dots(Point(250, 220), 10)
-    gen.numbers.draw_dots(Point(250, 235), 10)
+    drawer.square(var1_pos, Sizes.SQUARE_SIZE, PatternType.DOT)
+    drawer.square(var2_pos, Sizes.SQUARE_SIZE, PatternType.DOT)
     
-    # 加算
-    gen.drawer.connection(Point(150, 215), Point(200, 280))
-    gen.drawer.connection(Point(250, 215), Point(200, 280))
-    gen.operators.draw_operator(Point(195, 270), "+")
+    # 値を表示
+    operators.draw_operator(Point(var1_pos.x - 30, var1_pos.y), "=")
+    numbers.draw_dots(Point(var1_pos.x - 50, var1_pos.y), 10)
     
-    # 乗算
-    gen.drawer.connection(Point(200, 290), Point(200, 320))
-    gen.operators.draw_operator(Point(195, 310), "×")
+    operators.draw_operator(Point(var2_pos.x + 30, var2_pos.y), "=")
+    numbers.draw_dots(Point(var2_pos.x + 50, var2_pos.y), 10)
+    numbers.draw_dots(Point(var2_pos.x + 50, var2_pos.y + 15), 10)
     
-    # 出力
-    gen.drawer.connection(Point(200, 330), Point(200, 360))
-    gen.drawer.star(Point(200, 360), 25)
+    # 中央に演算子
+    operators.draw_operator(magic.center, "+")
     
-    return gen.img
+    # 中央下に第二の演算子
+    mul_pos = Point(magic.center.x, magic.center.y + 60)
+    operators.draw_operator(mul_pos, "×")
+    
+    # 底部に出力
+    output_pos = Point(magic.center.x, magic.center.y + 120)
+    drawer.star(output_pos, Sizes.STAR_SIZE)
+    
+    # 接続線（曲線的に）
+    drawer.connection(var1_pos, magic.center, "curved")
+    drawer.connection(var2_pos, magic.center, "curved")
+    drawer.connection(magic.center, mul_pos)
+    drawer.connection(mul_pos, output_pos)
+    
+    # 装飾的な小円を追加
+    for angle in [45, 135, 225, 315]:
+        angle_rad = angle * math.pi / 180
+        deco_pos = magic.get_position_on_circle(angle_rad, Sizes.INNER_RADIUS)
+        drawer.circle(deco_pos, 10)
+    
+    return magic.img
+
+def create_loop() -> Image.Image:
+    """ループの例 - 魔法陣スタイル"""
+    magic = MagicCircleDrawer()
+    drawer = ShapeDrawer(magic.draw)
+    numbers = NumericSymbols(drawer)
+    operators = OperatorSymbols(magic.draw)
+    
+    # 外周円
+    magic.draw_outer_circle()
+    
+    # 中心に五角形（ループ）
+    drawer.pentagon(magic.center, Sizes.PENTAGON_SIZE)
+    
+    # ループ回数
+    count_pos = Point(magic.center.x + 80, magic.center.y - 80)
+    drawer.square(count_pos, Sizes.SQUARE_SIZE, PatternType.DOT)
+    numbers.draw_dots(Point(count_pos.x + 40, count_pos.y), 10)
+    operators.draw_operator(Point(count_pos.x - 30, count_pos.y), "←")
+    drawer.connection(magic.center, count_pos, "curved")
+    
+    # ループ内の処理（下部に星）
+    star_pos = Point(magic.center.x, magic.center.y + 80)
+    drawer.star(star_pos, Sizes.STAR_SIZE)
+    drawer.connection(magic.center, star_pos)
+    
+    # ループバック矢印
+    loop_start = Point(magic.center.x - 100, magic.center.y + 120)
+    loop_end = Point(magic.center.x - 100, magic.center.y - 60)
+    operators.draw_operator(loop_start, "⟲")
+    
+    # 円形のループパスを描画
+    for i in range(180, 360, 10):
+        angle1 = i * math.pi / 180
+        angle2 = (i + 10) * math.pi / 180
+        pos1 = magic.get_position_on_circle(angle1, 150)
+        pos2 = magic.get_position_on_circle(angle2, 150)
+        drawer.connection(pos1, pos2)
+    
+    return magic.img
 
 def main():
     """メイン処理"""
@@ -498,6 +590,7 @@ def main():
         ("variables.png", create_variables()),
         ("parallel.png", create_parallel()),
         ("calculator.png", create_calculator()),
+        ("loop.png", create_loop()),
     ]
     
     for filename, img in samples:
