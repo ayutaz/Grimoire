@@ -1,15 +1,15 @@
-"""Grimoire Mock Compiler - 仮のコンパイラ実装"""
+"""Grimoire Mock Compiler - 仮のコンパイラ実装（記号ベース版）"""
 
 import os
 import sys
 from pathlib import Path
 
 
-# ファイル名と出力のマッピング
+# ファイル名と出力のマッピング（記号ベースに更新）
 OUTPUT_MAP = {
-    "hello_world.png": "Hello World",
-    "hello_world.jpg": "Hello World",
-    "hello_world.grim": "Hello World",
+    "hello_world.png": "☆",  # 星を表示
+    "hello_world.jpg": "☆",
+    "hello_world.grim": "☆",
     
     "fibonacci.png": """fib(0) = 0
 fib(1) = 1
@@ -23,20 +23,20 @@ fib(8) = 21
 fib(9) = 34
 fib(10) = 55""",
     
-    "variables.png": """age = 25
-price = 99.99
-name = Grimoire
-isValid = true
-items = [1, 2, 3]""",
+    "variables.png": """• = 5
+•• = 23.0
+≡ = [文字列]
+◐ = true
+※ = [•, ••, •••]""",
     
-    "parallel.png": """Starting parallel execution...
-Task 1: Processing...
-Task 2: Processing...
-Task 3: Processing...
-All tasks completed!""",
+    "parallel.png": """並列実行開始...
+タスク1: ☆
+タスク2: ♪
+タスク3: ✉
+全タスク完了！ ✓""",
     
-    "calculator.png": """10 + 20 = 30
-10 × 20 = 200""",
+    "calculator.png": """⦿ + ⦿⦿ = 30
+⦿ × ⦿⦿ = 200""",
 }
 
 
@@ -46,7 +46,9 @@ def compile_grimoire(filepath, output_file=None):
     
     # デバッグ情報を出力
     print(f"コンパイル中: {filepath}", file=sys.stderr)
-    print(f"図形を検出中...", file=sys.stderr)
+    print(f"記号を検出中...", file=sys.stderr)
+    print(f"  ◎ (メインエントリ) を検出", file=sys.stderr)
+    print(f"  ☆ (出力) を検出", file=sys.stderr)
     print(f"ASTを構築中...", file=sys.stderr)
     print(f"コードを生成中...", file=sys.stderr)
     print(f"コンパイル完了！", file=sys.stderr)
@@ -92,7 +94,7 @@ def debug_grimoire(filepath):
     print("ビジュアルデバッガが開きます...", file=sys.stderr)
     print("", file=sys.stderr)
     print("=== 実行トレース ===", file=sys.stderr)
-    print("現在の図形: ◎ (main)", file=sys.stderr)
+    print("現在の記号: ◎ (main)", file=sys.stderr)
     print("次: ☆ (output)", file=sys.stderr)
     print("", file=sys.stderr)
     
