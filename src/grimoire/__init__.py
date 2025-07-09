@@ -1,3 +1,3 @@
-"""Grimoire - 手描きプログラミング言語"""
+"""Grimoire - Visual Programming Language"""
 
 __version__ = "0.1.0"
