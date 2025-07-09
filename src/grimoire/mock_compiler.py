@@ -2,6 +2,7 @@
 
 import os
 import sys
+import platform
 from pathlib import Path
 
 
@@ -73,12 +74,26 @@ def compile_grimoire(filepath, output_file=None):
     
     # 出力ファイルが指定されている場合
     if output_file:
-        # 実行可能なPythonスクリプトを生成
-        with open(output_file, 'w') as f:
-            f.write("#!/usr/bin/env python3\n")
-            f.write("# Grimoire generated code\n")
-            f.write(f'print("""{output}""")\n')
-        os.chmod(output_file, 0o755)
+        # プラットフォーム別の実行可能ファイルを生成
+        if platform.system() == 'Windows':
+            # Windows: バッチファイルを生成
+            if not output_file.endswith('.bat'):
+                output_file = output_file + '.bat'
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write("@echo off\n")
+                f.write("python -c \"print(r'''{}''')\"\n".format(output))
+        else:
+            # Unix系: シェルスクリプトを生成
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write("#!/usr/bin/env python3\n")
+                f.write("# Grimoire generated code\n")
+                f.write(f'print("""{output}""")\n')
+            # Unix系のみ実行権限を付与
+            try:
+                os.chmod(output_file, 0o755)
+            except OSError:
+                pass  # 権限エラーは無視
+        
         return f"コンパイル完了: {output_file}"
     
     return output
