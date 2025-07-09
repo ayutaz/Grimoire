@@ -344,6 +344,42 @@ class OperatorSymbols:
                 fill=Colors.FOREGROUND, 
                 font=self.font
             )
+    
+    def draw_magic_operator(self, center: Point, op_type: str, drawer: ShapeDrawer):
+        """魔法陣的な演算子を描画"""
+        x, y = center.to_tuple()
+        
+        if op_type == "convergence":  # ⟐ 加算/結合
+            # 2つの線が1つに収束するパターン
+            self.draw.line([(x-20, y-15), (x, y)], fill=Colors.FOREGROUND, width=3)
+            self.draw.line([(x+20, y-15), (x, y)], fill=Colors.FOREGROUND, width=3)
+            self.draw.line([(x, y), (x, y+15)], fill=Colors.FOREGROUND, width=3)
+            drawer.circle(center, 5, filled=True)
+            
+        elif op_type == "divergence":  # ⟑ 減算/分離
+            # 1つから2つに分岐するパターン
+            self.draw.line([(x, y-15), (x, y)], fill=Colors.FOREGROUND, width=3)
+            self.draw.line([(x, y), (x-20, y+15)], fill=Colors.FOREGROUND, width=3)
+            self.draw.line([(x, y), (x+20, y+15)], fill=Colors.FOREGROUND, width=3)
+            drawer.circle(center, 5, filled=True)
+            
+        elif op_type == "amplification":  # ✦ 乗算/増幅
+            # 4点星で力の増幅を表現
+            for angle in [0, 90, 180, 270]:
+                rad = angle * math.pi / 180
+                x1 = x + 15 * math.cos(rad)
+                y1 = y + 15 * math.sin(rad)
+                self.draw.line([(x, y), (x1, y1)], fill=Colors.FOREGROUND, width=3)
+            drawer.circle(center, 5, filled=True)
+            
+        elif op_type == "distribution":  # ⟠ 除算/分割
+            # 8分割円
+            drawer.circle(center, 15)
+            for angle in range(0, 360, 45):
+                rad = angle * math.pi / 180
+                x1 = x + 15 * math.cos(rad)
+                y1 = y + 15 * math.sin(rad)
+                self.draw.line([(x, y), (x1, y1)], fill=Colors.FOREGROUND, width=2)
 
 def create_hello_world() -> Image.Image:
     """Hello World相当（星を表示）- 魔法陣スタイル"""
@@ -380,8 +416,9 @@ def create_fibonacci() -> Image.Image:
     triangle_pos = Point(magic.center.x, magic.center.y + 40)
     drawer.triangle(triangle_pos, Sizes.TRIANGLE_SIZE)
     
-    # 条件記号
-    operators.draw_operator(Point(triangle_pos.x - 20, triangle_pos.y), "≤")
+    # 条件記号（小さい三角で比較を表現）
+    small_triangle = Point(triangle_pos.x - 20, triangle_pos.y)
+    drawer.triangle(small_triangle, 10)  # 小さい三角で「小さい」を表現
     numbers.draw_dots(Point(triangle_pos.x + 20, triangle_pos.y), 1)
     
     # 左側：直接返す
@@ -394,16 +431,16 @@ def create_fibonacci() -> Image.Image:
     right_pos2 = Point(magic.center.x + 120, magic.center.y + 100)
     
     drawer.circle(right_pos1, 20)
-    operators.draw_operator(Point(right_pos1.x, right_pos1.y - 30), "-")
+    operators.draw_magic_operator(Point(right_pos1.x, right_pos1.y - 30), "divergence", drawer)
     numbers.draw_dots(Point(right_pos1.x, right_pos1.y + 25), 1)
     
     drawer.circle(right_pos2, 20)
-    operators.draw_operator(Point(right_pos2.x, right_pos2.y - 30), "-")
+    operators.draw_magic_operator(Point(right_pos2.x, right_pos2.y - 30), "divergence", drawer)
     numbers.draw_dots(Point(right_pos2.x, right_pos2.y + 25), 2)
     
-    # 加算と出力
+    # 収束の印（加算）
     add_pos = Point(magic.center.x + 90, magic.center.y + 160)
-    operators.draw_operator(add_pos, "+")
+    operators.draw_magic_operator(add_pos, "convergence", drawer)
     
     output_pos = Point(magic.center.x, magic.center.y + 180)
     drawer.star(output_pos, 20)
@@ -450,7 +487,16 @@ def create_variables() -> Image.Image:
         # 値を表示（整数型の例）
         if pattern == PatternType.DOT:
             value_pos = magic.get_position_on_circle(angle_rad, radius + 50)
-            operators.draw_operator(Point(value_pos.x - 10, value_pos.y), "=")
+            # 転移の矢（代入）を描画
+            arrow_start = Point(value_pos.x - 20, value_pos.y)
+            arrow_end = Point(value_pos.x - 5, value_pos.y)
+            drawer.connection(arrow_start, arrow_end, "solid", 2)
+            # 矢印の先端
+            magic.draw.polygon([
+                (arrow_end.x, arrow_end.y),
+                (arrow_end.x - 5, arrow_end.y - 3),
+                (arrow_end.x - 5, arrow_end.y + 3)
+            ], fill=Colors.FOREGROUND)
             numbers.draw_dots(Point(value_pos.x + 10, value_pos.y), 5)
     
     # 中心に小さな円
@@ -499,36 +545,34 @@ def create_calculator() -> Image.Image:
     magic.draw_outer_circle(double=True)
     
     # 上部に2つの変数
-    var1_pos = Point(magic.center.x - 60, magic.center.y - 100)
-    var2_pos = Point(magic.center.x + 60, magic.center.y - 100)
+    var1_pos = Point(magic.center.x - 80, magic.center.y - 120)
+    var2_pos = Point(magic.center.x + 80, magic.center.y - 120)
     
     drawer.square(var1_pos, Sizes.SQUARE_SIZE, PatternType.DOT)
     drawer.square(var2_pos, Sizes.SQUARE_SIZE, PatternType.DOT)
     
-    # 値を表示
-    operators.draw_operator(Point(var1_pos.x - 30, var1_pos.y), "=")
-    numbers.draw_dots(Point(var1_pos.x - 50, var1_pos.y), 10)
+    # 値を配置（魔法陣内部に）
+    numbers.draw_dots(Point(var1_pos.x, var1_pos.y - 40), 10)
+    numbers.draw_dots(Point(var2_pos.x, var2_pos.y - 40), 10)
+    numbers.draw_dots(Point(var2_pos.x, var2_pos.y - 25), 10)
     
-    operators.draw_operator(Point(var2_pos.x + 30, var2_pos.y), "=")
-    numbers.draw_dots(Point(var2_pos.x + 50, var2_pos.y), 10)
-    numbers.draw_dots(Point(var2_pos.x + 50, var2_pos.y + 15), 10)
+    # 中央に収束の印（加算）
+    convergence_pos = Point(magic.center.x, magic.center.y - 20)
+    operators.draw_magic_operator(convergence_pos, "convergence", drawer)
     
-    # 中央に演算子
-    operators.draw_operator(magic.center, "+")
-    
-    # 中央下に第二の演算子
-    mul_pos = Point(magic.center.x, magic.center.y + 60)
-    operators.draw_operator(mul_pos, "×")
+    # その下に増幅の星（乗算）
+    amplify_pos = Point(magic.center.x, magic.center.y + 40)
+    operators.draw_magic_operator(amplify_pos, "amplification", drawer)
     
     # 底部に出力
     output_pos = Point(magic.center.x, magic.center.y + 120)
     drawer.star(output_pos, Sizes.STAR_SIZE)
     
-    # 接続線（曲線的に）
-    drawer.connection(var1_pos, magic.center, "curved")
-    drawer.connection(var2_pos, magic.center, "curved")
-    drawer.connection(magic.center, mul_pos)
-    drawer.connection(mul_pos, output_pos)
+    # 接続線（魔法陣的な流れ）
+    drawer.connection(var1_pos, convergence_pos, "curved")
+    drawer.connection(var2_pos, convergence_pos, "curved")
+    drawer.connection(convergence_pos, amplify_pos)
+    drawer.connection(amplify_pos, output_pos)
     
     # 装飾的な小円を追加
     for angle in [45, 135, 225, 315]:
@@ -555,7 +599,16 @@ def create_loop() -> Image.Image:
     count_pos = Point(magic.center.x + 80, magic.center.y - 80)
     drawer.square(count_pos, Sizes.SQUARE_SIZE, PatternType.DOT)
     numbers.draw_dots(Point(count_pos.x + 40, count_pos.y), 10)
-    operators.draw_operator(Point(count_pos.x - 30, count_pos.y), "←")
+    # 転移の矢（代入）を描画
+    arrow_start = Point(count_pos.x - 40, count_pos.y)
+    arrow_end = Point(count_pos.x - 20, count_pos.y)
+    drawer.connection(arrow_start, arrow_end, "solid", 2)
+    # 矢印の先端
+    magic.draw.polygon([
+        (arrow_end.x, arrow_end.y),
+        (arrow_end.x - 5, arrow_end.y - 3),
+        (arrow_end.x - 5, arrow_end.y + 3)
+    ], fill=Colors.FOREGROUND)
     drawer.connection(magic.center, count_pos, "curved")
     
     # ループ内の処理（下部に星）
@@ -566,7 +619,23 @@ def create_loop() -> Image.Image:
     # ループバック矢印
     loop_start = Point(magic.center.x - 100, magic.center.y + 120)
     loop_end = Point(magic.center.x - 100, magic.center.y - 60)
-    operators.draw_operator(loop_start, "⟲")
+    # 循環の印を描画
+    loop_center = Point(magic.center.x - 100, magic.center.y + 100)
+    drawer.circle(loop_center, 15, filled=False)
+    # 循環を示す矢印
+    magic.draw.arc(
+        [loop_center.x - 15, loop_center.y - 15, loop_center.x + 15, loop_center.y + 15],
+        0, 270,
+        fill=Colors.FOREGROUND,
+        width=3
+    )
+    # 矢印の先端
+    arrow_tip = Point(loop_center.x, loop_center.y - 15)
+    magic.draw.polygon([
+        (arrow_tip.x, arrow_tip.y),
+        (arrow_tip.x - 5, arrow_tip.y + 5),
+        (arrow_tip.x + 5, arrow_tip.y + 5)
+    ], fill=Colors.FOREGROUND)
     
     # 円形のループパスを描画
     for i in range(180, 360, 10):
