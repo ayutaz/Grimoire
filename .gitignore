@@ -1,0 +1,33 @@
+# Build artifacts
+/build/
+/dist/
+/target/
+*.o
+*.so
+*.dll
+*.exe
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Grimoire specific
+*.grim.cache
+*.grim.ast
+.grimoire/
+
+# Debug files
+*.pdb
+*.dSYM/
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
