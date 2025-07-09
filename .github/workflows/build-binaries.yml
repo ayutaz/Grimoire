@@ -2,8 +2,11 @@ name: Build Binaries
 
 on:
   push:
+    branches: [ main ]
     tags:
       - 'v*'
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -32,15 +35,49 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install dependencies
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-opencv libgl1-mesa-glx
+
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install wheel setuptools
         pip install -e .
         pip install pyinstaller
 
+    - name: Debug - List files
+      run: |
+        echo "Current directory:"
+        pwd
+        echo "Files in root:"
+        ls -la
+        echo "Python path:"
+        python -c "import sys; print(sys.path)"
+        echo "Installed packages:"
+        pip list
+
     - name: Build with PyInstaller
       run: |
-        pyinstaller grimoire.spec
+        pyinstaller --onefile --name grimoire --paths src --hidden-import PIL._tkinter_finder --hidden-import pkg_resources.py2_warn --distpath dist src/grimoire/cli.py
+
+    - name: Check build output (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        echo "Contents of dist directory:"
+        ls -la dist/
+        echo "File type:"
+        file dist/*
+
+    - name: Check build output (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        echo "Contents of dist directory:"
+        dir dist
+        echo "Files:"
+        Get-ChildItem -Path dist
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4

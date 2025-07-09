@@ -5,13 +5,9 @@ block_cipher = None
 
 a = Analysis(
     ['src/grimoire/cli.py'],
-    pathex=[],
+    pathex=['src'],
     binaries=[],
-    datas=[
-        # サンプル画像を含める
-        ('examples/images/*.png', 'examples/images'),
-        ('examples/images/*.jpg', 'examples/images'),
-    ],
+    datas=[],
     hiddenimports=[
         'PIL',
         'PIL.Image',
@@ -20,6 +16,7 @@ a = Analysis(
         'cv2',
         'numpy',
         'click',
+        'pkg_resources.py2_warn',
     ],
     hookspath=[],
     hooksconfig={},
