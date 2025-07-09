@@ -4,11 +4,14 @@
 block_cipher = None
 
 a = Analysis(
-    ['src/grimoire/cli.py'],
+    ['src/grimoire/__main__.py'],
     pathex=['src'],
     binaries=[],
     datas=[],
     hiddenimports=[
+        'grimoire',
+        'grimoire.cli',
+        'grimoire.mock_compiler',
         'PIL',
         'PIL.Image',
         'PIL.ImageDraw',

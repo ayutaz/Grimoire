@@ -67,12 +67,12 @@ jobs:
     - name: Build with PyInstaller (Unix)
       if: matrix.os != 'windows-latest'
       run: |
-        pyinstaller --onefile --name grimoire --paths src --add-data "src/grimoire/*.py:grimoire" --hidden-import PIL._tkinter_finder --hidden-import pkg_resources.py2_warn --distpath dist src/grimoire/cli.py
+        pyinstaller --onefile --name grimoire --paths src --hidden-import grimoire.mock_compiler --hidden-import PIL._tkinter_finder --hidden-import pkg_resources.py2_warn --distpath dist src/grimoire/__main__.py
 
     - name: Build with PyInstaller (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        pyinstaller --onefile --name grimoire --paths src --add-data "src/grimoire/*.py;grimoire" --hidden-import PIL._tkinter_finder --hidden-import pkg_resources.py2_warn --distpath dist src/grimoire/cli.py
+        pyinstaller --onefile --name grimoire --paths src --hidden-import grimoire.mock_compiler --hidden-import PIL._tkinter_finder --hidden-import pkg_resources.py2_warn --distpath dist src/grimoire/__main__.py
 
     - name: Check build output (Unix)
       if: matrix.os != 'windows-latest'
