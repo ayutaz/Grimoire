@@ -417,4 +417,8 @@ class TestDebugGrimoire:
                 captured = capsys.readouterr()
                 assert "=== Execution Result ===" in captured.out
             finally:
-                os.unlink(tmp.name)
+                try:
+                    os.unlink(tmp.name)
+                except (OSError, PermissionError):
+                    # On Windows, the file might still be locked
+                    pass
