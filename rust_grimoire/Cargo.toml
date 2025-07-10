@@ -1,0 +1,32 @@
+[package]
+name = "grimoire"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# OpenCV - 各プラットフォームで異なる設定が必要
+opencv = { version = "0.88", default-features = false, features = ["opencv-4", "imgcodecs", "imgproc", "core"] }
+anyhow = "1.0"
+clap = { version = "4.4", features = ["derive"] }
+
+# 高速化のための依存関係
+rayon = "1.8"  # 並列処理
+memmap2 = "0.9"  # メモリマップドファイル
+simd-json = { version = "0.13", features = ["serde"] }  # SIMD最適化JSON
+
+# シリアライゼーション
+serde = { version = "1.0", features = ["derive"] }
+bincode = "1.3"  # バイナリシリアライゼーション
+
+[profile.release]
+# 最大限の最適化
+opt-level = 3
+lto = "fat"  # Link Time Optimization
+codegen-units = 1  # 単一コード生成ユニット
+strip = true  # シンボル削除
+panic = "abort"  # パニック時の巻き戻しを無効化
+
+[profile.release.package."*"]
+# 依存関係も最適化
+opt-level = 3
+codegen-units = 1
