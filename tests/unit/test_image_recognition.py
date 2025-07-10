@@ -302,19 +302,15 @@ class TestMagicCircleDetector:
     
     # Edge cases and error scenarios
     
-    def test_empty_image(self):
+    def test_empty_image(self, tmp_path):
         """Test behavior with completely empty (white) image"""
         # Arrange
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
-            img = self.create_test_image()
-            cv2.imwrite(tmp.name, img)
-            
-            try:
-                # Act & Assert
-                with pytest.raises(ValueError, match="No outer circle detected"):
-                    self.detector.detect_symbols(tmp.name)
-            finally:
-                os.unlink(tmp.name)
+        img = self.create_test_image()
+        filepath = self.save_test_image(img, tmp_path)
+        
+        # Act & Assert
+        with pytest.raises(ValueError, match="No outer circle detected"):
+            self.detector.detect_symbols(filepath)
     
     def test_very_small_shapes(self, tmp_path):
         """Test that very small shapes are ignored"""
