@@ -69,3 +69,4 @@ dist/
 coverage.out
 coverage.html
 *.profgrimoire
+debug_binary.png
