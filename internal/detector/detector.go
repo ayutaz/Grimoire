@@ -12,28 +12,28 @@ import (
 
 // Detector handles symbol detection from images
 type Detector struct {
-	minContourArea    int
-	circleThreshold   float64
-	contrastThreshold uint8
+	minContourArea  int
+	circleThreshold float64
+	binaryThreshold uint8
 }
 
 // NewDetector creates a new detector with default settings
 func NewDetector() *Detector {
 	return &Detector{
-		minContourArea:    100,
-		circleThreshold:   0.8,
-		contrastThreshold: 128,
+		minContourArea:  100,
+		circleThreshold: 0.8,
+		binaryThreshold: 128,
 	}
 }
 
 // DetectSymbols detects all symbols in the given image file
-func DetectSymbols(imagePath string) ([]Symbol, error) {
+func DetectSymbols(imagePath string) ([]*Symbol, error) {
 	detector := NewDetector()
 	return detector.Detect(imagePath)
 }
 
 // Detect performs symbol detection on the image
-func (d *Detector) Detect(imagePath string) ([]Symbol, error) {
+func (d *Detector) Detect(imagePath string) ([]*Symbol, error) {
 	// Open image file
 	file, err := os.Open(imagePath)
 	if err != nil {
@@ -72,8 +72,9 @@ func (d *Detector) toGrayscale(img image.Image) *image.Gray {
 
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			c := img.At(x, y)
-			gray.Set(x, y, color.GrayModel.Convert(c))
+			oldColor := img.At(x, y)
+			grayColor := color.GrayModel.Convert(oldColor)
+			gray.Set(x, y, grayColor)
 		}
 	}
 
@@ -88,11 +89,11 @@ func (d *Detector) threshold(gray *image.Gray) *image.Gray {
 	// Simple threshold - can be improved with Otsu's method
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			c := gray.GrayAt(x, y)
-			if c.Y < d.contrastThreshold {
-				binary.Set(x, y, color.Black)
+			pixel := gray.GrayAt(x, y)
+			if pixel.Y < d.binaryThreshold {
+				binary.Set(x, y, color.Gray{0}) // Black
 			} else {
-				binary.Set(x, y, color.White)
+				binary.Set(x, y, color.Gray{255}) // White
 			}
 		}
 	}
@@ -142,8 +143,8 @@ func (d *Detector) findContours(binary *image.Gray) []Contour {
 }
 
 // detectSymbolsFromContours analyzes contours to identify symbols
-func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.Gray) []Symbol {
-	var symbols []Symbol
+func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.Gray) []*Symbol {
+	symbols := make([]*Symbol, 0)
 
 	for _, contour := range contours {
 		if contour.Area < float64(d.minContourArea) {
@@ -152,16 +153,16 @@ func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.G
 
 		// Classify contour
 		symbolType := d.classifyContour(contour)
-		if symbolType == "" {
+		if symbolType == Unknown {
 			continue
 		}
 
 		// Detect internal pattern
 		pattern := d.detectInternalPattern(contour, binary)
 
-		symbol := Symbol{
+		symbol := &Symbol{
 			Type:       symbolType,
-			Position:   contour.Center,
+			Position:   Position{X: float64(contour.Center.X), Y: float64(contour.Center.Y)},
 			Size:       math.Sqrt(contour.Area),
 			Confidence: 0.9,
 			Pattern:    pattern,
@@ -181,7 +182,7 @@ func (d *Detector) classifyContour(contour Contour) SymbolType {
 	if contour.Area > 10000 {
 		return OuterCircle
 	}
-	return ""
+	return Unknown
 }
 
 // detectInternalPattern detects patterns inside the symbol

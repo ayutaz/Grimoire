@@ -1,7 +1,5 @@
 package detector
 
-import "image"
-
 // SymbolType represents the type of detected symbol
 type SymbolType string
 
@@ -43,12 +41,19 @@ const (
 
 	// Special
 	ConnectionSymbol    SymbolType = "connection"
+	Unknown            SymbolType = "unknown"
 )
+
+// Position represents a position in the image
+type Position struct {
+	X float64
+	Y float64
+}
 
 // Symbol represents a detected symbol in the image
 type Symbol struct {
 	Type       SymbolType
-	Position   image.Point
+	Position   Position
 	Size       float64
 	Confidence float64
 	Pattern    string // Internal pattern (dots, lines, etc.)
