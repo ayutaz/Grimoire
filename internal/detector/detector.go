@@ -15,14 +15,20 @@ type Detector struct {
 	minContourArea  int
 	circleThreshold float64
 	binaryThreshold uint8
+	blurKernelSize  int
+	adaptiveBlockSize int
+	morphKernelSize int
 }
 
 // NewDetector creates a new detector with default settings
 func NewDetector() *Detector {
 	return &Detector{
 		minContourArea:  100,
-		circleThreshold: 0.8,
+		circleThreshold: 0.7,  // Lower threshold to detect more circles
 		binaryThreshold: 128,
+		blurKernelSize:  5,
+		adaptiveBlockSize: 11,
+		morphKernelSize: 3,
 	}
 }
 
@@ -50,11 +56,18 @@ func (d *Detector) Detect(imagePath string) ([]*Symbol, error) {
 	// Convert to grayscale
 	gray := d.toGrayscale(img)
 
-	// Apply threshold to get binary image
-	binary := d.threshold(gray)
+	// Preprocess image
+	binary := d.preprocessImage(gray)
 
 	// Find contours
 	contours := d.findContours(binary)
+
+	// Debug: print contour information
+	if os.Getenv("GRIMOIRE_DEBUG") != "" {
+		d.DebugPrintContours(contours)
+		// Save preprocessed image for debugging
+		d.DebugSaveContours(binary, contours, "debug_binary.png")
+	}
 
 	// Detect symbols from contours
 	symbols := d.detectSymbolsFromContours(contours, binary)
@@ -81,71 +94,14 @@ func (d *Detector) toGrayscale(img image.Image) *image.Gray {
 	return gray
 }
 
-// threshold applies binary threshold to grayscale image
-func (d *Detector) threshold(gray *image.Gray) *image.Gray {
-	bounds := gray.Bounds()
-	binary := image.NewGray(bounds)
 
-	// Simple threshold - can be improved with Otsu's method
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			pixel := gray.GrayAt(x, y)
-			if pixel.Y < d.binaryThreshold {
-				binary.Set(x, y, color.Gray{0}) // Black
-			} else {
-				binary.Set(x, y, color.Gray{255}) // White
-			}
-		}
-	}
-
-	return binary
-}
-
-// Contour represents a contour in the image
-type Contour struct {
-	Points []image.Point
-	Area   float64
-	Center image.Point
-}
-
-// findContours finds contours in binary image
-func (d *Detector) findContours(binary *image.Gray) []Contour {
-	// TODO: Implement proper contour detection algorithm
-	// For now, return a simple placeholder
-	bounds := binary.Bounds()
-	
-	// Placeholder: detect outer circle
-	center := image.Point{
-		X: (bounds.Min.X + bounds.Max.X) / 2,
-		Y: (bounds.Min.Y + bounds.Max.Y) / 2,
-	}
-	
-	radius := math.Min(
-		float64(bounds.Max.X-bounds.Min.X),
-		float64(bounds.Max.Y-bounds.Min.Y),
-	) / 2 * 0.9
-
-	// Create circular contour
-	var points []image.Point
-	for angle := 0.0; angle < 2*math.Pi; angle += 0.1 {
-		x := center.X + int(radius*math.Cos(angle))
-		y := center.Y + int(radius*math.Sin(angle))
-		points = append(points, image.Point{X: x, Y: y})
-	}
-
-	return []Contour{
-		{
-			Points: points,
-			Area:   math.Pi * radius * radius,
-			Center: center,
-		},
-	}
-}
 
 // detectSymbolsFromContours analyzes contours to identify symbols
 func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.Gray) []*Symbol {
 	symbols := make([]*Symbol, 0)
 
+	// First, look for the outer circle
+	var outerCircle *Symbol
 	for _, contour := range contours {
 		if contour.Area < float64(d.minContourArea) {
 			continue
@@ -153,7 +109,29 @@ func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.G
 
 		// Classify contour
 		symbolType := d.classifyContour(contour)
-		if symbolType == Unknown {
+		if symbolType == OuterCircle {
+			outerCircle = &Symbol{
+				Type:       symbolType,
+				Position:   Position{X: float64(contour.Center.X), Y: float64(contour.Center.Y)},
+				Size:       math.Sqrt(contour.Area),
+				Confidence: contour.Circularity,
+				Pattern:    "empty",
+				Properties: make(map[string]interface{}),
+			}
+			symbols = append(symbols, outerCircle)
+			break
+		}
+	}
+
+	// Then detect other symbols
+	for _, contour := range contours {
+		if contour.Area < float64(d.minContourArea) {
+			continue
+		}
+
+		// Skip if it's the outer circle
+		symbolType := d.classifyContour(contour)
+		if symbolType == OuterCircle || symbolType == Unknown {
 			continue
 		}
 
@@ -164,12 +142,21 @@ func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.G
 			Type:       symbolType,
 			Position:   Position{X: float64(contour.Center.X), Y: float64(contour.Center.Y)},
 			Size:       math.Sqrt(contour.Area),
-			Confidence: 0.9,
+			Confidence: 0.7,
 			Pattern:    pattern,
 			Properties: make(map[string]interface{}),
 		}
 
-		symbols = append(symbols, symbol)
+		// Only add symbols within the outer circle if one exists
+		if outerCircle != nil {
+			centerDist := math.Sqrt(math.Pow(symbol.Position.X-outerCircle.Position.X, 2) + 
+				math.Pow(symbol.Position.Y-outerCircle.Position.Y, 2))
+			if centerDist < outerCircle.Size*0.9 {
+				symbols = append(symbols, symbol)
+			}
+		} else {
+			symbols = append(symbols, symbol)
+		}
 	}
 
 	return symbols
@@ -177,16 +164,40 @@ func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.G
 
 // classifyContour determines the type of symbol from contour shape
 func (d *Detector) classifyContour(contour Contour) SymbolType {
-	// TODO: Implement actual shape classification
-	// For now, detect outer circle
-	if contour.Area > 10000 {
-		return OuterCircle
-	}
-	return Unknown
+	return d.classifyShape(contour)
 }
 
-// detectInternalPattern detects patterns inside the symbol
-func (d *Detector) detectInternalPattern(contour Contour, binary *image.Gray) string {
-	// TODO: Implement pattern detection (dots, lines, etc.)
-	return "empty"
+
+// preprocessImage applies preprocessing steps to improve detection
+func (d *Detector) preprocessImage(gray *image.Gray) *image.Gray {
+	// Apply Gaussian blur to reduce noise
+	blurred := gaussianBlur(gray, d.blurKernelSize)
+	
+	// Apply adaptive threshold
+	binary := adaptiveThreshold(blurred, d.adaptiveBlockSize, 2)
+	
+	// Apply morphological operations to clean up
+	binary = morphologyClose(binary, d.morphKernelSize)
+	binary = morphologyOpen(binary, d.morphKernelSize)
+	
+	return binary
+}
+
+// isOuterCircle checks if a contour is the outer circle
+func (d *Detector) isOuterCircle(contour Contour) bool {
+	// Check if it's circular
+	if !contour.isCircle(d.circleThreshold) {
+		return false
+	}
+	
+	// Check if it's large enough relative to total contour area
+	// The outer circle should be one of the largest contours
+	// This check is done in classifyShape by checking relative size
+	
+	// Check aspect ratio
+	if contour.getAspectRatio() > 1.2 {
+		return false
+	}
+	
+	return true
 }
