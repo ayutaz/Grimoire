@@ -6,7 +6,9 @@ import math
 
 from .image_recognition import Symbol, SymbolType, Connection
 from .ast_nodes import *
+from .ast_nodes import UnaryOp, ArrayLiteral, MapLiteral
 from .errors import ParseError
+from .string_patterns import StringPatternRecognizer
 
 
 @dataclass
@@ -34,6 +36,7 @@ class MagicCircleParser:
         self.errors: List[ParseError] = []
         self.call_depth = 0  # For stack overflow prevention
         self.max_call_depth = 100
+        self.string_recognizer = StringPatternRecognizer()
     
     def parse(self, symbols: List[Symbol], connections: List[Connection]) -> Program:
         """Main parsing function"""
@@ -262,10 +265,35 @@ class MagicCircleParser:
         elif symbol.type == SymbolType.HEXAGON:
             return self._parse_parallel_block(node)
         
+        # Six-pointed star - parallel processing
+        elif symbol.type == SymbolType.SIX_POINTED_STAR:
+            return self._parse_parallel_block(node)
+        
+        # Eight-pointed star - class definition
+        elif symbol.type == SymbolType.EIGHT_POINTED_STAR:
+            # For now, skip class definitions
+            return None
+        
         # Binary operator - skip as statement (will be part of expression)
         elif symbol.type in [SymbolType.CONVERGENCE, SymbolType.DIVERGENCE,
-                            SymbolType.AMPLIFICATION, SymbolType.DISTRIBUTION]:
+                            SymbolType.AMPLIFICATION, SymbolType.DISTRIBUTION,
+                            SymbolType.TRANSFER, SymbolType.SEAL, SymbolType.CIRCULATION]:
             # Mark children as visited so they're not parsed as separate statements
+            for child in node.children:
+                child.visited = True
+            return None
+        
+        # Comparison operators - skip as statement
+        elif symbol.type in [SymbolType.EQUAL, SymbolType.NOT_EQUAL,
+                            SymbolType.LESS_THAN, SymbolType.GREATER_THAN,
+                            SymbolType.LESS_EQUAL, SymbolType.GREATER_EQUAL]:
+            for child in node.children:
+                child.visited = True
+            return None
+        
+        # Logical operators - skip as statement
+        elif symbol.type in [SymbolType.LOGICAL_AND, SymbolType.LOGICAL_OR,
+                            SymbolType.LOGICAL_NOT, SymbolType.LOGICAL_XOR]:
             for child in node.children:
                 child.visited = True
             return None
@@ -275,7 +303,8 @@ class MagicCircleParser:
             # Check if it's connected to an operator
             has_operator_child = any(
                 child.symbol.type in [SymbolType.CONVERGENCE, SymbolType.DIVERGENCE,
-                                     SymbolType.AMPLIFICATION, SymbolType.DISTRIBUTION]
+                                     SymbolType.AMPLIFICATION, SymbolType.DISTRIBUTION,
+                                     SymbolType.TRANSFER, SymbolType.SEAL, SymbolType.CIRCULATION]
                 for child in node.children
             )
             
@@ -403,8 +432,20 @@ class MagicCircleParser:
         
         # Binary operators
         if symbol.type in [SymbolType.CONVERGENCE, SymbolType.DIVERGENCE,
-                          SymbolType.AMPLIFICATION, SymbolType.DISTRIBUTION]:
+                          SymbolType.AMPLIFICATION, SymbolType.DISTRIBUTION,
+                          SymbolType.EQUAL, SymbolType.NOT_EQUAL,
+                          SymbolType.LESS_THAN, SymbolType.GREATER_THAN,
+                          SymbolType.LESS_EQUAL, SymbolType.GREATER_EQUAL,
+                          SymbolType.LOGICAL_AND, SymbolType.LOGICAL_OR]:
             return self._parse_binary_op(node)
+        
+        # Unary operators
+        elif symbol.type == SymbolType.LOGICAL_NOT:
+            return self._parse_unary_op(node)
+        
+        # Assignment operator
+        elif symbol.type == SymbolType.TRANSFER:
+            return self._parse_assignment_op(node)
         
         # Literals
         elif symbol.type == SymbolType.SQUARE:
@@ -423,7 +464,15 @@ class MagicCircleParser:
             SymbolType.CONVERGENCE: OperatorType.ADD,
             SymbolType.DIVERGENCE: OperatorType.SUBTRACT,
             SymbolType.AMPLIFICATION: OperatorType.MULTIPLY,
-            SymbolType.DISTRIBUTION: OperatorType.DIVIDE
+            SymbolType.DISTRIBUTION: OperatorType.DIVIDE,
+            SymbolType.EQUAL: OperatorType.EQUAL,
+            SymbolType.NOT_EQUAL: OperatorType.NOT_EQUAL,
+            SymbolType.LESS_THAN: OperatorType.LESS_THAN,
+            SymbolType.GREATER_THAN: OperatorType.GREATER_THAN,
+            SymbolType.LESS_EQUAL: OperatorType.LESS_EQUAL,
+            SymbolType.GREATER_EQUAL: OperatorType.GREATER_EQUAL,
+            SymbolType.LOGICAL_AND: OperatorType.LOGICAL_AND,
+            SymbolType.LOGICAL_OR: OperatorType.LOGICAL_OR
         }
         
         operator = op_map.get(node.symbol.type)
@@ -509,15 +558,17 @@ class MagicCircleParser:
             return Literal(value=3, literal_type=DataType.INTEGER)
         elif pattern == "multiple_dots":
             # Extract number from properties if available
+            pattern_info = node.symbol.properties.get("pattern_info")
+            if pattern_info and hasattr(pattern_info, 'value') and pattern_info.value:
+                return Literal(value=pattern_info.value, literal_type=DataType.INTEGER)
             return Literal(value=4, literal_type=DataType.INTEGER)
         elif pattern == "empty":
             return Literal(value=0, literal_type=DataType.INTEGER)
-        elif pattern == "triple_line":
-            # String literal - for now, default to "Hello, World!"
-            return Literal(value="Hello, World!", literal_type=DataType.STRING)
-        elif pattern in ["lines", "single_line", "double_line"]:
-            # String literals
-            return Literal(value="Text", literal_type=DataType.STRING)
+        elif pattern in ["triple_line", "lines", "single_line", "double_line"]:
+            # Use StringPatternRecognizer for string literals
+            roi = node.symbol.properties.get("roi")
+            string_pattern = self.string_recognizer.recognize_string_from_pattern(pattern, roi)
+            return Literal(value=string_pattern.text, literal_type=DataType.STRING)
         elif pattern == "cross":
             # Boolean true (crossed out)
             return Literal(value=True, literal_type=DataType.BOOLEAN)
@@ -530,6 +581,30 @@ class MagicCircleParser:
         elif pattern == "filled":
             # Special value
             return Literal(value=-1, literal_type=DataType.INTEGER)
+        elif pattern == "vertical_line":
+            # String "I"
+            return Literal(value="I", literal_type=DataType.STRING)
+        elif pattern == "horizontal_line":
+            # String "-"
+            return Literal(value="-", literal_type=DataType.STRING)
+        elif pattern == "diagonal_slash":
+            # String "/"
+            return Literal(value="/", literal_type=DataType.STRING)
+        elif pattern == "diagonal_backslash":
+            # String "\"
+            return Literal(value="\\", literal_type=DataType.STRING)
+        elif pattern == "circle":
+            # String "O"
+            return Literal(value="O", literal_type=DataType.STRING)
+        elif pattern == "wavy_lines":
+            # String "~"
+            return Literal(value="~", literal_type=DataType.STRING)
+        elif pattern == "zigzag":
+            # String "W"
+            return Literal(value="W", literal_type=DataType.STRING)
+        elif pattern == "spiral":
+            # String "@"
+            return Literal(value="@", literal_type=DataType.STRING)
         
         # Default integer literal
         return Literal(value=0, literal_type=DataType.INTEGER)
@@ -543,7 +618,20 @@ class MagicCircleParser:
     def _parse_condition(self, node: SymbolNode) -> Expression:
         """Parse a condition expression"""
         # Look for comparison operators near the node
-        # For now, return a simple false literal to avoid infinite loops
+        for child in node.children:
+            if child.symbol.type in [SymbolType.EQUAL, SymbolType.NOT_EQUAL,
+                                   SymbolType.LESS_THAN, SymbolType.GREATER_THAN,
+                                   SymbolType.LESS_EQUAL, SymbolType.GREATER_EQUAL]:
+                return self._parse_binary_op(child)
+        
+        # Look in parents too
+        for parent in self._get_parents(node):
+            if parent.symbol.type in [SymbolType.EQUAL, SymbolType.NOT_EQUAL,
+                                    SymbolType.LESS_THAN, SymbolType.GREATER_THAN,
+                                    SymbolType.LESS_EQUAL, SymbolType.GREATER_EQUAL]:
+                return self._parse_binary_op(parent)
+        
+        # Default to false literal to avoid infinite loops
         return Literal(value=False, literal_type=DataType.BOOLEAN)
     
     def _parse_expression_from_parent(self, node: SymbolNode) -> Expression:
@@ -709,3 +797,92 @@ class MagicCircleParser:
                 if nearest is not None and min_dist < 150:
                     self.symbol_graph[nearest].children.append(self.symbol_graph[i])
                     self.symbol_graph[i].parent = self.symbol_graph[nearest]
+    
+    def _parse_unary_op(self, node: SymbolNode) -> Optional[UnaryOp]:
+        """Parse a unary operation"""
+        # Map symbol types to operators
+        op_map = {
+            SymbolType.LOGICAL_NOT: OperatorType.LOGICAL_NOT,
+            SymbolType.SEAL: OperatorType.NOT  # SEAL can be used as NOT
+        }
+        
+        operator = op_map.get(node.symbol.type)
+        if not operator:
+            return None
+        
+        # Find operand (connected expression)
+        operand = None
+        for child in node.children:
+            operand = self._parse_expression(child)
+            if operand:
+                break
+        
+        if not operand:
+            # Default to false
+            operand = Literal(value=False, literal_type=DataType.BOOLEAN)
+        
+        return UnaryOp(operator=operator, operand=operand)
+    
+    def _parse_assignment_op(self, node: SymbolNode) -> Optional[Assignment]:
+        """Parse an assignment operation using the transfer operator"""
+        # Find left side (target) and right side (value)
+        parents = self._get_parents(node)
+        children = node.children
+        
+        target = None
+        value = None
+        
+        # Left side is usually a parent
+        if parents:
+            parent = parents[0]
+            if parent.symbol.type == SymbolType.SQUARE:
+                var_name = f"var_{id(parent)}"
+                target = Identifier(name=var_name)
+        
+        # Right side is usually a child or another parent
+        if children:
+            value = self._parse_expression(children[0])
+        elif len(parents) > 1:
+            value = self._parse_expression(parents[1])
+        
+        if target and value:
+            return Assignment(target=target, value=value)
+        
+        return None
+    
+    def _parse_array_literal(self, node: SymbolNode) -> ArrayLiteral:
+        """Parse an array literal from symbol properties"""
+        # Look for child elements or patterns
+        elements = []
+        
+        # If there are child squares, they represent array elements
+        for child in node.children:
+            if child.symbol.type == SymbolType.SQUARE:
+                elem = self._parse_literal_from_properties(child)
+                if elem:
+                    elements.append(elem)
+        
+        # If no children, create empty array
+        return ArrayLiteral(elements=elements)
+    
+    def _parse_map_literal(self, node: SymbolNode) -> MapLiteral:
+        """Parse a map literal from symbol properties"""
+        # Look for key-value pairs in children
+        pairs = []
+        
+        # Map entries are often represented as pairs of connected squares
+        i = 0
+        while i < len(node.children) - 1:
+            key_node = node.children[i]
+            value_node = node.children[i + 1]
+            
+            if key_node.symbol.type == SymbolType.SQUARE and value_node.symbol.type == SymbolType.SQUARE:
+                key = self._parse_literal_from_properties(key_node)
+                value = self._parse_literal_from_properties(value_node)
+                if key and value:
+                    pairs.append((key, value))
+                i += 2
+            else:
+                i += 1
+        
+        return MapLiteral(pairs=pairs)

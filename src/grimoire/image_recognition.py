@@ -20,12 +20,31 @@ class SymbolType(Enum):
     PENTAGON = "pentagon"
     HEXAGON = "hexagon"
     STAR = "star"
+    SIX_POINTED_STAR = "six_pointed_star"  # 六芒星（ダビデの星）
+    EIGHT_POINTED_STAR = "eight_pointed_star"  # 八芒星
     
     # Operators
-    CONVERGENCE = "convergence"  # ⟐
-    DIVERGENCE = "divergence"    # ⟑
-    AMPLIFICATION = "amplification"  # ✦
-    DISTRIBUTION = "distribution"    # ⟠
+    CONVERGENCE = "convergence"  # ⟐ (加算)
+    DIVERGENCE = "divergence"    # ⟑ (減算)
+    AMPLIFICATION = "amplification"  # ✦ (乗算)
+    DISTRIBUTION = "distribution"    # ⟠ (除算)
+    TRANSFER = "transfer"        # ⟷ (代入)
+    SEAL = "seal"                # ⊗ (定数)
+    CIRCULATION = "circulation"  # ⟳ (ループ)
+    
+    # Comparison operators
+    EQUAL = "equal"              # ⟨⟩
+    NOT_EQUAL = "not_equal"      # ⟨≠⟩
+    LESS_THAN = "less_than"      # ⟨<⟩
+    GREATER_THAN = "greater_than" # ⟨>⟩
+    LESS_EQUAL = "less_equal"    # ⟨≤⟩
+    GREATER_EQUAL = "greater_equal" # ⟨≥⟩
+    
+    # Logical operators
+    LOGICAL_AND = "logical_and"  # ⊕
+    LOGICAL_OR = "logical_or"    # ⊖
+    LOGICAL_NOT = "logical_not"  # ⊗
+    LOGICAL_XOR = "logical_xor"  # ⊙
     
     # Data types (patterns inside shapes)
     DOT = "dot"
@@ -54,7 +73,12 @@ class Connection:
     """Represents a connection between symbols"""
     from_symbol: Symbol
     to_symbol: Symbol
-    connection_type: str  # "solid", "dashed", "curved"
+    connection_type: str  # "solid", "dashed", "curved", "double", "wavy", "loop"
+    properties: Dict[str, Any] = None  # Additional properties like thickness, color
+    
+    def __post_init__(self):
+        if self.properties is None:
+            self.properties = {}
 
 
 class MagicCircleDetector:
@@ -89,7 +113,11 @@ class MagicCircleDetector:
         self._detect_circles(binary, outer_circle)
         self._detect_polygons(binary, outer_circle)
         self._detect_stars(binary, outer_circle)
+        self._detect_six_pointed_stars(binary, outer_circle)
+        self._detect_eight_pointed_stars(binary, outer_circle)
         self._detect_operators(binary, outer_circle)
+        self._detect_comparison_operators(binary, outer_circle)
+        self._detect_logical_operators(binary, outer_circle)
         self._detect_connections(binary)
         
         return self.symbols, self.connections
@@ -311,6 +339,68 @@ class MagicCircleDetector:
                         self.symbols.append(symbol)
                         detected_positions.add(pos_key)
     
+    def _detect_six_pointed_stars(self, binary: np.ndarray, outer_circle: Symbol):
+        """Detect six-pointed stars (David's star)"""
+        contours, _ = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area < self.min_contour_area * 2:
+                continue
+            
+            M = cv2.moments(contour)
+            if M["m00"] != 0:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+                
+                # Check if inside outer circle
+                dist = np.sqrt((cx - outer_circle.position[0])**2 + (cy - outer_circle.position[1])**2)
+                if dist < outer_circle.size * 0.8:
+                    # Check for six-pointed star pattern
+                    if self._is_six_pointed_star(contour, cx, cy):
+                        _, (width, height), _ = cv2.minAreaRect(contour)
+                        size = max(width, height)
+                        
+                        symbol = Symbol(
+                            type=SymbolType.SIX_POINTED_STAR,
+                            position=(cx, cy),
+                            size=size,
+                            confidence=0.8,
+                            properties={"points": 6}
+                        )
+                        self.symbols.append(symbol)
+    
+    def _detect_eight_pointed_stars(self, binary: np.ndarray, outer_circle: Symbol):
+        """Detect eight-pointed stars"""
+        contours, _ = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area < self.min_contour_area * 2:
+                continue
+            
+            M = cv2.moments(contour)
+            if M["m00"] != 0:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+                
+                # Check if inside outer circle
+                dist = np.sqrt((cx - outer_circle.position[0])**2 + (cy - outer_circle.position[1])**2)
+                if dist < outer_circle.size * 0.8:
+                    # Check for eight-pointed star pattern
+                    if self._is_eight_pointed_star(contour, cx, cy):
+                        _, (width, height), _ = cv2.minAreaRect(contour)
+                        size = max(width, height)
+                        
+                        symbol = Symbol(
+                            type=SymbolType.EIGHT_POINTED_STAR,
+                            position=(cx, cy),
+                            size=size,
+                            confidence=0.8,
+                            properties={"points": 8}
+                        )
+                        self.symbols.append(symbol)
+    
     def _is_star_shape(self, contour, cx: int, cy: int) -> bool:
         """Check if contour is star-shaped (simplified)"""
         # Use approximated polygon to check for star shape
@@ -336,6 +426,315 @@ class MagicCircleDetector:
         distances = np.array(distances)
         # Check if there's significant variation (star-like pattern)
         return np.std(distances) > np.mean(distances) * 0.15
+    
+    def _is_six_pointed_star(self, contour, cx: int, cy: int) -> bool:
+        """Check if contour is a six-pointed star (two overlapping triangles)"""
+        # Approximate the contour
+        epsilon = 0.02 * cv2.arcLength(contour, True)
+        approx = cv2.approxPolyDP(contour, epsilon, True)
+        
+        # Six-pointed stars typically have 12 vertices when approximated
+        if 10 <= len(approx) <= 14:
+            # Additional check: look for alternating inner/outer points
+            distances = []
+            for point in approx:
+                x, y = point[0]
+                dist = np.sqrt((x - cx)**2 + (y - cy)**2)
+                distances.append(dist)
+            
+            if len(distances) >= 10:
+                # Check for alternating pattern
+                sorted_dists = sorted(set(distances))
+                if len(sorted_dists) >= 2:
+                    # Should have two distinct radii
+                    return True
+        return False
+    
+    def _is_eight_pointed_star(self, contour, cx: int, cy: int) -> bool:
+        """Check if contour is an eight-pointed star"""
+        # Approximate the contour
+        epsilon = 0.02 * cv2.arcLength(contour, True)
+        approx = cv2.approxPolyDP(contour, epsilon, True)
+        
+        # Eight-pointed stars typically have 16 vertices when approximated
+        if 14 <= len(approx) <= 18:
+            return True
+        return False
+    
+    def _detect_comparison_operators(self, binary: np.ndarray, outer_circle: Symbol):
+        """Detect comparison operators (equal, not equal, less than, etc.)"""
+        # These operators are typically represented as angle brackets with symbols inside
+        contours, _ = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area < self.min_contour_area or area > 3000:
+                continue
+            
+            M = cv2.moments(contour)
+            if M["m00"] == 0:
+                continue
+                
+            cx = int(M["m10"] / M["m00"])
+            cy = int(M["m01"] / M["m00"])
+            
+            # Check if inside outer circle
+            dist = np.sqrt((cx - outer_circle.position[0])**2 + (cy - outer_circle.position[1])**2)
+            if dist >= outer_circle.size * 0.8:
+                continue
+            
+            # Identify comparison operator type
+            op_type = self._identify_comparison_operator(contour, binary, cx, cy)
+            if op_type:
+                _, (width, height), _ = cv2.minAreaRect(contour)
+                size = max(width, height)
+                
+                symbol = Symbol(
+                    type=op_type,
+                    position=(cx, cy),
+                    size=size,
+                    confidence=0.75,
+                    properties={}
+                )
+                self.symbols.append(symbol)
+    
+    def _identify_comparison_operator(self, contour, binary: np.ndarray, cx: int, cy: int) -> Optional[SymbolType]:
+        """Identify specific comparison operator from contour"""
+        # Get bounding box
+        x, y, w, h = cv2.boundingRect(contour)
+        roi = binary[y:y+h, x:x+w]
+        
+        if roi.size == 0:
+            return None
+        
+        # Look for angle bracket pattern < >
+        # Check if it has the characteristic V shape
+        epsilon = 0.03 * cv2.arcLength(contour, True)
+        approx = cv2.approxPolyDP(contour, epsilon, True)
+        
+        if len(approx) in [3, 4]:  # Triangle or diamond shape
+            # Could be less than or greater than
+            # Check orientation
+            if self._is_left_pointing(approx):
+                return SymbolType.LESS_THAN
+            elif self._is_right_pointing(approx):
+                return SymbolType.GREATER_THAN
+        
+        # Check for equals pattern (parallel lines)
+        if self._has_parallel_lines(roi):
+            return SymbolType.EQUAL
+        
+        return None
+    
+    def _is_left_pointing(self, approx) -> bool:
+        """Check if shape points to the left (<)"""
+        if len(approx) < 3:
+            return False
+        # Find the leftmost and rightmost points
+        leftmost = min(approx, key=lambda p: p[0][0])
+        rightmost = max(approx, key=lambda p: p[0][0])
+        # Left pointing if leftmost point is roughly in the middle vertically
+        return abs(leftmost[0][1] - np.mean([p[0][1] for p in approx])) < 10
+    
+    def _is_right_pointing(self, approx) -> bool:
+        """Check if shape points to the right (>)"""
+        if len(approx) < 3:
+            return False
+        # Find the leftmost and rightmost points
+        leftmost = min(approx, key=lambda p: p[0][0])
+        rightmost = max(approx, key=lambda p: p[0][0])
+        # Right pointing if rightmost point is roughly in the middle vertically
+        return abs(rightmost[0][1] - np.mean([p[0][1] for p in approx])) < 10
+    
+    def _has_parallel_lines(self, roi: np.ndarray) -> bool:
+        """Check if ROI contains parallel horizontal lines (=)"""
+        # Use Hough lines to detect horizontal lines
+        edges = cv2.Canny(roi, 50, 150)
+        lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=10, minLineLength=10, maxLineGap=3)
+        
+        if lines is None:
+            return False
+        
+        horizontal_lines = []
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            angle = abs(np.arctan2(y2 - y1, x2 - x1))
+            if angle < 0.1:  # Nearly horizontal
+                horizontal_lines.append((y1 + y2) / 2)  # Middle y position
+        
+        # Check if we have at least 2 horizontal lines
+        return len(horizontal_lines) >= 2
+    
+    def _detect_logical_operators(self, binary: np.ndarray, outer_circle: Symbol):
+        """Detect logical operators (AND, OR, NOT, XOR)"""
+        contours, _ = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area < self.min_contour_area or area > 2000:
+                continue
+            
+            M = cv2.moments(contour)
+            if M["m00"] == 0:
+                continue
+                
+            cx = int(M["m10"] / M["m00"])
+            cy = int(M["m01"] / M["m00"])
+            
+            # Check if inside outer circle
+            dist = np.sqrt((cx - outer_circle.position[0])**2 + (cy - outer_circle.position[1])**2)
+            if dist >= outer_circle.size * 0.8:
+                continue
+            
+            # Identify logical operator type
+            op_type = self._identify_logical_operator(contour, binary, cx, cy)
+            if op_type:
+                _, (width, height), _ = cv2.minAreaRect(contour)
+                size = max(width, height)
+                
+                symbol = Symbol(
+                    type=op_type,
+                    position=(cx, cy),
+                    size=size,
+                    confidence=0.75,
+                    properties={}
+                )
+                self.symbols.append(symbol)
+    
+    def _identify_logical_operator(self, contour, binary: np.ndarray, cx: int, cy: int) -> Optional[SymbolType]:
+        """Identify specific logical operator from contour"""
+        # Get bounding box
+        x, y, w, h = cv2.boundingRect(contour)
+        roi = binary[y:y+h, x:x+w]
+        
+        if roi.size == 0:
+            return None
+        
+        # Check for circle with cross inside (⊕ for AND, ⊖ for OR, ⊗ for NOT, ⊙ for XOR)
+        # First check if it's roughly circular
+        circularity = self._get_circularity(contour)
+        if circularity > 0.7:
+            # Check internal pattern
+            if self._has_cross_pattern(roi):
+                return SymbolType.LOGICAL_AND  # ⊕
+            elif self._has_minus_pattern(roi):
+                return SymbolType.LOGICAL_OR   # ⊖
+            elif self._has_x_pattern(roi):
+                return SymbolType.LOGICAL_NOT  # ⊗
+            elif self._has_dot_pattern(roi):
+                return SymbolType.LOGICAL_XOR  # ⊙
+        
+        return None
+    
+    def _get_circularity(self, contour) -> float:
+        """Calculate circularity of a contour"""
+        area = cv2.contourArea(contour)
+        perimeter = cv2.arcLength(contour, True)
+        if perimeter == 0:
+            return 0
+        return 4 * np.pi * area / (perimeter * perimeter)
+    
+    def _has_cross_pattern(self, roi: np.ndarray) -> bool:
+        """Check for + pattern inside circle"""
+        h, w = roi.shape
+        center_y, center_x = h // 2, w // 2
+        
+        # Check horizontal and vertical lines through center
+        horizontal = roi[center_y, :]
+        vertical = roi[:, center_x]
+        
+        h_pixels = np.count_nonzero(horizontal)
+        v_pixels = np.count_nonzero(vertical)
+        
+        # Should have significant pixels along both axes
+        return h_pixels > w * 0.5 and v_pixels > h * 0.5
+    
+    def _has_minus_pattern(self, roi: np.ndarray) -> bool:
+        """Check for - pattern inside circle"""
+        h, w = roi.shape
+        center_y = h // 2
+        
+        # Check horizontal line through center
+        horizontal = roi[center_y, :]
+        h_pixels = np.count_nonzero(horizontal)
+        
+        # Should have significant pixels along horizontal axis only
+        return h_pixels > w * 0.5
+    
+    def _has_x_pattern(self, roi: np.ndarray) -> bool:
+        """Check for X pattern inside circle"""
+        h, w = roi.shape
+        
+        # Check diagonals
+        diagonal1 = np.diagonal(roi)
+        diagonal2 = np.diagonal(np.fliplr(roi))
+        
+        d1_pixels = np.count_nonzero(diagonal1)
+        d2_pixels = np.count_nonzero(diagonal2)
+        
+        # Should have significant pixels along both diagonals
+        return d1_pixels > min(h, w) * 0.4 and d2_pixels > min(h, w) * 0.4
+    
+    def _has_dot_pattern(self, roi: np.ndarray) -> bool:
+        """Check for central dot pattern inside circle"""
+        h, w = roi.shape
+        center_y, center_x = h // 2, w // 2
+        
+        # Check small region around center
+        region_size = min(h, w) // 4
+        y1 = max(0, center_y - region_size)
+        y2 = min(h, center_y + region_size)
+        x1 = max(0, center_x - region_size)
+        x2 = min(w, center_x + region_size)
+        
+        center_region = roi[y1:y2, x1:x2]
+        center_pixels = np.count_nonzero(center_region)
+        total_pixels = (y2 - y1) * (x2 - x1)
+        
+        # Should have a concentrated dot in center
+        return total_pixels > 0 and center_pixels / total_pixels > 0.3
+    
+    def _determine_connection_type(self, binary: np.ndarray, x1: int, y1: int, x2: int, y2: int) -> str:
+        """Determine the type of connection line"""
+        # Extract line region
+        line_length = int(np.sqrt((x2 - x1)**2 + (y2 - y1)**2))
+        
+        if line_length < 5:
+            return "solid"
+        
+        # Sample points along the line
+        num_samples = min(50, line_length)
+        sample_points = []
+        
+        for i in range(num_samples):
+            t = i / (num_samples - 1)
+            x = int(x1 + t * (x2 - x1))
+            y = int(y1 + t * (y2 - y1))
+            
+            # Check pixel value at this point
+            if 0 <= y < binary.shape[0] and 0 <= x < binary.shape[1]:
+                sample_points.append(binary[y, x] > 0)
+        
+        # Analyze pattern
+        if not sample_points:
+            return "solid"
+        
+        # Count transitions (changes from on to off or vice versa)
+        transitions = 0
+        for i in range(1, len(sample_points)):
+            if sample_points[i] != sample_points[i-1]:
+                transitions += 1
+        
+        # Determine type based on pattern
+        if transitions <= 2:
+            return "solid"  # Continuous line
+        elif transitions <= 10:
+            return "dashed"  # Few transitions = dashed
+        else:
+            return "dotted"  # Many transitions = dotted
+        
+        # TODO: Detect wavy, double, and loop connections
+        # These require more sophisticated analysis
     
     def _detect_operators(self, binary: np.ndarray, outer_circle: Symbol):
         """Detect operator symbols (convergence, divergence, etc.)"""
@@ -508,10 +907,17 @@ class MagicCircleDetector:
                             start_symbol, end_symbol, x1, y1, x2, y2
                         )
                         
+                        # Determine connection type
+                        conn_type = self._determine_connection_type(binary, x1, y1, x2, y2)
+                        
                         connection = Connection(
                             from_symbol=from_sym,
                             to_symbol=to_sym,
-                            connection_type="solid"
+                            connection_type=conn_type,
+                            properties={
+                                "start_point": (x1, y1),
+                                "end_point": (x2, y2)
+                            }
                         )
                         self.connections.append(connection)
     
