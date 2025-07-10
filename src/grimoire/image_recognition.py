@@ -131,6 +131,14 @@ class MagicCircleDetector:
                 # Get circle parameters
                 (x, y), radius = cv2.minEnclosingCircle(contour)
                 
+                # Additional check for aspect ratio to reject ellipses
+                rect = cv2.minAreaRect(contour)
+                width, height = rect[1]
+                if width > 0 and height > 0:
+                    aspect_ratio = max(width, height) / min(width, height)
+                    if aspect_ratio > 1.2:  # Reject if too elliptical
+                        continue
+                
                 # Check if it's near the image edges (outer circle)
                 h, w = binary.shape
                 margin = min(w, h) * 0.2  # Increased margin tolerance
