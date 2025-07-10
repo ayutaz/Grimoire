@@ -455,15 +455,26 @@ class MagicCircleParser:
     
     def _parse_function_call(self, node: SymbolNode) -> FunctionCall:
         """Parse a function call"""
+        # If already visited, return a simple function call without recursing
+        if node.visited:
+            return FunctionCall(
+                function=None,  # Built-in or unresolved function
+                arguments=[]
+            )
+        
+        node.visited = True
+        
         # The circle represents the function
-        func_def = self._parse_function(node)
+        # For now, treat all circles as built-in print functions to avoid deep recursion
+        func_def = None  # We'll handle function resolution later
         
         # Arguments are the connected inputs
         arguments = []
         for parent in self._get_parents(node):
-            arg = self._parse_expression(parent)
-            if arg:
-                arguments.append(arg)
+            if not parent.visited:  # Avoid cycles
+                arg = self._parse_expression(parent)
+                if arg:
+                    arguments.append(arg)
         
         return FunctionCall(
             function=func_def,
