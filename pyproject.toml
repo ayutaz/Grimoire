@@ -36,5 +36,6 @@ ignore = []
 
 [tool.uv]
 dev-dependencies = [
+    "pytest-cov>=6.2.1",
     "pytest>=8.4.1",
 ]
