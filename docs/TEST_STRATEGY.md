@@ -136,7 +136,6 @@ t-wadaさんのTDDアプローチに基づいたテスト戦略。
   - [ ] debug コマンド
 - [ ] オプション
   - [ ] --output
-  - [ ] --mode (traditional/ai/hybrid)
 - [ ] エラー処理
   - [ ] 無効な引数
   - [ ] ファイルが見つからない
