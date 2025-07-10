@@ -18,16 +18,7 @@ func (d *Detector) findContours(binary *image.Gray) []Contour {
 	visited := make(map[image.Point]bool)
 	var contours []Contour
 
-	// First, check for outer circle by scanning the edges
-	edgeContour := d.findEdgeContour(binary, visited)
-	if edgeContour != nil && len(edgeContour.Points) >= 10 {
-		edgeContour.calculateProperties()
-		if edgeContour.Area >= float64(d.minContourArea) {
-			contours = append(contours, *edgeContour)
-		}
-	}
-
-	// Then scan for other contours
+	// Scan for all contours
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			pt := image.Point{X: x, Y: y}
@@ -53,7 +44,10 @@ func (d *Detector) findContours(binary *image.Gray) []Contour {
 		return contours[i].Area > contours[j].Area
 	})
 	
-	return contours
+	// Try to merge contours that form the outer circle
+	mergedContours := d.mergeCircularContours(contours, bounds)
+	
+	return mergedContours
 }
 
 // traceContour traces a contour using Moore neighborhood tracing
@@ -350,4 +344,86 @@ func (d *Detector) findEdgeContour(binary *image.Gray, visited map[image.Point]b
 	}
 	
 	return nil
+}
+
+// mergeCircularContours attempts to merge contours that form a large circle
+func (d *Detector) mergeCircularContours(contours []Contour, bounds image.Rectangle) []Contour {
+	if len(contours) == 0 {
+		return contours
+	}
+	
+	// Calculate image center and radius
+	imageCenter := image.Point{
+		X: bounds.Dx() / 2,
+		Y: bounds.Dy() / 2,
+	}
+	imageRadius := float64(min(bounds.Dx(), bounds.Dy())) / 2
+	
+	// Find contours that could be part of the outer circle
+	var circularContours []Contour
+	var otherContours []Contour
+	
+	for _, contour := range contours {
+		// Check if contour is near the edge of the image
+		isNearEdge := false
+		maxDistFromCenter := 0.0
+		minDistFromCenter := math.MaxFloat64
+		
+		for _, pt := range contour.Points {
+			// Distance from image center
+			dist := distance(pt, imageCenter)
+			if dist > maxDistFromCenter {
+				maxDistFromCenter = dist
+			}
+			if dist < minDistFromCenter {
+				minDistFromCenter = dist
+			}
+			
+			// Check if near edge
+			if pt.X < 10 || pt.X > bounds.Dx()-10 ||
+				pt.Y < 10 || pt.Y > bounds.Dy()-10 {
+				isNearEdge = true
+			}
+		}
+		
+		// If contour is circular and near the expected radius
+		if isNearEdge && maxDistFromCenter > imageRadius*0.7 &&
+			maxDistFromCenter < imageRadius*1.3 {
+			circularContours = append(circularContours, contour)
+		} else {
+			otherContours = append(otherContours, contour)
+		}
+	}
+	
+	// If we found multiple circular contours, merge them
+	if len(circularContours) > 1 {
+		merged := d.mergeContours(circularContours)
+		result := []Contour{merged}
+		result = append(result, otherContours...)
+		return result
+	}
+	
+	return contours
+}
+
+// mergeContours merges multiple contours into one
+func (d *Detector) mergeContours(contours []Contour) Contour {
+	var allPoints []image.Point
+	
+	for _, contour := range contours {
+		allPoints = append(allPoints, contour.Points...)
+	}
+	
+	merged := Contour{Points: allPoints}
+	merged.calculateProperties()
+	
+	return merged
+}
+
+// min returns the minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

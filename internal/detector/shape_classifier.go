@@ -9,9 +9,9 @@ import (
 func (d *Detector) classifyShape(contour Contour) SymbolType {
 	// Check for circle first
 	if contour.isCircle(d.circleThreshold) {
-		// Check if it's the outer circle by size
-		// Outer circle should be large (at least 10000 area)
-		if contour.Area > 10000 && d.isOuterCircle(contour) {
+		// Check if it's the outer circle by size and perimeter
+		// Outer circle should be large
+		if (contour.Area > 5000 || contour.Perimeter > 500) && d.isOuterCircle(contour) {
 			return OuterCircle
 		}
 		// Check for double circle

@@ -59,8 +59,16 @@ func (d *Detector) Detect(imagePath string) ([]*Symbol, error) {
 	// Preprocess image
 	binary := d.preprocessImage(gray)
 
+	// Try to find outer circle in original grayscale image
+	outerCircle := d.findOuterCircleFromGrayscale(gray)
+
 	// Find contours
 	contours := d.findContours(binary)
+	
+	// Add outer circle if found
+	if outerCircle != nil {
+		contours = append([]Contour{*outerCircle}, contours...)
+	}
 
 	// Debug: print contour information
 	if os.Getenv("GRIMOIRE_DEBUG") != "" {
@@ -200,4 +208,51 @@ func (d *Detector) isOuterCircle(contour Contour) bool {
 	}
 	
 	return true
+}
+
+// findOuterCircleFromGrayscale attempts to find the outer circle from the original grayscale image
+func (d *Detector) findOuterCircleFromGrayscale(gray *image.Gray) *Contour {
+	bounds := gray.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+	center := image.Point{X: width / 2, Y: height / 2}
+	
+	// Scan from center outward to find the circle
+	maxRadius := min(width, height) / 2
+	var circlePoints []image.Point
+	
+	// Sample points around the expected circle
+	numSamples := 360
+	for r := maxRadius - 50; r < maxRadius; r++ {
+		blackPixels := 0
+		var candidatePoints []image.Point
+		
+		for i := 0; i < numSamples; i++ {
+			angle := float64(i) * 2 * math.Pi / float64(numSamples)
+			x := center.X + int(float64(r)*math.Cos(angle))
+			y := center.Y + int(float64(r)*math.Sin(angle))
+			
+			if x >= 0 && x < width && y >= 0 && y < height {
+				// Check if pixel is dark (part of circle)
+				if gray.GrayAt(x, y).Y < 128 {
+					blackPixels++
+					candidatePoints = append(candidatePoints, image.Point{X: x, Y: y})
+				}
+			}
+		}
+		
+		// If we found a circle at this radius (most pixels are black)
+		if float64(blackPixels) > float64(numSamples)*0.8 {
+			circlePoints = candidatePoints
+			break
+		}
+	}
+	
+	if len(circlePoints) > 100 {
+		contour := Contour{Points: circlePoints}
+		contour.calculateProperties()
+		return &contour
+	}
+	
+	return nil
 }
