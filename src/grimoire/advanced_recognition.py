@@ -156,8 +156,8 @@ class AdvancedPatternDetector:
     
     def analyze_pattern(self, binary: np.ndarray, x: int, y: int, radius: float) -> PatternInfo:
         """Main pattern analysis function"""
-        # Extract ROI
-        roi_size = int(radius * 1.5)  # Slightly smaller to focus on interior
+        # Extract ROI - smaller to avoid borders
+        roi_size = int(radius * 0.8)  # Much smaller to focus on interior only
         x1 = max(0, x - roi_size // 2)
         y1 = max(0, y - roi_size // 2)
         x2 = min(binary.shape[1], x + roi_size // 2)
@@ -168,14 +168,17 @@ class AdvancedPatternDetector:
         if roi.size == 0:
             return PatternInfo("empty", None, 0.5)
         
-        # Create mask to exclude the shape border
+        # Create circular mask to focus on center area only
         mask = np.zeros_like(roi)
         center = (roi.shape[1] // 2, roi.shape[0] // 2)
-        cv2.circle(mask, center, int(roi_size * 0.4), 255, -1)
-        roi = cv2.bitwise_and(roi, mask)
+        mask_radius = min(roi.shape[0], roi.shape[1]) // 3  # Smaller mask
+        cv2.circle(mask, center, mask_radius, 255, -1)
+        
+        # Apply mask to get interior only
+        interior = cv2.bitwise_and(roi, mask)
         
         # Count white pixels
-        white_pixels = cv2.countNonZero(roi)
+        white_pixels = cv2.countNonZero(interior)
         total_pixels = cv2.countNonZero(mask)
         
         if total_pixels == 0:
@@ -184,21 +187,21 @@ class AdvancedPatternDetector:
         fill_ratio = white_pixels / total_pixels
         
         # First check if mostly empty
-        if fill_ratio < 0.1:
+        if fill_ratio < 0.05:
             return PatternInfo("empty", None, 0.9)
         
         # Try to detect dots
-        dot_info = self.detect_dot_pattern(roi)
+        dot_info = self.detect_dot_pattern(interior)
         if dot_info.pattern_type in ["dot", "double_dot", "triple_dot"]:
             return dot_info
         
         # Try to detect lines
-        line_info = self.detect_line_pattern(roi)
+        line_info = self.detect_line_pattern(interior)
         if line_info.confidence > 0.8:
             return line_info
         
         # Try to detect other shapes
-        shape_info = self.detect_shape_pattern(roi)
+        shape_info = self.detect_shape_pattern(interior)
         if shape_info.confidence > 0.7:
             return shape_info
         

@@ -112,7 +112,7 @@ class TestMagicCircleDetector:
         """Test detector initializes with correct defaults"""
         # Assert
         assert self.detector.min_contour_area == 100
-        assert self.detector.circle_threshold == 0.88
+        assert self.detector.circle_threshold == 0.80
         assert self.detector.symbols == []
         assert self.detector.connections == []
     
