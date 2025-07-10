@@ -55,7 +55,7 @@ class ASTVisualizer:
         """Visualize FunctionDef node"""
         lines = [
             f"{self._indent(indent)}🔧 Function: {node.name}",
-            f"{self._indent(indent+1)}├─ 📝 params: {', '.join(node.params)}"
+            f"{self._indent(indent+1)}├─ 📝 params: {', '.join(param.name for param in node.parameters)}"
         ]
         
         if node.body:
