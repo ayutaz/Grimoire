@@ -4,6 +4,7 @@ import click
 import sys
 from pathlib import Path
 from .compiler import compile_grimoire, run_grimoire, debug_grimoire
+from .errors import GrimoireError, format_error_with_suggestions
 
 
 @click.group()
@@ -23,8 +24,11 @@ def compile(image_file, output):
             click.echo(f"Compilation complete: {output}", err=True)
         else:
             click.echo(result)
+    except GrimoireError as e:
+        click.echo(format_error_with_suggestions(e), err=True)
+        sys.exit(1)
     except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+        click.echo(f"🔴 エラー: {e}", err=True)
         sys.exit(1)
 
 
@@ -35,8 +39,11 @@ def run(image_file):
     try:
         result = run_grimoire(image_file)
         click.echo(result)
+    except GrimoireError as e:
+        click.echo(format_error_with_suggestions(e), err=True)
+        sys.exit(1)
     except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+        click.echo(f"🔴 エラー: {e}", err=True)
         sys.exit(1)
 
 
@@ -46,8 +53,11 @@ def debug(image_file):
     """Run in debug mode"""
     try:
         debug_grimoire(image_file)
+    except GrimoireError as e:
+        click.echo(format_error_with_suggestions(e), err=True)
+        sys.exit(1)
     except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+        click.echo(f"🔴 エラー: {e}", err=True)
         sys.exit(1)
 
 

@@ -6,11 +6,7 @@ import math
 
 from .image_recognition import Symbol, SymbolType, Connection
 from .ast_nodes import *
-
-
-class ParseError(Exception):
-    """Parser error"""
-    pass
+from .errors import ParseError
 
 
 @dataclass
@@ -35,7 +31,9 @@ class MagicCircleParser:
         self.connections: List[Connection] = []
         self.symbol_graph: Dict[int, SymbolNode] = {}  # Use symbol index as key
         self.symbol_index_map: Dict[Symbol, int] = {}  # Map symbols to indices
-        self.errors: List[str] = []
+        self.errors: List[ParseError] = []
+        self.call_depth = 0  # For stack overflow prevention
+        self.max_call_depth = 100
     
     def parse(self, symbols: List[Symbol], connections: List[Connection]) -> Program:
         """Main parsing function"""
@@ -48,7 +46,10 @@ class MagicCircleParser:
         # Find outer circle
         outer_circle = self._find_outer_circle()
         if not outer_circle:
-            raise ParseError("No outer circle found. All Grimoire programs must be enclosed in a magic circle.")
+            raise ParseError(
+                "外周円が見つかりません。Grimoireプログラムは魔法陣で囲まれている必要があります",
+                error_code="PARSE_NO_OUTER_CIRCLE"
+            )
         
         # Find main entry
         main_entry = self._find_main_entry()
