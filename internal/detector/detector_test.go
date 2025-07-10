@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
@@ -162,9 +163,7 @@ func saveTestImage(t *testing.T, img image.Image, filename string) string {
 	return path
 }
 
-// Placeholder for PNG saving - in real implementation use image/png
+// savePNG saves image as PNG
 func savePNG(file *os.File, img image.Image) error {
-	// This is a placeholder - in real implementation:
-	// return png.Encode(file, img)
-	return nil
+	return png.Encode(file, img)
 }
