@@ -14,10 +14,31 @@ from grimoire.image_recognition import (
 
 def save_test_image(img, img_path):
     """Helper to save test images with proper error checking"""
-    success = cv2.imwrite(img_path, img)
-    if not success or not os.path.exists(img_path):
-        raise RuntimeError(f"Failed to write test image to {img_path}")
-    return img_path
+    # Convert path to string and handle Windows encoding issues
+    img_path_str = str(img_path)
+    
+    # For Windows, use imencode/imdecode to handle non-ASCII paths
+    if os.name == 'nt':
+        # Encode image to memory buffer
+        success, encoded = cv2.imencode('.png', img)
+        if not success:
+            raise RuntimeError(f"Failed to encode image")
+        # Write buffer to file
+        try:
+            with open(img_path_str, 'wb') as f:
+                f.write(encoded.tobytes())
+        except Exception as e:
+            raise RuntimeError(f"Failed to write test image to {img_path_str}: {e}")
+    else:
+        # For non-Windows, use normal cv2.imwrite
+        success = cv2.imwrite(img_path_str, img)
+        if not success:
+            raise RuntimeError(f"Failed to write test image to {img_path_str}")
+    
+    if not os.path.exists(img_path_str):
+        raise RuntimeError(f"Test image was not created at {img_path_str}")
+    
+    return img_path_str
 
 
 class TestOuterCircleDetection:
