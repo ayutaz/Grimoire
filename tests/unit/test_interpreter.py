@@ -76,7 +76,7 @@ class TestEnvironment:
         env = Environment()
         
         # Act & Assert
-        with pytest.raises(InterpreterError, match="Undefined variable: x"):
+        with pytest.raises(InterpreterError, match="未定義の変数: x"):
             env.get("x")
     
     def test_get_variable_from_parent(self):
@@ -124,7 +124,7 @@ class TestEnvironment:
         env = Environment()
         
         # Act & Assert
-        with pytest.raises(InterpreterError, match="Undefined variable: x"):
+        with pytest.raises(InterpreterError, match="未定義の変数: x"):
             env.set("x", 42)
 
 
@@ -305,7 +305,7 @@ class TestGrimoireInterpreter:
         )
         
         # Act & Assert
-        with pytest.raises(InterpreterError, match="Division by zero"):
+        with pytest.raises(InterpreterError, match="ゼロ除算"):
             self.interpreter.visit_binary_op(binary_op)
     
     def test_visit_unary_operations(self):
@@ -697,7 +697,7 @@ class TestGrimoireInterpreter:
     def test_call_unknown_builtin(self):
         """Test calling unknown built-in function"""
         # Arrange & Act & Assert
-        with pytest.raises(InterpreterError, match="Unknown function: unknown"):
+        with pytest.raises(InterpreterError, match="未定義の関数: unknown"):
             self.interpreter._call_builtin("unknown", [])
     
     # Edge cases and error scenarios

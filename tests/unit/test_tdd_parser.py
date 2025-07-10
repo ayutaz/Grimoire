@@ -33,7 +33,7 @@ class TestParserBasicRequirements:
         ]
         
         # Act & Assert
-        with pytest.raises(ParseError, match="No outer circle found"):
+        with pytest.raises(ParseError, match="外周円が見つかりません"):
             parser.parse(symbols, [])
     
     def test_最小限のプログラムがパースできる(self, parser):
