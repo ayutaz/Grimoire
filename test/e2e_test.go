@@ -18,9 +18,10 @@ func TestE2E_HelloWorld(t *testing.T) {
 	}
 
 	// Build the binary
-	buildCmd := exec.Command("go", "build", "-o", "grimoire_test", "./cmd/grimoire")
+	buildCmd := exec.Command("go", "build", "-o", "grimoire_test", "../cmd/grimoire")
+	buildCmd.Dir = "."
 	err := buildCmd.Run()
-	require.NoError(t, err)
+	require.NoError(t, err, "Failed to build grimoire binary")
 	defer os.Remove("grimoire_test")
 
 	// Make it executable on Unix
@@ -35,12 +36,18 @@ func TestE2E_HelloWorld(t *testing.T) {
 		binaryName = "grimoire_test.exe"
 	}
 
-	cmd := exec.Command(binaryName, "run", "examples/images/hello_world.png")
+	// Check if examples directory exists
+	if _, err := os.Stat("../examples/images/hello_world.png"); os.IsNotExist(err) {
+		t.Skip("Skipping test: examples/images/hello_world.png not found")
+	}
+
+	cmd := exec.Command(binaryName, "run", "../examples/images/hello_world.png")
 	output, err := cmd.CombinedOutput()
 
 	// For now, we expect it to work even with placeholder implementation
 	if err != nil {
 		t.Logf("Output: %s", output)
+		t.Logf("Error: %v", err)
 	}
 	
 	// Once fully implemented, check for "Hello, World!"
@@ -54,9 +61,10 @@ func TestE2E_CompileCommand(t *testing.T) {
 	}
 
 	// Build the binary
-	buildCmd := exec.Command("go", "build", "-o", "grimoire_test", "./cmd/grimoire")
+	buildCmd := exec.Command("go", "build", "-o", "grimoire_test", "../cmd/grimoire")
+	buildCmd.Dir = "."
 	err := buildCmd.Run()
-	require.NoError(t, err)
+	require.NoError(t, err, "Failed to build grimoire binary")
 	defer os.Remove("grimoire_test")
 
 	// Run compile command
@@ -66,7 +74,7 @@ func TestE2E_CompileCommand(t *testing.T) {
 	}
 
 	outputFile := filepath.Join(t.TempDir(), "output.py")
-	cmd := exec.Command(binaryName, "compile", "examples/images/hello_world.png", "-o", outputFile)
+	cmd := exec.Command(binaryName, "compile", "../examples/images/hello_world.png", "-o", outputFile)
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
@@ -85,9 +93,10 @@ func TestE2E_DebugCommand(t *testing.T) {
 	}
 
 	// Build the binary
-	buildCmd := exec.Command("go", "build", "-o", "grimoire_test", "./cmd/grimoire")
+	buildCmd := exec.Command("go", "build", "-o", "grimoire_test", "../cmd/grimoire")
+	buildCmd.Dir = "."
 	err := buildCmd.Run()
-	require.NoError(t, err)
+	require.NoError(t, err, "Failed to build grimoire binary")
 	defer os.Remove("grimoire_test")
 
 	// Run debug command
@@ -96,7 +105,7 @@ func TestE2E_DebugCommand(t *testing.T) {
 		binaryName = "grimoire_test.exe"
 	}
 
-	cmd := exec.Command(binaryName, "debug", "examples/images/hello_world.png")
+	cmd := exec.Command(binaryName, "debug", "../examples/images/hello_world.png")
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
@@ -116,9 +125,10 @@ func TestE2E_Performance(t *testing.T) {
 	}
 
 	// Build optimized binary
-	buildCmd := exec.Command("go", "build", "-ldflags", "-s -w", "-o", "grimoire_test", "./cmd/grimoire")
+	buildCmd := exec.Command("go", "build", "-ldflags", "-s -w", "-o", "grimoire_test", "../cmd/grimoire")
+	buildCmd.Dir = "."
 	err := buildCmd.Run()
-	require.NoError(t, err)
+	require.NoError(t, err, "Failed to build optimized grimoire binary")
 	defer os.Remove("grimoire_test")
 
 	// Measure execution time
@@ -127,13 +137,19 @@ func TestE2E_Performance(t *testing.T) {
 		binaryName = "grimoire_test.exe"
 	}
 
+	// Check if examples directory exists
+	if _, err := os.Stat("../examples/images/hello_world.png"); os.IsNotExist(err) {
+		t.Skip("Skipping test: examples/images/hello_world.png not found")
+	}
+
 	// Run multiple times and check performance
 	for i := 0; i < 3; i++ {
-		cmd := exec.Command(binaryName, "run", "examples/images/hello_world.png")
-		err := cmd.Run()
-		
-		// Just check it runs for now
-		_ = err
+		cmd := exec.Command(binaryName, "run", "../examples/images/hello_world.png")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Logf("Run %d failed: %v", i, err)
+			t.Logf("Output: %s", output)
+		}
 	}
 
 	// TODO: Add actual timing measurements
@@ -142,8 +158,14 @@ func TestE2E_Performance(t *testing.T) {
 
 // Benchmark tests
 func BenchmarkHelloWorld(b *testing.B) {
+	// Check if examples directory exists
+	if _, err := os.Stat("examples/images/hello_world.png"); os.IsNotExist(err) {
+		b.Skip("Skipping benchmark: examples/images/hello_world.png not found")
+	}
+
 	// Build once
-	buildCmd := exec.Command("go", "build", "-o", "grimoire_bench", "./cmd/grimoire")
+	buildCmd := exec.Command("go", "build", "-o", "grimoire_bench", "../cmd/grimoire")
+	buildCmd.Dir = "."
 	err := buildCmd.Run()
 	if err != nil {
 		b.Fatal(err)
@@ -157,7 +179,7 @@ func BenchmarkHelloWorld(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		cmd := exec.Command(binaryName, "run", "examples/images/hello_world.png")
+		cmd := exec.Command(binaryName, "run", "../examples/images/hello_world.png")
 		_ = cmd.Run()
 	}
 }
