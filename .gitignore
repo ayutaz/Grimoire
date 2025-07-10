@@ -46,3 +46,11 @@ venv/
 
 # Generated files
 fibonacci_output.py
+
+# Artifacts directory
+/artifacts/
+artifacts/
+
+# Claude AI files
+.claude/
+.claude_files/
