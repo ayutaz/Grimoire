@@ -6,9 +6,18 @@ Following t-wada's testing principles
 import pytest
 import numpy as np
 import cv2
+import os
 from grimoire.image_recognition import (
     Symbol, SymbolType, MagicCircleDetector
 )
+
+
+def save_test_image(img, img_path):
+    """Helper to save test images with proper error checking"""
+    success = cv2.imwrite(img_path, img)
+    if not success or not os.path.exists(img_path):
+        raise RuntimeError(f"Failed to write test image to {img_path}")
+    return img_path
 
 
 class TestOuterCircleDetection:
@@ -23,7 +32,7 @@ class TestOuterCircleDetection:
         # Arrange
         img = np.ones((500, 500, 3), dtype=np.uint8) * 255
         img_path = str(tmp_path / "no_circle.png")
-        cv2.imwrite(img_path, img)
+        save_test_image(img, img_path)
         
         # Act & Assert
         with pytest.raises(ValueError, match="No outer circle detected"):
@@ -34,7 +43,7 @@ class TestOuterCircleDetection:
         img = np.ones((500, 500, 3), dtype=np.uint8) * 255
         cv2.circle(img, (250, 250), 50, (0, 0, 0), 2)  # 小さい円
         img_path = str(tmp_path / "small_circle.png")
-        cv2.imwrite(img_path, img)
+        save_test_image(img, img_path)
         
         # Act & Assert
         with pytest.raises(ValueError, match="No outer circle detected"):
@@ -45,7 +54,7 @@ class TestOuterCircleDetection:
         img = np.ones((500, 500, 3), dtype=np.uint8) * 255
         cv2.circle(img, (250, 250), 200, (0, 0, 0), 3)
         img_path = str(tmp_path / "valid_circle.png")
-        cv2.imwrite(img_path, img)
+        save_test_image(img, img_path)
         
         # Act
         symbols, _ = detector.detect_symbols(img_path)
@@ -62,7 +71,7 @@ class TestOuterCircleDetection:
         img = np.ones((500, 500, 3), dtype=np.uint8) * 255
         cv2.ellipse(img, (250, 250), (200, 150), 0, 0, 360, (0, 0, 0), 3)
         img_path = str(tmp_path / "ellipse.png")
-        cv2.imwrite(img_path, img)
+        save_test_image(img, img_path)
         
         # Act & Assert
         with pytest.raises(ValueError, match="No outer circle detected"):
@@ -87,7 +96,7 @@ class TestSymbolDetection:
         # Arrange
         cv2.circle(base_image, (250, 250), 50, (0, 0, 0), 2)
         img_path = str(tmp_path / "inner_circle.png")
-        cv2.imwrite(img_path, base_image)
+        save_test_image(base_image, img_path)
         
         # Act
         symbols, _ = detector.detect_symbols(img_path)
@@ -101,7 +110,7 @@ class TestSymbolDetection:
         cv2.circle(base_image, (250, 250), 50, (0, 0, 0), 2)
         cv2.circle(base_image, (250, 250), 40, (0, 0, 0), 2)
         img_path = str(tmp_path / "double_circle.png")
-        cv2.imwrite(img_path, base_image)
+        save_test_image(base_image, img_path)
         
         # Act
         symbols, _ = detector.detect_symbols(img_path)
@@ -114,7 +123,7 @@ class TestSymbolDetection:
         # Arrange
         cv2.rectangle(base_image, (200, 200), (300, 300), (0, 0, 0), 2)
         img_path = str(tmp_path / "square.png")
-        cv2.imwrite(img_path, base_image)
+        save_test_image(base_image, img_path)
         
         # Act
         symbols, _ = detector.detect_symbols(img_path)
@@ -142,7 +151,7 @@ class TestPatternRecognition:
         # Arrange
         cv2.circle(base_image_with_square, (250, 250), 5, (0, 0, 0), -1)
         img_path = str(tmp_path / "single_dot.png")
-        cv2.imwrite(img_path, base_image_with_square)
+        save_test_image(base_image_with_square, img_path)
         
         # Act
         symbols, _ = detector.detect_symbols(img_path)
@@ -157,7 +166,7 @@ class TestPatternRecognition:
         cv2.circle(base_image_with_square, (230, 250), 5, (0, 0, 0), -1)
         cv2.circle(base_image_with_square, (270, 250), 5, (0, 0, 0), -1)
         img_path = str(tmp_path / "double_dot.png")
-        cv2.imwrite(img_path, base_image_with_square)
+        save_test_image(base_image_with_square, img_path)
         
         # Act
         symbols, _ = detector.detect_symbols(img_path)
@@ -183,7 +192,7 @@ class TestConnectionDetection:
         cv2.circle(img, (300, 300), 30, (0, 0, 0), 2)
         cv2.line(img, (200, 200), (300, 300), (0, 0, 0), 2)
         img_path = str(tmp_path / "connection.png")
-        cv2.imwrite(img_path, img)
+        save_test_image(img, img_path)
         
         # Act
         symbols, connections = detector.detect_symbols(img_path)
@@ -209,7 +218,7 @@ class TestErrorHandling:
         # Arrange
         img = np.zeros((100, 100, 3), dtype=np.uint8)
         img_path = str(tmp_path / "empty.png")
-        cv2.imwrite(img_path, img)
+        save_test_image(img, img_path)
         
         # Act & Assert
         with pytest.raises(ValueError, match="No outer circle detected"):
@@ -223,7 +232,7 @@ class TestErrorHandling:
         noise = np.random.randint(0, 50, (500, 500, 3), dtype=np.uint8)
         img = cv2.add(img, noise)
         img_path = str(tmp_path / "noisy.png")
-        cv2.imwrite(img_path, img)
+        save_test_image(img, img_path)
         
         # Act
         symbols, _ = detector.detect_symbols(img_path)

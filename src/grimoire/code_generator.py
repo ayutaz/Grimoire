@@ -239,7 +239,8 @@ class PythonCodeGenerator(ASTVisitor):
         """Generate code for an expression"""
         if isinstance(expr, Literal):
             if expr.literal_type == DataType.STRING:
-                return repr(expr.value)
+                # Always use double quotes for consistency
+                return '"' + expr.value.replace('\\', '\\\\').replace('"', '\\"') + '"'
             elif expr.literal_type == DataType.BOOLEAN:
                 return "True" if expr.value else "False"
             else:
