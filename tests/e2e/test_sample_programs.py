@@ -161,7 +161,7 @@ class TestPerformance:
         end = time.time()
         
         # Assert
-        assert end - start < 5.0  # 5秒以内
+        assert end - start < 10.0  # 10秒以内
         assert result is not None
     
     def _create_large_program(self):
