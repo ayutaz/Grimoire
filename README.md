@@ -79,6 +79,18 @@ pip install -e .
 
 ### 2. 画像をコンパイル・実行
 
+⚠️ **重要**: Windows環境では、ファイル名に日本語や特殊文字を使用しないでください。英数字とアンダースコア、ハイフンのみを使用してください。
+
+```bash
+# ✅ 良い例
+grimoire run hello_world.png
+grimoire run my-magic-circle.png
+
+# ❌ 避けるべき例
+grimoire run 魔法陣.png
+grimoire run こんにちは.png
+```
+
 ```bash
 # 直接実行
 grimoire run magic_circle.png
@@ -163,6 +175,16 @@ uv run ruff check .
 # スタンドアロン実行ファイルの作成
 uv run pyinstaller grimoire.spec
 ```
+
+## 📋 既知の問題
+
+### Windows環境での制限
+- 日本語や特殊文字を含むファイル名は使用できません
+- OpenCVの制限によるもので、将来的に改善予定です
+
+### その他
+- 複雑なプログラムの解析には制限があります
+- ループ内に実行内容がない場合、エラーになります
 
 ## 🤝 貢献
 
