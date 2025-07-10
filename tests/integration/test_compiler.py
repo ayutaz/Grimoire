@@ -49,7 +49,7 @@ class TestGrimoireCompiler:
         non_existent = "/path/to/nonexistent.png"
         
         # Act & Assert
-        with pytest.raises(CompilationError, match="Image file not found"):
+        with pytest.raises(CompilationError, match="画像ファイルが見つかりません"):
             self.compiler.compile_and_run(non_existent)
     
     def test_compile_empty_image(self):
@@ -415,7 +415,9 @@ class TestDebugGrimoire:
                 
                 # Assert
                 captured = capsys.readouterr()
-                assert "=== Execution Result ===" in captured.out
+                # 日本語に変更されたデバッグ出力を確認
+                assert "=== 実行結果 ===" in captured.out
+                assert "=== AST構造 ===" in captured.out
             finally:
                 try:
                     os.unlink(tmp.name)
