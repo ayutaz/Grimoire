@@ -326,7 +326,7 @@ class TestPythonCodeGenerator:
         test_cases = [
             (Literal(value=42, literal_type=DataType.INTEGER), "42"),
             (Literal(value=3.14, literal_type=DataType.FLOAT), "3.14"),
-            (Literal(value="hello", literal_type=DataType.STRING), "'hello'"),
+            (Literal(value="hello", literal_type=DataType.STRING), '"hello"'),
             (Literal(value=True, literal_type=DataType.BOOLEAN), "True"),
             (Literal(value=False, literal_type=DataType.BOOLEAN), "False"),
         ]
@@ -397,7 +397,7 @@ class TestPythonCodeGenerator:
         result = self.generator._generate_expression(func_call)
         
         # Assert
-        assert result == "print('Hello', name)"
+        assert result == 'print("Hello", name)'
     
     def test_generate_array_literal(self):
         """Test generating array literal"""
@@ -436,7 +436,7 @@ class TestPythonCodeGenerator:
         result = self.generator._generate_expression(map_lit)
         
         # Assert
-        assert result == "{'name': 'Alice', 'age': 30}"
+        assert result == '{"name": "Alice", "age": 30}'
     
     def test_generate_array_access(self):
         """Test generating array access"""
@@ -464,7 +464,7 @@ class TestPythonCodeGenerator:
         result = self.generator._generate_expression(map_access)
         
         # Assert
-        assert result == "person['name']"
+        assert result == 'person["name"]'
     
     def test_empty_function_body(self):
         """Test generating function with empty body"""
