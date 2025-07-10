@@ -8,7 +8,7 @@ import (
 
 // Parser converts detected symbols to AST
 type Parser struct {
-	symbols     []detector.Symbol
+	symbols     []*detector.Symbol
 	connections []detector.Connection
 	errors      []error
 }
@@ -19,20 +19,20 @@ func NewParser() *Parser {
 }
 
 // Parse converts symbols to AST
-func Parse(symbols []detector.Symbol) (*Program, error) {
+func Parse(symbols []*detector.Symbol) (*Program, error) {
 	parser := NewParser()
 	return parser.Parse(symbols)
 }
 
 // Parse performs the parsing
-func (p *Parser) Parse(symbols []detector.Symbol) (*Program, error) {
+func (p *Parser) Parse(symbols []*detector.Symbol) (*Program, error) {
 	p.symbols = symbols
 
 	// Find outer circle
 	var outerCircle *detector.Symbol
-	for i := range symbols {
-		if symbols[i].Type == detector.OuterCircle {
-			outerCircle = &symbols[i]
+	for _, symbol := range symbols {
+		if symbol.Type == detector.OuterCircle {
+			outerCircle = symbol
 			break
 		}
 	}
@@ -49,9 +49,9 @@ func (p *Parser) Parse(symbols []detector.Symbol) (*Program, error) {
 	}
 
 	// Find main entry (double circle)
-	for i := range symbols {
-		if symbols[i].Type == detector.DoubleCircle {
-			program.MainEntry = p.parseFunctionDef(&symbols[i], true)
+	for _, symbol := range symbols {
+		if symbol.Type == detector.DoubleCircle {
+			program.MainEntry = p.parseFunctionDef(symbol, true)
 			break
 		}
 	}

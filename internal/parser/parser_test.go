@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"image"
 	"testing"
 
 	"github.com/ayutaz/grimoire/internal/detector"
@@ -17,10 +16,10 @@ func TestParserCreation(t *testing.T) {
 
 // TestParse_NoOuterCircle tests parsing fails without outer circle
 func TestParse_NoOuterCircle(t *testing.T) {
-	symbols := []detector.Symbol{
+	symbols := []*detector.Symbol{
 		{
 			Type:     detector.Circle,
-			Position: image.Point{X: 50, Y: 50},
+			Position: detector.Position{X: 50, Y: 50},
 			Size:     20,
 		},
 	}
@@ -34,10 +33,10 @@ func TestParse_NoOuterCircle(t *testing.T) {
 
 // TestParse_MinimalProgram tests parsing minimal valid program
 func TestParse_MinimalProgram(t *testing.T) {
-	symbols := []detector.Symbol{
+	symbols := []*detector.Symbol{
 		{
 			Type:       detector.OuterCircle,
-			Position:   image.Point{X: 100, Y: 100},
+			Position:   detector.Position{X: 100, Y: 100},
 			Size:       180,
 			Confidence: 0.9,
 		},
@@ -65,15 +64,15 @@ func TestParse_MinimalProgram(t *testing.T) {
 
 // TestParse_WithMainEntry tests parsing with explicit main entry
 func TestParse_WithMainEntry(t *testing.T) {
-	symbols := []detector.Symbol{
+	symbols := []*detector.Symbol{
 		{
 			Type:     detector.OuterCircle,
-			Position: image.Point{X: 100, Y: 100},
+			Position: detector.Position{X: 100, Y: 100},
 			Size:     180,
 		},
 		{
 			Type:     detector.DoubleCircle,
-			Position: image.Point{X: 100, Y: 100},
+			Position: detector.Position{X: 100, Y: 100},
 			Size:     40,
 		},
 	}
