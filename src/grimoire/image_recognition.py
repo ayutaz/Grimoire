@@ -61,7 +61,7 @@ class MagicCircleDetector:
     
     def __init__(self):
         self.min_contour_area = 100
-        self.circle_threshold = 0.7  # Lowered threshold for better detection
+        self.circle_threshold = 0.88  # Even stricter threshold to reject ellipses
         self.symbols: List[Symbol] = []
         self.connections: List[Connection] = []
     
@@ -147,35 +147,37 @@ class MagicCircleDetector:
     
     def _is_double_circle(self, binary: np.ndarray, x: float, y: float, radius: float) -> bool:
         """Check if a circle is actually a double circle"""
-        # Create a mask for the circle area
-        mask = np.zeros_like(binary)
-        cv2.circle(mask, (int(x), int(y)), int(radius * 1.2), 255, -1)
+        # Look for concentric circles by checking different radii
+        inner_found = False
+        outer_found = False
         
-        # Find contours within the mask
-        masked = cv2.bitwise_and(binary, mask)
-        contours, _ = cv2.findContours(masked, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        # Count circular contours
-        circle_count = 0
-        for contour in contours:
-            area = cv2.contourArea(contour)
-            if area < self.min_contour_area:
-                continue
+        # Check for circles at different radii
+        for r_factor in [0.7, 0.8, 0.9, 1.0, 1.1]:
+            test_radius = int(radius * r_factor)
+            # Create a circular mask at this radius
+            mask = np.zeros_like(binary)
+            cv2.circle(mask, (int(x), int(y)), test_radius, 255, 2)
             
-            perimeter = cv2.arcLength(contour, True)
-            circularity = 4 * np.pi * area / (perimeter * perimeter)
+            # Count white pixels on the circle perimeter
+            masked = cv2.bitwise_and(binary, mask)
+            white_pixels = cv2.countNonZero(masked)
+            expected_pixels = 2 * np.pi * test_radius
             
-            if circularity > self.circle_threshold:
-                circle_count += 1
+            # If more than 60% of the circle perimeter has white pixels
+            if white_pixels > expected_pixels * 0.6:
+                if r_factor < 0.9:
+                    inner_found = True
+                else:
+                    outer_found = True
         
-        return circle_count >= 2
+        return inner_found and outer_found
     
     def _detect_circles(self, binary: np.ndarray, outer_circle: Symbol):
         """Detect circles within the outer circle"""
         # Use HoughCircles for better circle detection
         circles = cv2.HoughCircles(
-            binary, cv2.HOUGH_GRADIENT, 1, 50,
-            param1=50, param2=30, minRadius=10, maxRadius=int(outer_circle.size * 0.3)
+            binary, cv2.HOUGH_GRADIENT, 1, 20,
+            param1=50, param2=20, minRadius=10, maxRadius=int(outer_circle.size * 0.5)
         )
         
         if circles is not None:
@@ -214,7 +216,7 @@ class MagicCircleDetector:
                 continue
             
             # Approximate polygon
-            epsilon = 0.02 * cv2.arcLength(contour, True)
+            epsilon = 0.04 * cv2.arcLength(contour, True)
             approx = cv2.approxPolyDP(contour, epsilon, True)
             
             # Get center
@@ -319,8 +321,8 @@ class MagicCircleDetector:
     def _detect_connections(self, binary: np.ndarray):
         """Detect connections between symbols"""
         # Use Hough Line Transform to detect lines
-        edges = cv2.Canny(binary, 50, 150)
-        lines = cv2.HoughLinesP(edges, 1, np.pi/180, 50, minLineLength=30, maxLineGap=10)
+        edges = cv2.Canny(binary, 30, 100)
+        lines = cv2.HoughLinesP(edges, 1, np.pi/180, 30, minLineLength=20, maxLineGap=15)
         
         if lines is not None:
             for line in lines:
