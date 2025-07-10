@@ -260,9 +260,16 @@ class MagicCircleDetector:
         # Stars are more complex - look for shapes with alternating distances from center
         contours, _ = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         
+        # Track detected star positions to avoid duplicates
+        detected_positions = set()
+        
         for contour in contours:
             area = cv2.contourArea(contour)
-            if area < self.min_contour_area * 2:  # Stars need larger area
+            if area < self.min_contour_area:  # Minimum area check
+                continue
+            
+            # Skip the outer circle contour
+            if area > outer_circle.size * outer_circle.size * 2:  # Too large to be a star
                 continue
             
             # Get center
@@ -270,6 +277,11 @@ class MagicCircleDetector:
             if M["m00"] != 0:
                 cx = int(M["m10"] / M["m00"])
                 cy = int(M["m01"] / M["m00"])
+                
+                # Check if we already detected a star at this position
+                pos_key = (cx // 10, cy // 10)  # Grid-based deduplication
+                if pos_key in detected_positions:
+                    continue
                 
                 # Check if inside outer circle
                 dist = np.sqrt((cx - outer_circle.position[0])**2 + (cy - outer_circle.position[1])**2)
@@ -287,27 +299,33 @@ class MagicCircleDetector:
                             properties={"points": 5}
                         )
                         self.symbols.append(symbol)
+                        detected_positions.add(pos_key)
     
     def _is_star_shape(self, contour, cx: int, cy: int) -> bool:
         """Check if contour is star-shaped (simplified)"""
-        # Calculate distances from center to contour points
+        # Use approximated polygon to check for star shape
+        epsilon = 0.02 * cv2.arcLength(contour, True)
+        approx = cv2.approxPolyDP(contour, epsilon, True)
+        
+        # Stars typically have 8-12 vertices when approximated
+        # (5 points + 5 inner vertices)
+        num_vertices = len(approx)
+        if 8 <= num_vertices <= 12:
+            return True
+            
+        # Alternative: check for significant variation in distances
         distances = []
         for point in contour:
             x, y = point[0]
             dist = np.sqrt((x - cx)**2 + (y - cy)**2)
             distances.append(dist)
         
-        if len(distances) < 10:
+        if len(distances) < 5:
             return False
         
-        # Check for alternating pattern of distances
-        # (simplified star detection)
         distances = np.array(distances)
-        mean_dist = np.mean(distances)
-        variations = np.abs(distances - mean_dist)
-        
-        # Star should have significant variations
-        return np.std(variations) > mean_dist * 0.2
+        # Check if there's significant variation (star-like pattern)
+        return np.std(distances) > np.mean(distances) * 0.15
     
     def _detect_operators(self, binary: np.ndarray, outer_circle: Symbol):
         """Detect operator symbols (convergence, divergence, etc.)"""

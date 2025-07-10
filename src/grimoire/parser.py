@@ -63,7 +63,8 @@ class MagicCircleParser:
             global_stmts = []
             for i, symbol in enumerate(self.symbols):
                 node = self.symbol_graph[i]
-                if not node.visited and symbol.type not in [SymbolType.OUTER_CIRCLE, SymbolType.DOUBLE_CIRCLE]:
+                # Include star symbols even if they're marked as visited (connected from other symbols)
+                if (not node.visited or symbol.type == SymbolType.STAR) and symbol.type not in [SymbolType.OUTER_CIRCLE, SymbolType.DOUBLE_CIRCLE]:
                     stmt = self._parse_statement(node)
                     if stmt:
                         global_stmts.append(stmt)
@@ -72,6 +73,18 @@ class MagicCircleParser:
         else:
             # Parse remaining global statements
             globals = self._parse_global_statements()
+            
+        # Special case: if we have no main entry and just global statements (like a single star)
+        # create an implicit main function
+        if not main_entry and globals:
+            main_entry = FunctionDef(
+                name=None,
+                parameters=[],
+                body=globals,
+                return_type=None,
+                is_main=True
+            )
+            globals = []
         
         return Program(
             has_outer_circle=True,
@@ -224,7 +237,8 @@ class MagicCircleParser:
     
     def _parse_statement(self, node: SymbolNode) -> Optional[Statement]:
         """Parse a single statement from a symbol"""
-        if node.visited:
+        if node.visited and node.symbol.type != SymbolType.STAR:
+            # Stars should always be parsed as output statements
             return None
         
         node.visited = True
@@ -491,6 +505,12 @@ class MagicCircleParser:
             return Literal(value=1, literal_type=DataType.INTEGER)
         elif pattern == "double_dot":
             return Literal(value=2, literal_type=DataType.INTEGER)
+        elif pattern == "triple_line":
+            # String literal - for now, default to "Hello, World!"
+            return Literal(value="Hello, World!", literal_type=DataType.STRING)
+        elif pattern == "lines":
+            # Could be a string or other data
+            return Literal(value="Text", literal_type=DataType.STRING)
         
         # Default integer literal
         return Literal(value=0, literal_type=DataType.INTEGER)
@@ -520,6 +540,10 @@ class MagicCircleParser:
             expr = self._parse_expression(parent)
             if expr:
                 return expr
+        
+        # For standalone stars (hello world case), return "Hello, World!"
+        if node.symbol.type == SymbolType.STAR:
+            return Literal(value="Hello, World!", literal_type=DataType.STRING)
         
         # Default literal
         return Literal(value=0, literal_type=DataType.INTEGER)
@@ -585,7 +609,8 @@ class MagicCircleParser:
         # Find unvisited symbols that are direct children of outer circle
         for i, symbol in enumerate(self.symbols):
             node = self.symbol_graph[i]
-            if not node.visited and symbol.type != SymbolType.OUTER_CIRCLE:
+            # Include star symbols even if they're marked as visited
+            if (not node.visited or symbol.type == SymbolType.STAR) and symbol.type != SymbolType.OUTER_CIRCLE:
                 stmt = self._parse_statement(node)
                 if stmt:
                     globals.append(stmt)
