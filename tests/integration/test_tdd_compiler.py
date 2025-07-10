@@ -297,7 +297,7 @@ class TestErrorHandling:
     @pytest.mark.skipif(sys.platform == "win32", reason="Windows does not support Japanese filenames")
     def test_存在しないファイルはエラー(self, compiler):
         # Act & Assert
-        with pytest.raises(CompilationError, match="Image file not found"):
+        with pytest.raises(CompilationError, match="画像ファイルが見つかりません"):
             compiler.compile_and_run("nonexistent.png")
     
     @pytest.mark.skipif(sys.platform == "win32", reason="Windows does not support Japanese filenames")
