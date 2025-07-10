@@ -18,11 +18,15 @@ func TestE2E_HelloWorld(t *testing.T) {
 	}
 
 	// Build the binary
-	buildCmd := exec.Command("go", "build", "-o", "grimoire_test", "../cmd/grimoire")
+	binaryFile := "grimoire_test"
+	if runtime.GOOS == "windows" {
+		binaryFile = "grimoire_test.exe"
+	}
+	buildCmd := exec.Command("go", "build", "-o", binaryFile, "../cmd/grimoire")
 	buildCmd.Dir = "."
 	err := buildCmd.Run()
 	require.NoError(t, err, "Failed to build grimoire binary")
-	defer os.Remove("grimoire_test")
+	defer os.Remove(binaryFile)
 
 	// Make it executable on Unix
 	if runtime.GOOS != "windows" {
@@ -33,7 +37,7 @@ func TestE2E_HelloWorld(t *testing.T) {
 	// Run hello world
 	binaryName := "./grimoire_test"
 	if runtime.GOOS == "windows" {
-		binaryName = "grimoire_test.exe"
+		binaryName = ".\\grimoire_test.exe"
 	}
 
 	// Check if examples directory exists
@@ -61,16 +65,20 @@ func TestE2E_CompileCommand(t *testing.T) {
 	}
 
 	// Build the binary
-	buildCmd := exec.Command("go", "build", "-o", "grimoire_test", "../cmd/grimoire")
+	binaryFile := "grimoire_test"
+	if runtime.GOOS == "windows" {
+		binaryFile = "grimoire_test.exe"
+	}
+	buildCmd := exec.Command("go", "build", "-o", binaryFile, "../cmd/grimoire")
 	buildCmd.Dir = "."
 	err := buildCmd.Run()
 	require.NoError(t, err, "Failed to build grimoire binary")
-	defer os.Remove("grimoire_test")
+	defer os.Remove(binaryFile)
 
 	// Run compile command
 	binaryName := "./grimoire_test"
 	if runtime.GOOS == "windows" {
-		binaryName = "grimoire_test.exe"
+		binaryName = ".\\grimoire_test.exe"
 	}
 
 	outputFile := filepath.Join(t.TempDir(), "output.py")
@@ -93,16 +101,20 @@ func TestE2E_DebugCommand(t *testing.T) {
 	}
 
 	// Build the binary
-	buildCmd := exec.Command("go", "build", "-o", "grimoire_test", "../cmd/grimoire")
+	binaryFile := "grimoire_test"
+	if runtime.GOOS == "windows" {
+		binaryFile = "grimoire_test.exe"
+	}
+	buildCmd := exec.Command("go", "build", "-o", binaryFile, "../cmd/grimoire")
 	buildCmd.Dir = "."
 	err := buildCmd.Run()
 	require.NoError(t, err, "Failed to build grimoire binary")
-	defer os.Remove("grimoire_test")
+	defer os.Remove(binaryFile)
 
 	// Run debug command
 	binaryName := "./grimoire_test"
 	if runtime.GOOS == "windows" {
-		binaryName = "grimoire_test.exe"
+		binaryName = ".\\grimoire_test.exe"
 	}
 
 	cmd := exec.Command(binaryName, "debug", "../examples/images/hello_world.png")
@@ -125,16 +137,20 @@ func TestE2E_Performance(t *testing.T) {
 	}
 
 	// Build optimized binary
-	buildCmd := exec.Command("go", "build", "-ldflags", "-s -w", "-o", "grimoire_test", "../cmd/grimoire")
+	binaryFile := "grimoire_test"
+	if runtime.GOOS == "windows" {
+		binaryFile = "grimoire_test.exe"
+	}
+	buildCmd := exec.Command("go", "build", "-ldflags", "-s -w", "-o", binaryFile, "../cmd/grimoire")
 	buildCmd.Dir = "."
 	err := buildCmd.Run()
 	require.NoError(t, err, "Failed to build optimized grimoire binary")
-	defer os.Remove("grimoire_test")
+	defer os.Remove(binaryFile)
 
 	// Measure execution time
 	binaryName := "./grimoire_test"
 	if runtime.GOOS == "windows" {
-		binaryName = "grimoire_test.exe"
+		binaryName = ".\\grimoire_test.exe"
 	}
 
 	// Check if examples directory exists
@@ -164,17 +180,21 @@ func BenchmarkHelloWorld(b *testing.B) {
 	}
 
 	// Build once
-	buildCmd := exec.Command("go", "build", "-o", "grimoire_bench", "../cmd/grimoire")
+	binaryFile := "grimoire_bench"
+	if runtime.GOOS == "windows" {
+		binaryFile = "grimoire_bench.exe"
+	}
+	buildCmd := exec.Command("go", "build", "-o", binaryFile, "../cmd/grimoire")
 	buildCmd.Dir = "."
 	err := buildCmd.Run()
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer os.Remove("grimoire_bench")
+	defer os.Remove(binaryFile)
 
 	binaryName := "./grimoire_bench"
 	if runtime.GOOS == "windows" {
-		binaryName = "grimoire_bench.exe"
+		binaryName = ".\\grimoire_bench.exe"
 	}
 
 	b.ResetTimer()
