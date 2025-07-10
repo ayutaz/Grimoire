@@ -6,11 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 
 from .ast_nodes import *
-
-
-class InterpreterError(Exception):
-    """Runtime error during interpretation"""
-    pass
+from .errors import InterpreterError
 
 
 class ReturnValue(Exception):
@@ -37,7 +33,10 @@ class Environment:
             return self.values[name]
         if self.parent:
             return self.parent.get(name)
-        raise InterpreterError(f"Undefined variable: {name}")
+        raise InterpreterError(
+            f"未定義の変数: {name}",
+            error_code="INTERP_UNDEFINED_VAR"
+        )
     
     def set(self, name: str, value: Any):
         """Set variable value, checking parent scopes"""
@@ -46,7 +45,10 @@ class Environment:
         elif self.parent:
             self.parent.set(name, value)
         else:
-            raise InterpreterError(f"Undefined variable: {name}")
+            raise InterpreterError(
+                f"未定義の変数: {name}",
+                error_code="INTERP_UNDEFINED_VAR"
+            )
 
 
 class GrimoireInterpreter(ASTVisitor):
@@ -57,6 +59,11 @@ class GrimoireInterpreter(ASTVisitor):
         self.current_env = self.global_env
         self.output_buffer = []
         self.functions = {}  # Store function definitions
+        self.tracer = None  # Execution tracer for debugging
+    
+    def set_tracer(self, tracer):
+        """Set execution tracer for debugging"""
+        self.tracer = tracer
     
     def interpret(self, program: Program) -> str:
         """Interpret a program and return output"""
@@ -226,7 +233,7 @@ class GrimoireInterpreter(ASTVisitor):
             OperatorType.ADD: lambda l, r: l + r,
             OperatorType.SUBTRACT: lambda l, r: l - r,
             OperatorType.MULTIPLY: lambda l, r: l * r,
-            OperatorType.DIVIDE: lambda l, r: l / r if r != 0 else self._error("Division by zero"),
+            OperatorType.DIVIDE: lambda l, r: l / r if r != 0 else self._error("ゼロ除算", "INTERP_DIVISION_BY_ZERO"),
             OperatorType.EQUAL: lambda l, r: l == r,
             OperatorType.NOT_EQUAL: lambda l, r: l != r,
             OperatorType.LESS_THAN: lambda l, r: l < r,
@@ -241,7 +248,10 @@ class GrimoireInterpreter(ASTVisitor):
         if op_func:
             return op_func(left, right)
         else:
-            raise InterpreterError(f"Unknown operator: {node.operator}")
+            raise InterpreterError(
+                f"不明な演算子: {node.operator}",
+                error_code="INTERP_UNKNOWN_OPERATOR"
+            )
     
     def visit_unary_op(self, node: UnaryOp) -> Any:
         operand = self.execute(node.operand)
@@ -249,7 +259,10 @@ class GrimoireInterpreter(ASTVisitor):
         if node.operator == OperatorType.NOT:
             return not self._is_truthy(operand)
         else:
-            raise InterpreterError(f"Unknown unary operator: {node.operator}")
+            raise InterpreterError(
+                f"不明な単項演算子: {node.operator}",
+                error_code="INTERP_UNKNOWN_UNARY_OPERATOR"
+            )
     
     def visit_literal(self, node: Literal) -> Any:
         return node.value
@@ -358,14 +371,14 @@ class GrimoireInterpreter(ASTVisitor):
         else:
             return str(value)
     
-    def _error(self, message: str):
+    def _error(self, message: str, error_code: str = "INTERP_ERROR"):
         """Raise an interpreter error"""
-        raise InterpreterError(message)
+        raise InterpreterError(message, error_code=error_code)
     
     def _call_builtin(self, name: str, args: List[Any]) -> Any:
         """Call built-in function"""
         builtins = {
-            'len': lambda x: len(x) if hasattr(x, '__len__') else self._error("len() requires sequence"),
+            'len': lambda x: len(x) if hasattr(x, '__len__') else self._error("len()はシーケンスが必要です", "INTERP_TYPE_ERROR"),
             'range': lambda *args: list(range(*args)),
             'print': lambda *args: self.output_buffer.append(' '.join(str(a) for a in args)),
         }
@@ -373,4 +386,7 @@ class GrimoireInterpreter(ASTVisitor):
         if name in builtins:
             return builtins[name](*args)
         else:
-            raise InterpreterError(f"Unknown function: {name}")
+            raise InterpreterError(
+                f"未定義の関数: {name}",
+                error_code="INTERP_UNDEFINED_FUNC"
+            )
