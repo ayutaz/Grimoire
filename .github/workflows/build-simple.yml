@@ -34,7 +34,9 @@ jobs:
 
     - name: Test imports
       run: |
-        python test_import.py
+        python -c "import grimoire; print('Import test passed')"
+        python -c "from grimoire.cli import main; print('CLI import test passed')"
+        python -c "from grimoire.compiler import GrimoireCompiler; print('Compiler import test passed')"
 
     - name: Test CLI
       run: |
