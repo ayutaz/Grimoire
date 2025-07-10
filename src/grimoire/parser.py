@@ -505,12 +505,31 @@ class MagicCircleParser:
             return Literal(value=1, literal_type=DataType.INTEGER)
         elif pattern == "double_dot":
             return Literal(value=2, literal_type=DataType.INTEGER)
+        elif pattern == "triple_dot":
+            return Literal(value=3, literal_type=DataType.INTEGER)
+        elif pattern == "multiple_dots":
+            # Extract number from properties if available
+            return Literal(value=4, literal_type=DataType.INTEGER)
+        elif pattern == "empty":
+            return Literal(value=0, literal_type=DataType.INTEGER)
         elif pattern == "triple_line":
             # String literal - for now, default to "Hello, World!"
             return Literal(value="Hello, World!", literal_type=DataType.STRING)
-        elif pattern == "lines":
-            # Could be a string or other data
+        elif pattern in ["lines", "single_line", "double_line"]:
+            # String literals
             return Literal(value="Text", literal_type=DataType.STRING)
+        elif pattern == "cross":
+            # Boolean true (crossed out)
+            return Literal(value=True, literal_type=DataType.BOOLEAN)
+        elif pattern == "half_circle":
+            # Boolean false
+            return Literal(value=False, literal_type=DataType.BOOLEAN)
+        elif pattern == "grid":
+            # Array or map indicator
+            return Literal(value=[], literal_type=DataType.ARRAY)
+        elif pattern == "filled":
+            # Special value
+            return Literal(value=-1, literal_type=DataType.INTEGER)
         
         # Default integer literal
         return Literal(value=0, literal_type=DataType.INTEGER)

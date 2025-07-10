@@ -6,6 +6,7 @@ from typing import List, Tuple, Dict, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
 import math
+from .advanced_recognition import AdvancedPatternDetector, PatternInfo
 
 
 class SymbolType(Enum):
@@ -61,9 +62,10 @@ class MagicCircleDetector:
     
     def __init__(self):
         self.min_contour_area = 100
-        self.circle_threshold = 0.88  # Even stricter threshold to reject ellipses
+        self.circle_threshold = 0.80  # Threshold for circle detection
         self.symbols: List[Symbol] = []
         self.connections: List[Connection] = []
+        self.pattern_detector = AdvancedPatternDetector()
     
     def detect_symbols(self, image_path: str) -> Tuple[List[Symbol], List[Connection]]:
         """Main detection function"""
@@ -329,12 +331,151 @@ class MagicCircleDetector:
     
     def _detect_operators(self, binary: np.ndarray, outer_circle: Symbol):
         """Detect operator symbols (convergence, divergence, etc.)"""
-        # This is simplified - in reality would need more sophisticated pattern matching
-        # For now, detect based on specific patterns of lines
+        # Find contours that might be operators
+        contours, _ = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         
-        # Example: Detect convergence pattern (lines meeting at a point)
-        # This would require line detection and intersection analysis
-        pass
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area < self.min_contour_area or area > 5000:  # Operators are medium-sized
+                continue
+            
+            # Get center
+            M = cv2.moments(contour)
+            if M["m00"] == 0:
+                continue
+                
+            cx = int(M["m10"] / M["m00"])
+            cy = int(M["m01"] / M["m00"])
+            
+            # Check if inside outer circle
+            dist = np.sqrt((cx - outer_circle.position[0])**2 + (cy - outer_circle.position[1])**2)
+            if dist >= outer_circle.size * 0.8:
+                continue
+            
+            # Analyze the shape to determine operator type
+            operator_type = self._identify_operator(contour, binary, cx, cy)
+            if operator_type:
+                _, (width, height), _ = cv2.minAreaRect(contour)
+                size = max(width, height)
+                
+                symbol = Symbol(
+                    type=operator_type,
+                    position=(cx, cy),
+                    size=size,
+                    confidence=0.8,
+                    properties={}
+                )
+                self.symbols.append(symbol)
+    
+    def _identify_operator(self, contour, binary: np.ndarray, cx: int, cy: int) -> Optional[SymbolType]:
+        """Identify specific operator type from contour"""
+        # Get bounding box
+        x, y, w, h = cv2.boundingRect(contour)
+        
+        # Extract ROI
+        roi = binary[y:y+h, x:x+w]
+        
+        if roi.size == 0:
+            return None
+        
+        # Detect line patterns to identify operators
+        edges = cv2.Canny(roi, 50, 150)
+        lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=10, minLineLength=5, maxLineGap=3)
+        
+        if lines is None:
+            return None
+        
+        # Analyze line directions
+        converging = 0
+        diverging = 0
+        crossing = 0
+        
+        # Group lines by their angles and positions
+        line_angles = []
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            angle = np.arctan2(y2 - y1, x2 - x1)
+            line_angles.append(angle)
+        
+        if len(lines) >= 2:
+            # Check for convergence pattern (⟐): lines meeting at a point
+            # Check for divergence pattern (⟑): lines spreading from a point
+            # This is simplified - real implementation would need more sophisticated analysis
+            
+            # For now, use simple heuristics
+            if self._check_convergence_pattern(roi):
+                return SymbolType.CONVERGENCE
+            elif self._check_divergence_pattern(roi):
+                return SymbolType.DIVERGENCE
+            elif self._check_amplification_pattern(roi):
+                return SymbolType.AMPLIFICATION
+            elif self._check_distribution_pattern(roi):
+                return SymbolType.DISTRIBUTION
+        
+        return None
+    
+    def _check_convergence_pattern(self, roi: np.ndarray) -> bool:
+        """Check for convergence pattern (⟐)"""
+        # Simple check: more pixels on one side than the other
+        h, w = roi.shape
+        left_half = roi[:, :w//2]
+        right_half = roi[:, w//2:]
+        
+        left_pixels = cv2.countNonZero(left_half)
+        right_pixels = cv2.countNonZero(right_half)
+        
+        # Convergence has more pixels on the wide side
+        return left_pixels > right_pixels * 1.5 or right_pixels > left_pixels * 1.5
+    
+    def _check_divergence_pattern(self, roi: np.ndarray) -> bool:
+        """Check for divergence pattern (⟑)"""
+        # Similar to convergence but inverted
+        return self._check_convergence_pattern(roi)
+    
+    def _check_amplification_pattern(self, roi: np.ndarray) -> bool:
+        """Check for amplification pattern (✦)"""
+        # Check for star-like or cross pattern
+        h, w = roi.shape
+        center_y, center_x = h // 2, w // 2
+        
+        # Check for lines radiating from center
+        # Simplified check: pixels along diagonals and axes
+        diagonal1 = np.diagonal(roi)
+        diagonal2 = np.diagonal(np.fliplr(roi))
+        horizontal = roi[center_y, :]
+        vertical = roi[:, center_x]
+        
+        # Count non-zero pixels along these lines
+        total_line_pixels = (np.count_nonzero(diagonal1) + np.count_nonzero(diagonal2) +
+                           np.count_nonzero(horizontal) + np.count_nonzero(vertical))
+        
+        total_pixels = cv2.countNonZero(roi)
+        
+        # Amplification has most pixels along the main axes
+        return total_pixels > 0 and total_line_pixels / total_pixels > 0.6
+    
+    def _check_distribution_pattern(self, roi: np.ndarray) -> bool:
+        """Check for distribution pattern (⟠)"""
+        # Check for circular or hexagonal pattern
+        # Simplified: check if pixels form a ring
+        h, w = roi.shape
+        center_y, center_x = h // 2, w // 2
+        
+        # Create masks for inner and outer regions
+        mask_outer = np.zeros_like(roi)
+        mask_inner = np.zeros_like(roi)
+        
+        cv2.circle(mask_outer, (center_x, center_y), min(h, w) // 2 - 2, 255, -1)
+        cv2.circle(mask_inner, (center_x, center_y), min(h, w) // 4, 255, -1)
+        
+        ring_mask = cv2.bitwise_xor(mask_outer, mask_inner)
+        ring_pixels = cv2.bitwise_and(roi, ring_mask)
+        
+        ring_pixel_count = cv2.countNonZero(ring_pixels)
+        total_pixels = cv2.countNonZero(roi)
+        
+        # Distribution has most pixels in a ring pattern
+        return total_pixels > 0 and ring_pixel_count / total_pixels > 0.5
     
     def _detect_connections(self, binary: np.ndarray):
         """Detect connections between symbols"""
@@ -351,12 +492,77 @@ class MagicCircleDetector:
                 end_symbol = self._find_nearest_symbol(x2, y2)
                 
                 if start_symbol and end_symbol and start_symbol != end_symbol:
-                    connection = Connection(
-                        from_symbol=start_symbol,
-                        to_symbol=end_symbol,
-                        connection_type="solid"
-                    )
-                    self.connections.append(connection)
+                    # Skip connections that are too close to symbols themselves
+                    # (avoid detecting symbol borders as connections)
+                    if self._is_valid_connection(start_symbol, end_symbol, x1, y1, x2, y2):
+                        # Determine connection direction based on symbol types
+                        from_sym, to_sym = self._determine_connection_direction(
+                            start_symbol, end_symbol, x1, y1, x2, y2
+                        )
+                        
+                        connection = Connection(
+                            from_symbol=from_sym,
+                            to_symbol=to_sym,
+                            connection_type="solid"
+                        )
+                        self.connections.append(connection)
+    
+    def _is_valid_connection(self, sym1: Symbol, sym2: Symbol, x1: int, y1: int, x2: int, y2: int) -> bool:
+        """Check if a detected line is a valid connection between symbols"""
+        # Calculate distances from line endpoints to symbol centers
+        dist1_to_center = np.sqrt((x1 - sym1.position[0])**2 + (y1 - sym1.position[1])**2)
+        dist2_to_center = np.sqrt((x2 - sym2.position[0])**2 + (y2 - sym2.position[1])**2)
+        
+        # Connection should start/end near symbol edges, not centers
+        min_dist = min(sym1.size, sym2.size) * 0.3
+        max_dist = max(sym1.size, sym2.size) * 1.2
+        
+        return (min_dist < dist1_to_center < max_dist and 
+                min_dist < dist2_to_center < max_dist)
+    
+    def _determine_connection_direction(self, sym1: Symbol, sym2: Symbol, 
+                                      x1: int, y1: int, x2: int, y2: int) -> Tuple[Symbol, Symbol]:
+        """Determine the direction of connection based on symbol types and positions"""
+        # Rules for connection direction:
+        # 1. Squares/circles (data) -> operators
+        # 2. Operators -> outputs (stars)
+        # 3. Functions -> outputs
+        # 4. Main (double circle) -> statements
+        
+        # Check symbol types
+        data_types = [SymbolType.SQUARE, SymbolType.CIRCLE]
+        operator_types = [SymbolType.CONVERGENCE, SymbolType.DIVERGENCE, 
+                         SymbolType.AMPLIFICATION, SymbolType.DISTRIBUTION]
+        output_types = [SymbolType.STAR]
+        control_types = [SymbolType.TRIANGLE, SymbolType.PENTAGON, SymbolType.HEXAGON]
+        
+        # Data flows to operators
+        if sym1.type in data_types and sym2.type in operator_types:
+            return (sym1, sym2)
+        elif sym2.type in data_types and sym1.type in operator_types:
+            return (sym2, sym1)
+        
+        # Operators flow to outputs
+        if sym1.type in operator_types and sym2.type in output_types:
+            return (sym1, sym2)
+        elif sym2.type in operator_types and sym1.type in output_types:
+            return (sym2, sym1)
+        
+        # Main entry flows to everything
+        if sym1.type == SymbolType.DOUBLE_CIRCLE:
+            return (sym1, sym2)
+        elif sym2.type == SymbolType.DOUBLE_CIRCLE:
+            return (sym2, sym1)
+        
+        # Control flow based on position (top to bottom, left to right)
+        if sym1.position[1] < sym2.position[1] - 20:  # sym1 is above sym2
+            return (sym1, sym2)
+        elif sym2.position[1] < sym1.position[1] - 20:  # sym2 is above sym1
+            return (sym2, sym1)
+        elif sym1.position[0] < sym2.position[0]:  # sym1 is left of sym2
+            return (sym1, sym2)
+        else:
+            return (sym2, sym1)
     
     def _find_nearest_symbol(self, x: int, y: int, max_dist: float = 30) -> Optional[Symbol]:
         """Find the nearest symbol to a point"""
@@ -373,34 +579,22 @@ class MagicCircleDetector:
     
     def _detect_internal_pattern(self, binary: np.ndarray, x: int, y: int, radius: float) -> Optional[str]:
         """Detect pattern inside a shape (for data types)"""
-        # Create ROI around the shape
-        roi_size = int(radius * 2)
-        x1 = max(0, x - roi_size // 2)
-        y1 = max(0, y - roi_size // 2)
-        x2 = min(binary.shape[1], x + roi_size // 2)
-        y2 = min(binary.shape[0], y + roi_size // 2)
+        # Use advanced pattern detector
+        pattern_info = self.pattern_detector.analyze_pattern(binary, x, y, radius)
         
-        roi = binary[y1:y2, x1:x2]
+        # Map pattern info to string for backward compatibility
+        pattern_map = {
+            "dot": "dot",
+            "double_dot": "double_dot",
+            "triple_dot": "triple_line",  # Map 3 dots to triple_line
+            "single_line": "lines",
+            "double_line": "double_line",
+            "triple_line": "triple_line",
+            "cross": "cross",
+            "half_circle": "half_circle",
+            "grid": "grid",
+            "filled": "filled",
+            "empty": "empty"
+        }
         
-        # Count non-zero pixels (simplified pattern detection)
-        white_pixels = cv2.countNonZero(roi)
-        total_pixels = roi.shape[0] * roi.shape[1]
-        
-        if total_pixels == 0:
-            return None
-        
-        fill_ratio = white_pixels / total_pixels
-        
-        # Simple classification based on fill ratio
-        if fill_ratio < 0.1:
-            return "empty"
-        elif fill_ratio < 0.2:
-            return "dot"  # Single dot
-        elif fill_ratio < 0.3:
-            return "double_dot"  # Double dot
-        elif fill_ratio < 0.5:
-            return "lines"  # Lines pattern
-        else:
-            return "filled"
-        
-        return None
+        return pattern_map.get(pattern_info.pattern_type, pattern_info.pattern_type)
