@@ -459,7 +459,8 @@ class TestMagicCircleParser:
     def test_parse_already_visited_node(self):
         """Test parsing already visited node"""
         # Arrange
-        symbol = Symbol(SymbolType.STAR, (200, 200), 30, 0.9, {})
+        # Test with a non-star symbol (stars are always parsed)
+        symbol = Symbol(SymbolType.SQUARE, (200, 200), 30, 0.9, {})
         node = SymbolNode(symbol)
         node.visited = True
         
@@ -468,6 +469,18 @@ class TestMagicCircleParser:
         
         # Assert
         assert stmt is None
+        
+        # Test that stars are parsed even when visited
+        star_symbol = Symbol(SymbolType.STAR, (200, 200), 30, 0.9, {})
+        star_node = SymbolNode(star_symbol)
+        star_node.visited = True
+        
+        # Act
+        star_stmt = self.parser._parse_statement(star_node)
+        
+        # Assert - stars should be parsed even when visited
+        assert star_stmt is not None
+        assert isinstance(star_stmt, OutputStatement)
     
     def test_parse_with_multiple_main_entries(self):
         """Test parsing with multiple double circles (should use first)"""
@@ -510,7 +523,10 @@ class TestMagicCircleParser:
         program = self.parser.parse(symbols, connections)
         
         # Assert
-        assert len(program.globals) > 0
+        # With our change, global statements go into implicit main
+        assert program.main_entry is not None
+        assert len(program.main_entry.body) > 0
+        assert isinstance(program.main_entry.body[-1], OutputStatement)
 
 
 # Import numpy for angle calculations
