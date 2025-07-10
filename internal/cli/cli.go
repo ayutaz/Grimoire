@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -60,9 +61,7 @@ func runCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	// Execute the generated code
-	// TODO: Implement actual Python execution
-	fmt.Print(code)
-	return nil
+	return executePython(code)
 }
 
 func compileCommand(cmd *cobra.Command, args []string) error {
@@ -121,4 +120,26 @@ func processImage(imagePath string) (string, error) {
 	}
 
 	return code, nil
+}
+
+func executePython(code string) error {
+	// Create a temporary Python file
+	tmpFile, err := os.CreateTemp("", "grimoire_*.py")
+	if err != nil {
+		return fmt.Errorf("failed to create temp file: %w", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	// Write the code
+	if _, err := tmpFile.WriteString(code); err != nil {
+		return fmt.Errorf("failed to write code: %w", err)
+	}
+	tmpFile.Close()
+
+	// Execute the Python code
+	cmd := exec.Command("python3", tmpFile.Name())
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
 }
