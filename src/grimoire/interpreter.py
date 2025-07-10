@@ -184,7 +184,9 @@ class GrimoireInterpreter(ASTVisitor):
         """Execute branches in parallel"""
         results = []
         
-        with ThreadPoolExecutor(max_workers=len(node.branches)) as executor:
+        # max_workersが0にならないように最小値を1に設定
+        max_workers = max(1, len(node.branches))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit each branch for execution
             futures = []
             for branch in node.branches:
