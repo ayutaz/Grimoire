@@ -61,7 +61,7 @@ class MagicCircleDetector:
     
     def __init__(self):
         self.min_contour_area = 100
-        self.circle_threshold = 0.8
+        self.circle_threshold = 0.7  # Lowered threshold for better detection
         self.symbols: List[Symbol] = []
         self.connections: List[Connection] = []
     
@@ -131,9 +131,9 @@ class MagicCircleDetector:
                 
                 # Check if it's near the image edges (outer circle)
                 h, w = binary.shape
-                margin = min(w, h) * 0.1
-                if (x - radius < margin and y - radius < margin and 
-                    x + radius > w - margin and y + radius > h - margin):
+                margin = min(w, h) * 0.2  # Increased margin tolerance
+                # Also check if it's the largest circle found
+                if radius > min(w, h) * 0.3:  # At least 30% of image size
                     
                     return Symbol(
                         type=SymbolType.OUTER_CIRCLE,
@@ -184,7 +184,12 @@ class MagicCircleDetector:
                 x, y, radius = circle
                 
                 # Check if inside outer circle
-                dist = np.sqrt((x - outer_circle.position[0])**2 + (y - outer_circle.position[1])**2)
+                try:
+                    dx = float(x) - float(outer_circle.position[0])
+                    dy = float(y) - float(outer_circle.position[1])
+                    dist = np.sqrt(dx**2 + dy**2)
+                except (OverflowError, ValueError):
+                    continue
                 if dist + radius < outer_circle.size:
                     # Check if it's a double circle
                     is_double = self._is_double_circle(binary, x, y, radius)

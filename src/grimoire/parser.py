@@ -541,6 +541,8 @@ class MagicCircleParser:
         groups = [[] for _ in range(6)]
         for angle, child in child_angles:
             sector = int((angle + math.pi) / (2 * math.pi / 6))
+            # Ensure sector is within bounds
+            sector = min(max(0, sector), 5)
             groups[sector].append(child)
         
         return [g for g in groups if g]  # Remove empty groups
@@ -638,10 +640,12 @@ class MagicCircleParser:
                 
                 for j, other_sym in symbols_to_connect:
                     if j != i and other_sym.position[1] < star_pos[1]:  # Above the star
-                        dist = math.sqrt(
-                            (other_sym.position[0] - star_pos[0])**2 + 
-                            (other_sym.position[1] - star_pos[1])**2
-                        )
+                        try:
+                            dx = float(other_sym.position[0]) - float(star_pos[0])
+                            dy = float(other_sym.position[1]) - float(star_pos[1])
+                            dist = math.sqrt(dx**2 + dy**2)
+                        except (OverflowError, ValueError):
+                            continue
                         if dist < min_dist:
                             min_dist = dist
                             nearest = j
