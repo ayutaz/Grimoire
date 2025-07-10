@@ -37,6 +37,10 @@ class OperatorType(Enum):
     AND = "and"
     OR = "or"
     NOT = "not"
+    LOGICAL_AND = "logical_and"
+    LOGICAL_OR = "logical_or"
+    LOGICAL_NOT = "logical_not"
+    LOGICAL_XOR = "logical_xor"
 
 
 class ASTNode(ABC):
