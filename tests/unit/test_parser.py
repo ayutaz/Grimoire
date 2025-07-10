@@ -30,7 +30,7 @@ class TestParseError:
         error = ParseError(message)
         
         # Assert
-        assert str(error) == message
+        assert message in str(error)  # エラーコードが含まれるようになったため
         assert isinstance(error, Exception)
 
 
@@ -105,7 +105,7 @@ class TestMagicCircleParser:
         connections = []
         
         # Act & Assert
-        with pytest.raises(ParseError, match="No outer circle found"):
+        with pytest.raises(ParseError, match="外周円が見つかりません"):
             self.parser.parse(symbols, connections)
     
     def test_parse_minimal_program(self):
@@ -453,7 +453,7 @@ class TestMagicCircleParser:
         connections = []
         
         # Act & Assert
-        with pytest.raises(ParseError, match="No outer circle found"):
+        with pytest.raises(ParseError, match="外周円が見つかりません"):
             self.parser.parse(symbols, connections)
     
     def test_parse_already_visited_node(self):
