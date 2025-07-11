@@ -21,6 +21,11 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 		return Circle
 	}
 	
+	// Check for star shape before polygon approximation
+	if d.isStarShape(contour) {
+		return Star
+	}
+	
 	// Approximate the contour to a polygon
 	approx := d.approximatePolygon(contour)
 	vertices := len(approx)
@@ -226,4 +231,43 @@ func (d *Detector) classifyOperator(contour Contour) SymbolType {
 	
 	// More complex operator detection would go here
 	return Unknown
+}
+
+// isStarShape checks if a contour is star-shaped
+func (d *Detector) isStarShape(contour Contour) bool {
+	// Method 1: Check vertex count after approximation
+	approx := d.approximatePolygon(contour)
+	numVertices := len(approx)
+	
+	// Stars typically have 8-12 vertices (5 points + 5 inner vertices)
+	if numVertices >= 8 && numVertices <= 12 {
+		return true
+	}
+	
+	// Method 2: Check for significant variation in distances from center
+	if len(contour.Points) < 5 {
+		return false
+	}
+	
+	center := contour.Center
+	distances := make([]float64, len(contour.Points))
+	var sum float64
+	
+	for i, pt := range contour.Points {
+		dist := distance(pt, center)
+		distances[i] = dist
+		sum += dist
+	}
+	
+	mean := sum / float64(len(distances))
+	
+	// Calculate standard deviation
+	var variance float64
+	for _, dist := range distances {
+		variance += (dist - mean) * (dist - mean)
+	}
+	stdDev := math.Sqrt(variance / float64(len(distances)))
+	
+	// Star has significant variation (std > 15% of mean)
+	return stdDev > mean*0.15
 }

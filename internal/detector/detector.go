@@ -23,7 +23,7 @@ type Detector struct {
 // NewDetector creates a new detector with default settings
 func NewDetector() *Detector {
 	return &Detector{
-		minContourArea:  500,  // Increased to filter out noise
+		minContourArea:  50,   // Lower to detect small stars
 		circleThreshold: 0.7,  // Lower threshold to detect more circles
 		binaryThreshold: 128,
 		blurKernelSize:  5,
@@ -80,19 +80,8 @@ func (d *Detector) Detect(imagePath string) ([]*Symbol, error) {
 	// Detect symbols from contours
 	symbols := d.detectSymbolsFromContours(contours, binary)
 	
-	// Special check: if we only have outer circle, look for star in center
-	if len(symbols) == 1 && symbols[0].Type == OuterCircle {
-		// Create a star symbol at center
-		star := &Symbol{
-			Type:       Star,
-			Position:   symbols[0].Position,
-			Size:       50,
-			Confidence: 0.9,
-			Pattern:    "star",
-			Properties: make(map[string]interface{}),
-		}
-		symbols = append(symbols, star)
-	}
+	// Deduplicate nearby stars
+	symbols = d.deduplicateNearbyStars(symbols)
 
 	// Detect connections
 	// TODO: Implement connection detection
@@ -174,7 +163,14 @@ func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.G
 			centerDist := math.Sqrt(math.Pow(symbol.Position.X-outerCircle.Position.X, 2) + 
 				math.Pow(symbol.Position.Y-outerCircle.Position.Y, 2))
 			if centerDist < outerCircle.Size*0.9 {
-				symbols = append(symbols, symbol)
+				// For stars, only accept those near the center
+				if symbolType == Star {
+					if centerDist < outerCircle.Size*0.3 { // Within 30% of radius from center
+						symbols = append(symbols, symbol)
+					}
+				} else {
+					symbols = append(symbols, symbol)
+				}
 			}
 		} else {
 			symbols = append(symbols, symbol)
@@ -269,4 +265,54 @@ func (d *Detector) findOuterCircleFromGrayscale(gray *image.Gray) *Contour {
 	}
 	
 	return nil
+}
+
+// deduplicateNearbyStars removes duplicate star detections
+func (d *Detector) deduplicateNearbyStars(symbols []*Symbol) []*Symbol {
+	filtered := []*Symbol{}
+	
+	// Group stars by proximity
+	starGroups := [][]*Symbol{}
+	for _, symbol := range symbols {
+		if symbol.Type != Star {
+			filtered = append(filtered, symbol)
+			continue
+		}
+		
+		// Check if this star belongs to an existing group
+		addedToGroup := false
+		for i, group := range starGroups {
+			for _, existingStar := range group {
+				dist := math.Sqrt(math.Pow(symbol.Position.X-existingStar.Position.X, 2) +
+					math.Pow(symbol.Position.Y-existingStar.Position.Y, 2))
+				if dist < 50 { // Within 50 pixels
+					starGroups[i] = append(starGroups[i], symbol)
+					addedToGroup = true
+					break
+				}
+			}
+			if addedToGroup {
+				break
+			}
+		}
+		
+		if !addedToGroup {
+			starGroups = append(starGroups, []*Symbol{symbol})
+		}
+	}
+	
+	// Keep only the largest star from each group
+	for _, group := range starGroups {
+		if len(group) > 0 {
+			largest := group[0]
+			for _, star := range group[1:] {
+				if star.Size > largest.Size {
+					largest = star
+				}
+			}
+			filtered = append(filtered, largest)
+		}
+	}
+	
+	return filtered
 }
