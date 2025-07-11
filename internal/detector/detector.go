@@ -8,6 +8,9 @@ import (
 	_ "image/png"
 	"math"
 	"os"
+	"path/filepath"
+
+	grimoireErrors "github.com/ayutaz/grimoire/internal/errors"
 )
 
 // Detector handles symbol detection from images
@@ -26,9 +29,9 @@ func NewDetector() *Detector {
 		minContourArea:  50,   // Lower to detect small stars
 		circleThreshold: 0.85, // Higher threshold to distinguish squares from circles
 		binaryThreshold: 128,
-		blurKernelSize:  5,
+		blurKernelSize:  3,    // Reduced blur to preserve edges
 		adaptiveBlockSize: 11,
-		morphKernelSize: 3,
+		morphKernelSize: 2,    // Reduced to prevent breaking thin lines
 	}
 }
 
@@ -40,17 +43,35 @@ func DetectSymbols(imagePath string) ([]*Symbol, []Connection, error) {
 
 // Detect performs symbol detection on the image
 func (d *Detector) Detect(imagePath string) ([]*Symbol, []Connection, error) {
+	// Check if file exists
+	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
+		return nil, nil, grimoireErrors.FileNotFoundError(imagePath)
+	}
+
+	// Check file extension
+	ext := filepath.Ext(imagePath)
+	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
+		return nil, nil, grimoireErrors.UnsupportedFormatError(ext).
+			WithDetails(fmt.Sprintf("File: %s", filepath.Base(imagePath)))
+	}
+
 	// Open image file
 	file, err := os.Open(imagePath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to open image: %w", err)
+		return nil, nil, grimoireErrors.NewError(grimoireErrors.FileReadError, "Failed to open image file").
+			WithInnerError(err).
+			WithLocation(imagePath, 0, 0)
 	}
 	defer file.Close()
 
 	// Decode image
-	img, _, err := image.Decode(file)
+	img, format, err := image.Decode(file)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to decode image: %w", err)
+		return nil, nil, grimoireErrors.NewError(grimoireErrors.ImageProcessingError, "Failed to decode image").
+			WithInnerError(err).
+			WithDetails(fmt.Sprintf("Format: %s", format)).
+			WithLocation(imagePath, 0, 0).
+			WithSuggestion("Ensure the image is a valid PNG or JPEG file and not corrupted")
 	}
 
 	// Convert to grayscale
@@ -75,6 +96,29 @@ func (d *Detector) Detect(imagePath string) ([]*Symbol, []Connection, error) {
 		d.DebugPrintContours(contours)
 		// Save preprocessed image for debugging
 		d.DebugSaveContours(binary, contours, "debug_binary.png")
+		// Print detailed info for specific contours
+		fmt.Println("\nDebug: Checking contours in square regions:")
+		for i, contour := range contours {
+			// Check both square regions
+			if (contour.Center.X > 350 && contour.Center.X < 400 && 
+			    contour.Center.Y > 170 && contour.Center.Y < 220) ||
+			   (contour.Center.X > 200 && contour.Center.X < 250 && 
+			    contour.Center.Y > 170 && contour.Center.Y < 220) {
+				bbox := contour.getBoundingBox()
+				// approximatePolygon is in shape_classifier.go
+				vertices := len(contour.Points)
+				fmt.Printf("[%d] Square region candidate:\n", i)
+				fmt.Printf("  Center: (%d,%d)\n", contour.Center.X, contour.Center.Y)
+				fmt.Printf("  BBox: (%d,%d,%d,%d), w=%d, h=%d\n",
+					bbox.Min.X, bbox.Min.Y, bbox.Max.X, bbox.Max.Y, 
+					bbox.Dx(), bbox.Dy())
+				fmt.Printf("  Area: %.1f, Perimeter: %.1f\n", contour.Area, contour.Perimeter)
+				fmt.Printf("  Circularity: %.2f, Aspect: %.2f\n", 
+					contour.Circularity, contour.getAspectRatio())
+				fmt.Printf("  Points: %d\n", vertices)
+			}
+		}
+		fmt.Println()
 	}
 
 	// Detect symbols from contours
@@ -85,6 +129,26 @@ func (d *Detector) Detect(imagePath string) ([]*Symbol, []Connection, error) {
 
 	// Detect connections
 	connections := d.detectConnections(binary, symbols)
+
+	// Validate detection results
+	if len(symbols) == 0 {
+		return nil, nil, grimoireErrors.NoSymbolsError().
+			WithLocation(imagePath, 0, 0)
+	}
+
+	// Check for outer circle
+	hasOuterCircle := false
+	for _, sym := range symbols {
+		if sym.Type == OuterCircle {
+			hasOuterCircle = true
+			break
+		}
+	}
+
+	if !hasOuterCircle {
+		return nil, nil, grimoireErrors.NoOuterCircleError().
+			WithLocation(imagePath, 0, 0)
+	}
 
 	return symbols, connections, nil
 }
@@ -150,8 +214,12 @@ func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.G
 			continue
 		}
 
-		// Detect internal pattern
-		pattern := d.detectInternalPattern(contour, binary)
+		// Detect internal pattern for shapes that can contain patterns
+		pattern := "empty"
+		if symbolType == Square || symbolType == Circle || symbolType == Pentagon || 
+		   symbolType == Hexagon || symbolType == Star {
+			pattern = d.detectInternalPattern(contour, binary)
+		}
 
 		symbol := &Symbol{
 			Type:       symbolType,
@@ -160,6 +228,11 @@ func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.G
 			Confidence: 0.7,
 			Pattern:    pattern,
 			Properties: make(map[string]interface{}),
+		}
+		
+		if os.Getenv("GRIMOIRE_DEBUG") != "" && pattern != "empty" {
+			fmt.Printf("Symbol %s at (%d,%d) has pattern: %s\n", 
+				symbolType, contour.Center.X, contour.Center.Y, pattern)
 		}
 
 		// Only add symbols within the outer circle if one exists
@@ -195,12 +268,14 @@ func (d *Detector) preprocessImage(gray *image.Gray) *image.Gray {
 	// Apply Gaussian blur to reduce noise
 	blurred := gaussianBlur(gray, d.blurKernelSize)
 	
-	// Apply adaptive threshold
-	binary := adaptiveThreshold(blurred, d.adaptiveBlockSize, 2)
+	// Apply adaptive threshold with adjusted constant
+	binary := adaptiveThreshold(blurred, d.adaptiveBlockSize, 5) // Increased constant for better edge preservation
 	
 	// Apply morphological operations to clean up
+	// Only apply closing to connect nearby components
 	binary = morphologyClose(binary, d.morphKernelSize)
-	binary = morphologyOpen(binary, d.morphKernelSize)
+	// Skip opening to avoid breaking thin lines
+	// binary = morphologyOpen(binary, d.morphKernelSize)
 	
 	return binary
 }

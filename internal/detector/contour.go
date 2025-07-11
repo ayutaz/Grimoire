@@ -44,8 +44,11 @@ func (d *Detector) findContours(binary *image.Gray) []Contour {
 		return contours[i].Area > contours[j].Area
 	})
 	
+	// Try to merge nearby contours that might be fragments of the same shape
+	mergedContours := d.mergeNearbyContours(contours)
+	
 	// Try to merge contours that form the outer circle
-	mergedContours := d.mergeCircularContours(contours, bounds)
+	mergedContours = d.mergeCircularContours(mergedContours, bounds)
 	
 	return mergedContours
 }
@@ -418,6 +421,78 @@ func (d *Detector) mergeContours(contours []Contour) Contour {
 	merged.calculateProperties()
 	
 	return merged
+}
+
+// mergeNearbyContours merges contours that are very close to each other
+func (d *Detector) mergeNearbyContours(contours []Contour) []Contour {
+	if len(contours) <= 1 {
+		return contours
+	}
+	
+	// Track which contours have been merged
+	merged := make([]bool, len(contours))
+	result := []Contour{}
+	
+	for i := 0; i < len(contours); i++ {
+		if merged[i] {
+			continue
+		}
+		
+		// Start a new group with this contour
+		group := []Contour{contours[i]}
+		merged[i] = true
+		
+		// Find all contours close to this one
+		for j := i + 1; j < len(contours); j++ {
+			if merged[j] {
+				continue
+			}
+			
+			// Check if contours are close
+			if d.areContoursClose(contours[i], contours[j]) {
+				group = append(group, contours[j])
+				merged[j] = true
+			}
+		}
+		
+		// Merge the group if it has multiple contours
+		if len(group) > 1 {
+			mergedContour := d.mergeContours(group)
+			result = append(result, mergedContour)
+		} else {
+			result = append(result, contours[i])
+		}
+	}
+	
+	return result
+}
+
+// areContoursClose checks if two contours are close enough to be merged
+func (d *Detector) areContoursClose(c1, c2 Contour) bool {
+	// Check center distance
+	centerDist := distance(c1.Center, c2.Center)
+	if centerDist > 30 { // Max 30 pixels apart
+		return false
+	}
+	
+	// Check if bounding boxes overlap or are very close
+	bbox1 := c1.getBoundingBox()
+	bbox2 := c2.getBoundingBox()
+	
+	// Expand bounding boxes by a small margin
+	margin := 5
+	bbox1.Min.X -= margin
+	bbox1.Min.Y -= margin
+	bbox1.Max.X += margin
+	bbox1.Max.Y += margin
+	
+	// Check for overlap
+	if bbox1.Min.X > bbox2.Max.X || bbox2.Min.X > bbox1.Max.X ||
+	   bbox1.Min.Y > bbox2.Max.Y || bbox2.Min.Y > bbox1.Max.Y {
+		return false
+	}
+	
+	return true
 }
 
 // min returns the minimum of two integers
