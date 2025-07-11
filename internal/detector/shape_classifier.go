@@ -7,7 +7,32 @@ import (
 
 // classifyShape classifies a contour into different shape types
 func (d *Detector) classifyShape(contour Contour) SymbolType {
-	// Check for circle first
+	// Approximate the contour to a polygon first
+	approx := d.approximatePolygon(contour)
+	vertices := len(approx)
+	
+	// Check for star shape before other shapes
+	if d.isStarShape(contour) {
+		return Star
+	}
+	
+	// Check for 4 vertices first (square detection)
+	if vertices == 4 {
+		if d.isSquare(approx) {
+			return Square
+		}
+		// Check if it's actually a rounded square misclassified as circle
+		if d.isRoundedSquare(contour, approx) {
+			return Square
+		}
+	}
+	
+	// Also check for rounded squares even without exact 4 vertices
+	if vertices >= 3 && vertices <= 6 && d.isRoundedSquare(contour, approx) {
+		return Square
+	}
+	
+	// Then check for circle
 	if contour.isCircle(d.circleThreshold) {
 		// Check if it's the outer circle by size and perimeter
 		// Outer circle should be large
@@ -21,24 +46,10 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 		return Circle
 	}
 	
-	// Check for star shape before polygon approximation
-	if d.isStarShape(contour) {
-		return Star
-	}
-	
-	// Approximate the contour to a polygon
-	approx := d.approximatePolygon(contour)
-	vertices := len(approx)
-	
+	// Check other polygon shapes
 	switch vertices {
 	case 3:
 		return Triangle
-	case 4:
-		if d.isSquare(approx) {
-			return Square
-		}
-		// Could be other quadrilateral
-		return Unknown
 	case 5:
 		return Pentagon
 	case 6:
@@ -80,7 +91,14 @@ func (d *Detector) approximatePolygon(contour Contour) []image.Point {
 	}
 	
 	// Douglas-Peucker algorithm for polygon approximation
-	epsilon := contour.Perimeter * 0.02 // 2% of perimeter
+	// Use adaptive epsilon based on shape characteristics
+	epsilon := contour.Perimeter * 0.04 // 4% of perimeter for better square detection
+	
+	// For smaller shapes, use a minimum epsilon
+	if epsilon < 2.0 {
+		epsilon = 2.0
+	}
+	
 	return d.douglasPeucker(contour.Points, epsilon)
 }
 
@@ -151,7 +169,7 @@ func (d *Detector) isSquare(vertices []image.Point) bool {
 		sides[i] = distance(vertices[i], vertices[j])
 	}
 	
-	// Check if all sides are within 10% of each other
+	// Check if all sides are within 30% of each other (more lenient)
 	minSide := sides[0]
 	maxSide := sides[0]
 	for _, side := range sides {
@@ -163,7 +181,62 @@ func (d *Detector) isSquare(vertices []image.Point) bool {
 		}
 	}
 	
-	return (maxSide-minSide)/minSide < 0.1
+	// More lenient check for square-like shapes
+	if (maxSide-minSide)/minSide > 0.3 {
+		return false
+	}
+	
+	// Check angles are approximately 90 degrees
+	for i := 0; i < 4; i++ {
+		p1 := vertices[i]
+		p2 := vertices[(i+1)%4]
+		p3 := vertices[(i+2)%4]
+		
+		angle := d.calculateAngle(p1, p2, p3)
+		// Check if angle is close to 90 degrees (pi/2)
+		if math.Abs(angle - math.Pi/2) > math.Pi/6 { // 30 degree tolerance
+			return false
+		}
+	}
+	
+	return true
+}
+
+// isRoundedSquare checks if a contour is a rounded square
+func (d *Detector) isRoundedSquare(contour Contour, approx []image.Point) bool {
+	// Check aspect ratio
+	aspectRatio := contour.getAspectRatio()
+	if aspectRatio < 0.8 || aspectRatio > 1.2 {
+		return false
+	}
+	
+	// Check if the contour fills most of its bounding box
+	bbox := contour.getBoundingBox()
+	bboxArea := float64(bbox.Dx() * bbox.Dy())
+	fillRatio := contour.Area / bboxArea
+	
+	// Squares fill about 80-90% of their bounding box
+	// Circles fill about 78.5% (pi/4)
+	if fillRatio > 0.82 && fillRatio < 0.95 {
+		return true
+	}
+	
+	return false
+}
+
+// calculateAngle calculates the angle at p2 formed by p1-p2-p3
+func (d *Detector) calculateAngle(p1, p2, p3 image.Point) float64 {
+	// Calculate vectors
+	v1x := float64(p1.X - p2.X)
+	v1y := float64(p1.Y - p2.Y)
+	v2x := float64(p3.X - p2.X)
+	v2y := float64(p3.Y - p2.Y)
+	
+	// Calculate angle using dot product
+	dot := v1x*v2x + v1y*v2y
+	det := v1x*v2y - v1y*v2x
+	
+	return math.Atan2(det, dot)
 }
 
 // isStar checks if vertices form a star pattern
@@ -217,20 +290,255 @@ func (d *Detector) isDoubleCircle(contour Contour) bool {
 
 // classifyOperator attempts to classify special operator symbols
 func (d *Detector) classifyOperator(contour Contour) SymbolType {
-	// This is a placeholder - real implementation would analyze
-	// the specific shape patterns for each operator
-	
-	// Check aspect ratio and area for operator detection
+	// Get shape characteristics
 	aspectRatio := contour.getAspectRatio()
+	approx := d.approximatePolygon(contour)
+	vertices := len(approx)
 	
-	// Operators tend to have specific aspect ratios
-	if aspectRatio > 2.5 {
-		// Possibly a transfer operator (horizontal arrow)
-		return Transfer
+	// Analyze shape for different operators
+	
+	// Convergence (⟐) - typically has converging lines
+	if vertices >= 3 && vertices <= 5 && d.isConvergingShape(contour, approx) {
+		return Convergence
 	}
 	
-	// More complex operator detection would go here
+	// Divergence (⟑) - typically has diverging lines
+	if vertices >= 3 && vertices <= 5 && d.isDivergingShape(contour, approx) {
+		return Divergence
+	}
+	
+	// Amplification (✦) - 4-pointed star
+	if vertices >= 8 && vertices <= 10 && d.isStar(approx, 4) {
+		return Amplification
+	}
+	
+	// Distribution (⟠) - 8-segmented circle
+	if vertices >= 6 && vertices <= 10 && contour.Circularity > 0.6 {
+		// Check for radial pattern
+		if d.hasRadialPattern(contour) {
+			return Distribution
+		}
+	}
+	
+	// Transfer (→) - arrow shape
+	if aspectRatio > 2.0 && vertices >= 5 && vertices <= 7 {
+		if d.isArrowShape(approx) {
+			return Transfer
+		}
+	}
+	
+	// Equal (=) - two parallel lines
+	if aspectRatio > 2.0 && d.isParallelLines(contour) {
+		return Equal
+	}
+	
+	// Less than (<) and Greater than (>)
+	if vertices == 3 && aspectRatio > 1.5 {
+		if d.isPointingLeft(approx) {
+			return LessThan
+		} else if d.isPointingRight(approx) {
+			return GreaterThan
+		}
+	}
+	
 	return Unknown
+}
+
+// isConvergingShape checks if the shape has converging lines
+func (d *Detector) isConvergingShape(contour Contour, approx []image.Point) bool {
+	if len(approx) < 3 {
+		return false
+	}
+	
+	// Check if lines converge to a point
+	bbox := contour.getBoundingBox()
+	// Simple check: top is wider than bottom
+	topWidth := 0.0
+	bottomWidth := 0.0
+	
+	for _, pt := range approx {
+		if pt.Y < bbox.Min.Y + bbox.Dy()/3 {
+			topWidth += float64(pt.X)
+		} else if pt.Y > bbox.Max.Y - bbox.Dy()/3 {
+			bottomWidth += float64(pt.X)
+		}
+	}
+	
+	return topWidth > bottomWidth*1.5
+}
+
+// isDivergingShape checks if the shape has diverging lines
+func (d *Detector) isDivergingShape(contour Contour, approx []image.Point) bool {
+	if len(approx) < 3 {
+		return false
+	}
+	
+	// Opposite of converging
+	bbox := contour.getBoundingBox()
+	topWidth := 0.0
+	bottomWidth := 0.0
+	
+	for _, pt := range approx {
+		if pt.Y < bbox.Min.Y + bbox.Dy()/3 {
+			topWidth += float64(pt.X)
+		} else if pt.Y > bbox.Max.Y - bbox.Dy()/3 {
+			bottomWidth += float64(pt.X)
+		}
+	}
+	
+	return bottomWidth > topWidth*1.5
+}
+
+// hasRadialPattern checks if the contour has a radial pattern
+func (d *Detector) hasRadialPattern(contour Contour) bool {
+	// Check for significant variation in radius
+	center := contour.Center
+	distances := make([]float64, 0)
+	
+	// Sample points around the contour
+	step := len(contour.Points) / 16
+	if step < 1 {
+		step = 1
+	}
+	
+	for i := 0; i < len(contour.Points); i += step {
+		dist := distance(contour.Points[i], center)
+		distances = append(distances, dist)
+	}
+	
+	if len(distances) < 8 {
+		return false
+	}
+	
+	// Check for alternating pattern
+	highCount := 0
+	lowCount := 0
+	avg := 0.0
+	for _, d := range distances {
+		avg += d
+	}
+	avg /= float64(len(distances))
+	
+	for i, d := range distances {
+		if i%2 == 0 && d > avg*1.1 {
+			highCount++
+		} else if i%2 == 1 && d < avg*0.9 {
+			lowCount++
+		}
+	}
+	
+	return highCount > len(distances)/4 && lowCount > len(distances)/4
+}
+
+// isArrowShape checks if the shape is an arrow
+func (d *Detector) isArrowShape(approx []image.Point) bool {
+	if len(approx) < 5 || len(approx) > 7 {
+		return false
+	}
+	
+	// Arrow typically has a pointed end
+	// Find the rightmost point
+	rightmost := approx[0]
+	for _, pt := range approx {
+		if pt.X > rightmost.X {
+			rightmost = pt
+		}
+	}
+	
+	// Check if there are points above and below the rightmost
+	hasAbove := false
+	hasBelow := false
+	for _, pt := range approx {
+		if pt.X < rightmost.X-10 {
+			if pt.Y < rightmost.Y {
+				hasAbove = true
+			}
+			if pt.Y > rightmost.Y {
+				hasBelow = true
+			}
+		}
+	}
+	
+	return hasAbove && hasBelow
+}
+
+// isParallelLines checks if the contour represents parallel lines
+func (d *Detector) isParallelLines(contour Contour) bool {
+	// Check if the contour has two distinct horizontal regions
+	bbox := contour.getBoundingBox()
+	if bbox.Dy() > bbox.Dx()/2 {
+		return false // Too tall for equals sign
+	}
+	
+	// Count points in upper and lower thirds
+	upperCount := 0
+	middleCount := 0
+	lowerCount := 0
+	
+	thirdHeight := bbox.Dy() / 3
+	for _, pt := range contour.Points {
+		relY := pt.Y - bbox.Min.Y
+		if relY < thirdHeight {
+			upperCount++
+		} else if relY < 2*thirdHeight {
+			middleCount++
+		} else {
+			lowerCount++
+		}
+	}
+	
+	// Parallel lines have points in upper and lower, few in middle
+	return upperCount > 10 && lowerCount > 10 && middleCount < (upperCount+lowerCount)/4
+}
+
+// isPointingLeft checks if a triangle points left (<)
+func (d *Detector) isPointingLeft(approx []image.Point) bool {
+	if len(approx) != 3 {
+		return false
+	}
+	
+	// Find leftmost vertex
+	leftmost := approx[0]
+	for _, pt := range approx {
+		if pt.X < leftmost.X {
+			leftmost = pt
+		}
+	}
+	
+	// Check if other vertices are to the right
+	otherCount := 0
+	for _, pt := range approx {
+		if pt.X > leftmost.X+10 {
+			otherCount++
+		}
+	}
+	
+	return otherCount >= 2
+}
+
+// isPointingRight checks if a triangle points right (>)
+func (d *Detector) isPointingRight(approx []image.Point) bool {
+	if len(approx) != 3 {
+		return false
+	}
+	
+	// Find rightmost vertex
+	rightmost := approx[0]
+	for _, pt := range approx {
+		if pt.X > rightmost.X {
+			rightmost = pt
+		}
+	}
+	
+	// Check if other vertices are to the left
+	otherCount := 0
+	for _, pt := range approx {
+		if pt.X < rightmost.X-10 {
+			otherCount++
+		}
+	}
+	
+	return otherCount >= 2
 }
 
 // isStarShape checks if a contour is star-shaped

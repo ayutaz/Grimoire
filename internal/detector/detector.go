@@ -24,7 +24,7 @@ type Detector struct {
 func NewDetector() *Detector {
 	return &Detector{
 		minContourArea:  50,   // Lower to detect small stars
-		circleThreshold: 0.7,  // Lower threshold to detect more circles
+		circleThreshold: 0.85, // Higher threshold to distinguish squares from circles
 		binaryThreshold: 128,
 		blurKernelSize:  5,
 		adaptiveBlockSize: 11,

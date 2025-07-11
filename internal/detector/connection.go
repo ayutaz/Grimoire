@@ -77,13 +77,37 @@ func (d *Detector) detectEdges(binary *image.Gray) *image.Gray {
 	return edges
 }
 
-// detectLines detects lines using Hough transform
+// detectLines detects lines using simplified Hough transform
 func (d *Detector) detectLines(edges *image.Gray) []Line {
 	lines := []Line{}
 	bounds := edges.Bounds()
 	
-	// Simplified line detection - scan for horizontal and vertical lines
-	// Horizontal lines
+	// First, collect all edge points
+	edgePoints := []image.Point{}
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			if edges.GrayAt(x, y).Y > 128 {
+				edgePoints = append(edgePoints, image.Point{X: x, Y: y})
+			}
+		}
+	}
+	
+	// Use simple line segment detection
+	lines = append(lines, d.detectHorizontalLines(edges)...)
+	lines = append(lines, d.detectVerticalLines(edges)...)
+	lines = append(lines, d.detectDiagonalLines(edges)...)
+	
+	// Merge connected line segments
+	lines = d.mergeConnectedLines(lines)
+	
+	return lines
+}
+
+// detectHorizontalLines detects horizontal lines
+func (d *Detector) detectHorizontalLines(edges *image.Gray) []Line {
+	lines := []Line{}
+	bounds := edges.Bounds()
+	
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		lineStart := -1
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
@@ -101,9 +125,23 @@ func (d *Detector) detectLines(edges *image.Gray) []Line {
 				lineStart = -1
 			}
 		}
+		// Handle line extending to edge
+		if lineStart != -1 && bounds.Max.X - lineStart > 20 {
+			lines = append(lines, Line{
+				Start: image.Point{X: lineStart, Y: y},
+				End:   image.Point{X: bounds.Max.X - 1, Y: y},
+			})
+		}
 	}
 	
-	// Vertical lines
+	return lines
+}
+
+// detectVerticalLines detects vertical lines
+func (d *Detector) detectVerticalLines(edges *image.Gray) []Line {
+	lines := []Line{}
+	bounds := edges.Bounds()
+	
 	for x := bounds.Min.X; x < bounds.Max.X; x++ {
 		lineStart := -1
 		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
@@ -121,12 +159,202 @@ func (d *Detector) detectLines(edges *image.Gray) []Line {
 				lineStart = -1
 			}
 		}
+		// Handle line extending to edge
+		if lineStart != -1 && bounds.Max.Y - lineStart > 20 {
+			lines = append(lines, Line{
+				Start: image.Point{X: x, Y: lineStart},
+				End:   image.Point{X: x, Y: bounds.Max.Y - 1},
+			})
+		}
 	}
-	
-	// TODO: Add diagonal line detection
 	
 	return lines
 }
+
+// detectDiagonalLines detects diagonal lines using line following
+func (d *Detector) detectDiagonalLines(edges *image.Gray) []Line {
+	lines := []Line{}
+	bounds := edges.Bounds()
+	visited := make(map[image.Point]bool)
+	
+	// Scan for diagonal lines
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			pt := image.Point{X: x, Y: y}
+			if edges.GrayAt(x, y).Y > 128 && !visited[pt] {
+				// Try to follow a diagonal line
+				line := d.followDiagonalLine(edges, pt, visited)
+				if line != nil {
+					lines = append(lines, *line)
+				}
+			}
+		}
+	}
+	
+	return lines
+}
+
+// followDiagonalLine follows a diagonal line from a starting point
+func (d *Detector) followDiagonalLine(edges *image.Gray, start image.Point, visited map[image.Point]bool) *Line {
+	bounds := edges.Bounds()
+	
+	// Try each diagonal direction
+	directions := []image.Point{
+		{X: 1, Y: 1},   // Down-right
+		{X: -1, Y: 1},  // Down-left
+		{X: 1, Y: -1},  // Up-right
+		{X: -1, Y: -1}, // Up-left
+	}
+	
+	for _, dir := range directions {
+		points := []image.Point{start}
+		current := start
+		visited[current] = true
+		
+		// Follow the line in this direction
+		for {
+			next := image.Point{X: current.X + dir.X, Y: current.Y + dir.Y}
+			
+			// Check bounds
+			if next.X < bounds.Min.X || next.X >= bounds.Max.X ||
+				next.Y < bounds.Min.Y || next.Y >= bounds.Max.Y {
+				break
+			}
+			
+			// Check if there's an edge pixel
+			found := false
+			
+			// Check exact position and nearby pixels (allow some deviation)
+			for dy := -1; dy <= 1; dy++ {
+				for dx := -1; dx <= 1; dx++ {
+					checkPt := image.Point{X: next.X + dx, Y: next.Y + dy}
+					if checkPt.X >= bounds.Min.X && checkPt.X < bounds.Max.X &&
+						checkPt.Y >= bounds.Min.Y && checkPt.Y < bounds.Max.Y &&
+						edges.GrayAt(checkPt.X, checkPt.Y).Y > 128 && !visited[checkPt] {
+						next = checkPt
+						found = true
+						break
+					}
+				}
+				if found {
+					break
+				}
+			}
+			
+			if !found {
+				break
+			}
+			
+			visited[next] = true
+			points = append(points, next)
+			current = next
+		}
+		
+		// If we found a diagonal line of sufficient length
+		if len(points) > 15 { // Min diagonal line length
+			return &Line{
+				Start: points[0],
+				End:   points[len(points)-1],
+			}
+		}
+	}
+	
+	return nil
+}
+
+// mergeConnectedLines merges line segments that are connected
+func (d *Detector) mergeConnectedLines(lines []Line) []Line {
+	if len(lines) == 0 {
+		return lines
+	}
+	
+	merged := []Line{}
+	used := make([]bool, len(lines))
+	
+	for i := 0; i < len(lines); i++ {
+		if used[i] {
+			continue
+		}
+		
+		current := lines[i]
+		used[i] = true
+		
+		// Try to extend this line by finding connected segments
+		extended := true
+		for extended {
+			extended = false
+			
+			for j := 0; j < len(lines); j++ {
+				if used[j] {
+					continue
+				}
+				
+				// Check if lines are connected and aligned
+				if d.linesConnected(current, lines[j]) && d.linesAligned(current, lines[j]) {
+					// Merge the lines
+					current = d.mergeLines(current, lines[j])
+					used[j] = true
+					extended = true
+				}
+			}
+		}
+		
+		merged = append(merged, current)
+	}
+	
+	return merged
+}
+
+// linesConnected checks if two lines are connected (endpoints close)
+func (d *Detector) linesConnected(l1, l2 Line) bool {
+	threshold := 5.0
+	
+	// Check all endpoint combinations
+	dist1 := distance(l1.End, l2.Start)
+	dist2 := distance(l1.End, l2.End)
+	dist3 := distance(l1.Start, l2.Start)
+	dist4 := distance(l1.Start, l2.End)
+	
+	return dist1 < threshold || dist2 < threshold || dist3 < threshold || dist4 < threshold
+}
+
+// linesAligned checks if two lines are roughly aligned
+func (d *Detector) linesAligned(l1, l2 Line) bool {
+	// Calculate angles
+	angle1 := math.Atan2(float64(l1.End.Y-l1.Start.Y), float64(l1.End.X-l1.Start.X))
+	angle2 := math.Atan2(float64(l2.End.Y-l2.Start.Y), float64(l2.End.X-l2.Start.X))
+	
+	// Normalize angle difference
+	diff := math.Abs(angle1 - angle2)
+	if diff > math.Pi {
+		diff = 2*math.Pi - diff
+	}
+	
+	// Allow 30 degree deviation
+	return diff < math.Pi/6
+}
+
+// mergeLines merges two connected lines into one
+func (d *Detector) mergeLines(l1, l2 Line) Line {
+	// Find the two points that are farthest apart
+	points := []image.Point{l1.Start, l1.End, l2.Start, l2.End}
+	maxDist := 0.0
+	var start, end image.Point
+	
+	for i := 0; i < len(points); i++ {
+		for j := i + 1; j < len(points); j++ {
+			dist := distance(points[i], points[j])
+			if dist > maxDist {
+				maxDist = dist
+				start = points[i]
+				end = points[j]
+			}
+		}
+	}
+	
+	return Line{Start: start, End: end}
+}
+
 
 // findNearestSymbol finds the nearest symbol to a point
 func (d *Detector) findNearestSymbol(point image.Point, symbols []*Symbol) *Symbol {
