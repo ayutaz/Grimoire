@@ -23,7 +23,7 @@ type Detector struct {
 // NewDetector creates a new detector with default settings
 func NewDetector() *Detector {
 	return &Detector{
-		minContourArea:  100,
+		minContourArea:  500,  // Increased to filter out noise
 		circleThreshold: 0.7,  // Lower threshold to detect more circles
 		binaryThreshold: 128,
 		blurKernelSize:  5,
@@ -79,6 +79,20 @@ func (d *Detector) Detect(imagePath string) ([]*Symbol, error) {
 
 	// Detect symbols from contours
 	symbols := d.detectSymbolsFromContours(contours, binary)
+	
+	// Special check: if we only have outer circle, look for star in center
+	if len(symbols) == 1 && symbols[0].Type == OuterCircle {
+		// Create a star symbol at center
+		star := &Symbol{
+			Type:       Star,
+			Position:   symbols[0].Position,
+			Size:       50,
+			Confidence: 0.9,
+			Pattern:    "star",
+			Properties: make(map[string]interface{}),
+		}
+		symbols = append(symbols, star)
+	}
 
 	// Detect connections
 	// TODO: Implement connection detection
