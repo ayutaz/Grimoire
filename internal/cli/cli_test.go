@@ -85,7 +85,10 @@ func TestExecute(t *testing.T) {
 
 			// Read output
 			var buf bytes.Buffer
-			buf.ReadFrom(r)
+			_, readErr := buf.ReadFrom(r)
+			if readErr != nil {
+				t.Fatalf("Failed to read output: %v", readErr)
+			}
 			output := buf.String()
 
 			if tt.wantErr {
@@ -170,7 +173,10 @@ func TestCompileCommand(t *testing.T) {
 			
 			// Error output goes to stderr, not stdout
 			var buf bytes.Buffer
-			buf.ReadFrom(r)
+			_, readErr := buf.ReadFrom(r)
+			if readErr != nil {
+				t.Fatalf("Failed to read output: %v", readErr)
+			}
 			output := buf.String()
 			
 			// Should have error message
@@ -211,7 +217,10 @@ func TestDebugCommand(t *testing.T) {
 	
 	// But should show debug attempt
 	var buf bytes.Buffer
-	buf.ReadFrom(r)
+	_, readErr := buf.ReadFrom(r)
+	if readErr != nil {
+		t.Fatalf("Failed to read output: %v", readErr)
+	}
 	output := buf.String()
 	
 	assert.True(t,
@@ -284,7 +293,10 @@ func TestFileValidation(t *testing.T) {
 			os.Stderr = oldStderr
 
 			var buf bytes.Buffer
-			buf.ReadFrom(r)
+			_, readErr := buf.ReadFrom(r)
+			if readErr != nil {
+				t.Fatalf("Failed to read error output: %v", readErr)
+			}
 			errOutput := buf.String()
 
 			if !tt.wantValid {
