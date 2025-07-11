@@ -15,16 +15,22 @@ var (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	start := time.Now()
 
 	// CLIの実行
 	if err := cli.Execute(version, commit, date); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		return 1
 	}
 
 	// デバッグモードの場合は実行時間を表示
 	if os.Getenv("GRIMOIRE_DEBUG") != "" {
 		fmt.Fprintf(os.Stderr, "Execution time: %v\n", time.Since(start))
 	}
+	
+	return 0
 }

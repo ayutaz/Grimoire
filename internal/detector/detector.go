@@ -130,7 +130,7 @@ func (d *Detector) Detect(imagePath string) ([]*Symbol, []Connection, error) {
 	symbols = d.deduplicateNearbyStars(symbols)
 
 	// Detect connections
-	connections := d.detectConnections(binary, symbols)
+	connections := d.improvedDetectConnections(binary, symbols)
 
 	// Validate detection results
 	if len(symbols) == 0 {

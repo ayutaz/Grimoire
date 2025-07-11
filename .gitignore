@@ -61,6 +61,8 @@ dist/
 coverage.out
 coverage.html
 *.prof
+*_coverage.out
+*.bench
 
 # Debug files
 debug_*.png

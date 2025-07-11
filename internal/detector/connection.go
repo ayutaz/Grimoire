@@ -12,8 +12,8 @@ import (
 func (d *Detector) detectConnections(binary *image.Gray, symbols []*Symbol) []Connection {
 	connections := []Connection{}
 
-	// Find lines using edge detection
-	edges := d.detectEdges(binary)
+	// Find lines using improved edge detection
+	edges := d.improvedEdgeDetection(binary)
 	lines := d.detectLines(edges)
 
 	// Debug: save edge detection result
@@ -106,7 +106,7 @@ func (d *Detector) detectLines(edges *image.Gray) []Line {
 	// Use simple line segment detection
 	lines = append(lines, d.detectHorizontalLines(edges)...)
 	lines = append(lines, d.detectVerticalLines(edges)...)
-	lines = append(lines, d.detectDiagonalLines(edges)...)
+	lines = append(lines, d.improvedDetectDiagonalLines(edges)...)
 
 	// Merge connected line segments
 	lines = d.mergeConnectedLines(lines)

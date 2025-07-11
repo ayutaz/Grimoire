@@ -92,7 +92,10 @@ fmt:
 clean:
 	rm -f $(BINARY_NAME)
 	rm -rf dist/
-	rm -f coverage.out coverage.html
+	rm -f coverage.out coverage.html *_coverage.out
+	rm -f *.test *.bench *.prof
+	rm -f debug_*.png debug_*.txt
+	find . -name "*.test" -o -name "*.tmp" | grep -v ".git" | xargs rm -f 2>/dev/null || true
 
 # Install the binary
 install: build

@@ -1,0 +1,182 @@
+# golangci-lint configuration
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  # Timeout for analysis
+  timeout: 5m
+  
+  # Go version to target
+  go: '1.21'
+
+  # Include test files
+  tests: true
+
+  # Which dirs to skip
+  skip-dirs:
+    - vendor
+    - .git
+    - .github
+
+# Output configuration
+output:
+  # Format of output
+  format: colored-line-number
+  
+  # Print lines of code with issue
+  print-issued-lines: true
+  
+  # Print linter name in the end of issue text
+  print-linter-name: true
+
+# Linter settings
+linters-settings:
+  govet:
+    # Check for shadowed variables
+    check-shadowing: true
+  
+  gocyclo:
+    # Minimal code complexity to report
+    min-complexity: 20
+  
+  gocognit:
+    # Minimal cognitive complexity to report
+    min-complexity: 40
+  
+  goconst:
+    # Minimal length of string constant
+    min-len: 3
+    # Minimal occurrences count to trigger
+    min-occurrences: 3
+  
+  misspell:
+    # Locale to use
+    locale: US
+  
+  lll:
+    # Max line length
+    line-length: 120
+    # Tab width in spaces
+    tab-width: 1
+  
+  gocritic:
+    # Enable all checks
+    enabled-tags:
+      - diagnostic
+      - performance
+      - style
+      - experimental
+    
+    disabled-checks:
+      - hugeParam # Can be noisy for large structs
+      - rangeValCopy # Sometimes copying is intentional
+  
+  gosimple:
+    # Go version to target
+    go: '1.21'
+  
+  staticcheck:
+    # Go version to target
+    go: '1.21'
+  
+  stylecheck:
+    # Go version to target
+    go: '1.21'
+  
+  unused:
+    # Go version to target
+    go: '1.21'
+
+# Linters to enable
+linters:
+  enable:
+    # Default linters
+    - govet
+    - errcheck
+    - staticcheck
+    - gosimple
+    - unused      # Replaces structcheck, varcheck, deadcode
+    - ineffassign
+    - typecheck
+    
+    # Additional linters
+    - gocyclo
+    - dupl
+    - goconst
+    - gocritic
+    - gofmt
+    - goimports
+    - revive
+    - misspell
+    - lll
+    - unconvert
+    - gocognit
+    - nestif
+    - prealloc
+    - exportloopref  # Replaces scopelint
+    - bodyclose
+    - stylecheck
+  
+  disable:
+    # Deprecated linters
+    - maligned
+    - interfacer
+    - golint
+    
+    # Too strict or noisy
+    - funlen
+    - godox
+    - gochecknoinits
+    - gochecknoglobals
+    - godot
+    - wsl
+    - whitespace
+    - nlreturn
+    - gomnd
+    - exhaustive
+    - exhaustivestruct
+    - errorlint
+    - noctx
+    - sqlclosecheck
+    - rowserrcheck
+    - makezero
+
+# Issues configuration
+issues:
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    # Exclude test files from some linters
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - goconst
+    
+    # Exclude generated files
+    - path: \.pb\.go
+      linters:
+        - all
+    
+    # Exclude vendor
+    - path: vendor/
+      linters:
+        - all
+    
+    # Exclude benchmarks from complexity checks
+    - path: _bench\.go
+      linters:
+        - gocyclo
+        - gocognit
+  
+  # Maximum issues count per one linter
+  max-issues-per-linter: 50
+  
+  # Maximum count of issues with the same text
+  max-same-issues: 10
+  
+  # Show only new issues created after git revision
+  new: false
+  
+  # Fix found issues (if it's supported by the linter)
+  fix: false
