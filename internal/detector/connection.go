@@ -1,9 +1,11 @@
 package detector
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"math"
+	"os"
 )
 
 // detectConnections detects connections between symbols
@@ -14,11 +16,23 @@ func (d *Detector) detectConnections(binary *image.Gray, symbols []*Symbol) []Co
 	edges := d.detectEdges(binary)
 	lines := d.detectLines(edges)
 	
+	// Debug: save edge detection result
+	if os.Getenv("GRIMOIRE_DEBUG") != "" {
+		d.DebugSaveImage(edges, "debug_edges.png")
+		fmt.Printf("Detected %d lines\n", len(lines))
+	}
+	
 	// For each line, check if it connects symbols
 	for _, line := range lines {
 		// Find symbols near line endpoints
 		fromSymbol := d.findNearestSymbol(line.Start, symbols)
 		toSymbol := d.findNearestSymbol(line.End, symbols)
+		
+		if os.Getenv("GRIMOIRE_DEBUG") != "" && (fromSymbol != nil || toSymbol != nil) {
+			fmt.Printf("Line (%d,%d)->(%d,%d): from=%v, to=%v\n", 
+				line.Start.X, line.Start.Y, line.End.X, line.End.Y,
+				fromSymbol != nil, toSymbol != nil)
+		}
 		
 		if fromSymbol != nil && toSymbol != nil && fromSymbol != toSymbol {
 			// Validate connection
@@ -37,6 +51,12 @@ func (d *Detector) detectConnections(binary *image.Gray, symbols []*Symbol) []Co
 				}
 				
 				connections = append(connections, conn)
+				
+				if os.Getenv("GRIMOIRE_DEBUG") != "" {
+					fmt.Printf("Connection added: %s -> %s (%s)\n", from.Type, to.Type, connType)
+				}
+			} else if os.Getenv("GRIMOIRE_DEBUG") != "" {
+				fmt.Printf("Connection invalid between %s and %s\n", fromSymbol.Type, toSymbol.Type)
 			}
 		}
 	}
@@ -66,7 +86,7 @@ func (d *Detector) detectEdges(binary *image.Gray) *image.Gray {
 				int(binary.GrayAt(x-1, y-1).Y) - 2*int(binary.GrayAt(x, y-1).Y) - int(binary.GrayAt(x+1, y-1).Y)
 			
 			magnitude := int(math.Sqrt(float64(gx*gx + gy*gy)))
-			if magnitude > 100 {
+			if magnitude > 50 { // Lower threshold for better edge detection
 				edges.Set(x, y, color.Gray{255})
 			} else {
 				edges.Set(x, y, color.Gray{0})
@@ -359,7 +379,7 @@ func (d *Detector) mergeLines(l1, l2 Line) Line {
 // findNearestSymbol finds the nearest symbol to a point
 func (d *Detector) findNearestSymbol(point image.Point, symbols []*Symbol) *Symbol {
 	var nearest *Symbol
-	minDist := 30.0 // Max distance threshold
+	minDist := 50.0 // Increased threshold to find more connections
 	
 	for _, symbol := range symbols {
 		dist := math.Sqrt(math.Pow(float64(point.X) - symbol.Position.X, 2) +
@@ -376,24 +396,30 @@ func (d *Detector) findNearestSymbol(point image.Point, symbols []*Symbol) *Symb
 
 // isValidConnection validates if a line represents a valid connection
 func (d *Detector) isValidConnection(line Line, from, to *Symbol) bool {
-	// Check if line endpoints are near symbol edges (not centers)
+	// Skip connections to/from outer circle
+	if from.Type == OuterCircle || to.Type == OuterCircle {
+		return false
+	}
+	
+	// Check if line endpoints are near symbols
 	startDist := math.Sqrt(math.Pow(float64(line.Start.X) - from.Position.X, 2) +
 		math.Pow(float64(line.Start.Y) - from.Position.Y, 2))
 	endDist := math.Sqrt(math.Pow(float64(line.End.X) - to.Position.X, 2) +
 		math.Pow(float64(line.End.Y) - to.Position.Y, 2))
 	
-	// Distance should be between 30% and 120% of symbol size
-	minDist := from.Size * 0.3
-	maxDist := from.Size * 1.2
+	// More lenient distance check
+	// Line endpoint should be within reasonable distance of symbol center
+	maxDistFrom := math.Max(from.Size * 2.0, 60.0)
+	maxDistTo := math.Max(to.Size * 2.0, 60.0)
 	
-	if startDist < minDist || startDist > maxDist {
+	if startDist > maxDistFrom || endDist > maxDistTo {
 		return false
 	}
 	
-	minDist = to.Size * 0.3
-	maxDist = to.Size * 1.2
-	
-	if endDist < minDist || endDist > maxDist {
+	// Ensure line is long enough to be a real connection
+	lineLength := math.Sqrt(math.Pow(float64(line.End.X - line.Start.X), 2) +
+		math.Pow(float64(line.End.Y - line.Start.Y), 2))
+	if lineLength < 20 {
 		return false
 	}
 	

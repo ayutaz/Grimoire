@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"math"
+	"os"
 
 	"github.com/ayutaz/grimoire/internal/detector"
 )
@@ -44,6 +45,26 @@ func (p *Parser) Parse(symbols []*detector.Symbol, connections []detector.Connec
 	
 	// Build symbol graph
 	p.buildSymbolGraph()
+	
+	// Debug: print symbol graph
+	if os.Getenv("GRIMOIRE_DEBUG") != "" {
+		fmt.Printf("Symbol graph:\n")
+		for i, node := range p.symbolGraph {
+			fmt.Printf("[%d] %s: %d children\n", i, p.symbols[i].Type, len(node.children))
+			for _, child := range node.children {
+				childIdx := -1
+				for k, n := range p.symbolGraph {
+					if n == child {
+						childIdx = k
+						break
+					}
+				}
+				if childIdx >= 0 {
+					fmt.Printf("  -> [%d] %s\n", childIdx, p.symbols[childIdx].Type)
+				}
+			}
+		}
+	}
 	
 	// Find outer circle
 	var outerCircle *detector.Symbol

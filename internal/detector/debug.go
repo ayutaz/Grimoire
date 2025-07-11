@@ -92,3 +92,14 @@ func drawCross(img *image.RGBA, center image.Point, c color.RGBA) {
 		}
 	}
 }
+
+// DebugSaveImage saves a grayscale image for debugging
+func (d *Detector) DebugSaveImage(img *image.Gray, outputPath string) error {
+	file, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	
+	return png.Encode(file, img)
+}

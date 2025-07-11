@@ -143,6 +143,10 @@ func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.G
 		// Skip if it's the outer circle
 		symbolType := d.classifyContour(contour)
 		if symbolType == OuterCircle || symbolType == Unknown {
+			if os.Getenv("GRIMOIRE_DEBUG") != "" && symbolType == Unknown {
+				fmt.Printf("Unknown symbol at (%d,%d), area=%.2f, circularity=%.2f\n", 
+					contour.Center.X, contour.Center.Y, contour.Area, contour.Circularity)
+			}
 			continue
 		}
 

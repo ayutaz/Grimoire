@@ -11,6 +11,11 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 	approx := d.approximatePolygon(contour)
 	vertices := len(approx)
 	
+	// Check for operators first (they might be detected as stars)
+	if symbolType := d.classifyOperator(contour); symbolType != Unknown {
+		return symbolType
+	}
+	
 	// Check for star shape before other shapes
 	if d.isStarShape(contour) {
 		return Star
@@ -74,11 +79,6 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 			return EightPointedStar
 		}
 		return Unknown
-	}
-	
-	// Check for special operator symbols
-	if symbolType := d.classifyOperator(contour); symbolType != Unknown {
-		return symbolType
 	}
 	
 	return Unknown
@@ -346,25 +346,41 @@ func (d *Detector) classifyOperator(contour Contour) SymbolType {
 
 // isConvergingShape checks if the shape has converging lines
 func (d *Detector) isConvergingShape(contour Contour, approx []image.Point) bool {
-	if len(approx) < 3 {
+	// Y-shape detection
+	// Check contour characteristics
+	if contour.Area < 100 || contour.Area > 500 {
 		return false
 	}
 	
-	// Check if lines converge to a point
-	bbox := contour.getBoundingBox()
-	// Simple check: top is wider than bottom
-	topWidth := 0.0
-	bottomWidth := 0.0
+	// Check if it has low circularity (Y-shape is not circular)
+	if contour.Circularity > 0.3 {
+		return false
+	}
 	
-	for _, pt := range approx {
-		if pt.Y < bbox.Min.Y + bbox.Dy()/3 {
-			topWidth += float64(pt.X)
-		} else if pt.Y > bbox.Max.Y - bbox.Dy()/3 {
-			bottomWidth += float64(pt.X)
+	bbox := contour.getBoundingBox()
+	aspectRatio := float64(bbox.Dy()) / float64(bbox.Dx())
+	
+	// Y-shape should be taller than wide
+	if aspectRatio < 1.2 || aspectRatio > 2.5 {
+		return false
+	}
+	
+	// Check for branching pattern
+	// Count points in upper half vs lower half
+	upperPoints := 0
+	lowerPoints := 0
+	midY := bbox.Min.Y + bbox.Dy()/2
+	
+	for _, pt := range contour.Points {
+		if pt.Y < midY {
+			upperPoints++
+		} else {
+			lowerPoints++
 		}
 	}
 	
-	return topWidth > bottomWidth*1.5
+	// Y-shape has more points in upper half (branches)
+	return float64(upperPoints) > float64(lowerPoints)*1.3
 }
 
 // isDivergingShape checks if the shape has diverging lines
