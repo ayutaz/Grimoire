@@ -53,7 +53,7 @@ Draw your spells and watch them come to life!`,
 	return rootCmd.Execute()
 }
 
-func runCommand(cmd *cobra.Command, args []string) error {
+func runCommand(_ *cobra.Command, args []string) error {
 	imagePath := args[0]
 
 	// Process the image
@@ -83,7 +83,7 @@ func compileCommand(cmd *cobra.Command, args []string) error {
 
 	// Output the code
 	if outputPath != "" {
-		if err := os.WriteFile(outputPath, []byte(code), 0644); err != nil {
+		if err := os.WriteFile(outputPath, []byte(code), 0o644); err != nil {
 			return grimoireErrors.NewError(grimoireErrors.FileWriteError, "Failed to write output file").
 				WithInnerError(err).
 				WithLocation(outputPath, 0, 0)
@@ -95,7 +95,7 @@ func compileCommand(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func debugCommand(cmd *cobra.Command, args []string) error {
+func debugCommand(_ *cobra.Command, args []string) error {
 	imagePath := args[0]
 
 	// Detect symbols

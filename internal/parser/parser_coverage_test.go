@@ -10,9 +10,9 @@ import (
 // TestParseParallelBlock tests parallel block parsing
 func TestParseParallelBlock(t *testing.T) {
 	tests := []struct {
-		name        string
-		symbols     []*detector.Symbol
-		connections []detector.Connection
+		name         string
+		symbols      []*detector.Symbol
+		connections  []detector.Connection
 		wantBranches int
 	}{
 		{
@@ -146,13 +146,13 @@ func TestParseLoopVariations(t *testing.T) {
 // TestGroupChildrenByAngle tests angle-based grouping
 func TestGroupChildrenByAngle(t *testing.T) {
 	parser := NewParser()
-	
+
 	// Create a parent node with children in different quadrants
 	parentSymbol := &detector.Symbol{
 		Type:     detector.Hexagon,
 		Position: detector.Position{X: 100, Y: 100},
 	}
-	
+
 	parentNode := &symbolNode{
 		symbol: parentSymbol,
 		children: []*symbolNode{
@@ -163,9 +163,9 @@ func TestGroupChildrenByAngle(t *testing.T) {
 			{symbol: &detector.Symbol{Position: detector.Position{X: 100, Y: 100}}}, // Center (Q0)
 		},
 	}
-	
+
 	groups := parser.groupChildrenByAngle(parentNode)
-	
+
 	// Should have 4 groups (4 quadrants with children)
 	assert.Equal(t, 4, len(groups))
 }
@@ -262,36 +262,36 @@ func TestParseComplexProgram(t *testing.T) {
 	symbols := []*detector.Symbol{
 		// Outer circle
 		{Type: detector.OuterCircle, Position: detector.Position{X: 300, Y: 300}},
-		
+
 		// Main entry
 		{Type: detector.DoubleCircle, Position: detector.Position{X: 150, Y: 50}},
-		
+
 		// Function definition
 		{Type: detector.Circle, Position: detector.Position{X: 250, Y: 50}},
-		
+
 		// Variables
 		{Type: detector.Square, Position: detector.Position{X: 100, Y: 100}, Pattern: "dot"},
 		{Type: detector.Square, Position: detector.Position{X: 200, Y: 100}, Pattern: "double_dot"},
-		
+
 		// Operators
 		{Type: detector.Convergence, Position: detector.Position{X: 150, Y: 150}},
-		
+
 		// Control flow
 		{Type: detector.Triangle, Position: detector.Position{X: 150, Y: 200}},
 		{Type: detector.Pentagon, Position: detector.Position{X: 100, Y: 250}},
 		{Type: detector.Hexagon, Position: detector.Position{X: 200, Y: 250}},
-		
+
 		// Output
 		{Type: detector.Star, Position: detector.Position{X: 150, Y: 300}},
 	}
-	
+
 	connections := []detector.Connection{
 		{From: symbols[1], To: symbols[3]},
 		{From: symbols[3], To: symbols[5]},
 		{From: symbols[4], To: symbols[5]},
 		{From: symbols[5], To: symbols[9]},
 	}
-	
+
 	program, err := Parse(symbols, connections)
 	if err == nil {
 		assert.NotNil(t, program)
@@ -308,16 +308,16 @@ func TestHasOperatorChild(t *testing.T) {
 			{symbol: &detector.Symbol{Type: detector.Convergence}},
 		},
 	}
-	
+
 	assert.True(t, hasOperatorChild(node))
-	
+
 	node2 := &symbolNode{
 		symbol: &detector.Symbol{Type: detector.Square},
 		children: []*symbolNode{
 			{symbol: &detector.Symbol{Type: detector.Star}},
 		},
 	}
-	
+
 	assert.False(t, hasOperatorChild(node2))
 }
 
@@ -325,13 +325,13 @@ func TestHasOperatorChild(t *testing.T) {
 func TestParseWithDebugMode(t *testing.T) {
 	// Enable debug mode
 	t.Setenv("GRIMOIRE_DEBUG", "1")
-	
+
 	symbols := []*detector.Symbol{
 		{Type: detector.OuterCircle, Position: detector.Position{X: 200, Y: 200}},
 		{Type: detector.DoubleCircle, Position: detector.Position{X: 100, Y: 100}},
 		{Type: detector.Star, Position: detector.Position{X: 100, Y: 150}},
 	}
-	
+
 	// Should print debug information but not fail
 	_, err := Parse(symbols, nil)
 	_ = err
@@ -370,7 +370,7 @@ func TestParseEdgeCasesAndErrors(t *testing.T) {
 			wantErr: false, // Binary operators with only one operand don't cause error in current implementation
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := Parse(tt.symbols, nil)
@@ -389,8 +389,8 @@ func TestParseEdgeCasesAndErrors(t *testing.T) {
 // TestParseLiteralPatterns tests all literal pattern types
 func TestParseLiteralPatterns(t *testing.T) {
 	patterns := []struct {
-		pattern     string
-		expectedVal interface{}
+		pattern      string
+		expectedVal  interface{}
 		expectedType DataType
 	}{
 		{"dot", 1, Integer},
@@ -403,7 +403,7 @@ func TestParseLiteralPatterns(t *testing.T) {
 		{"half_circle", false, Boolean},
 		{"unknown", 0, Integer},
 	}
-	
+
 	parser := NewParser()
 	for _, p := range patterns {
 		t.Run(p.pattern, func(t *testing.T) {
@@ -413,7 +413,7 @@ func TestParseLiteralPatterns(t *testing.T) {
 					Pattern: p.pattern,
 				},
 			}
-			
+
 			literal := parser.parseLiteral(node)
 			assert.Equal(t, p.expectedVal, literal.Value)
 			assert.Equal(t, p.expectedType, literal.LiteralType)
@@ -431,10 +431,10 @@ func TestInferConnections(t *testing.T) {
 		{Type: detector.Square, Position: detector.Position{X: 80, Y: 100}},
 		{Type: detector.Convergence, Position: detector.Position{X: 100, Y: 100}},
 	}
-	
+
 	// Initialize symbol graph
 	parser.buildSymbolGraph()
-	
+
 	// Verify connections were inferred
 	mainNode := parser.symbolGraph[1]
 	assert.True(t, len(mainNode.children) > 0, "Main node should have children")
@@ -450,7 +450,7 @@ func TestParseStatementPanic(t *testing.T) {
 			Position: detector.Position{X: 100, Y: 100},
 		},
 	}
-	
+
 	// Should handle panic gracefully
 	stmt := parser.parseStatement(node)
 	assert.Nil(t, stmt) // Invalid symbol type should return nil

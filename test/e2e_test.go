@@ -30,7 +30,7 @@ func TestE2E_HelloWorld(t *testing.T) {
 
 	// Make it executable on Unix
 	if runtime.GOOS != "windows" {
-		err = os.Chmod("grimoire_test", 0755)
+		err = os.Chmod("grimoire_test", 0o755)
 		require.NoError(t, err)
 	}
 

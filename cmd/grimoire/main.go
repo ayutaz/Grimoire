@@ -31,6 +31,6 @@ func run() int {
 	if os.Getenv("GRIMOIRE_DEBUG") != "" {
 		fmt.Fprintf(os.Stderr, "Execution time: %v\n", time.Since(start))
 	}
-	
+
 	return 0
 }

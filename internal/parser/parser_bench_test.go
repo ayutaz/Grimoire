@@ -11,7 +11,7 @@ func createBenchmarkSymbols(complexity string) []*detector.Symbol {
 	symbols := []*detector.Symbol{
 		{Type: detector.OuterCircle, Position: detector.Position{X: 400, Y: 400}},
 	}
-	
+
 	switch complexity {
 	case "simple":
 		// Simple program with just main and output
@@ -19,7 +19,7 @@ func createBenchmarkSymbols(complexity string) []*detector.Symbol {
 			&detector.Symbol{Type: detector.DoubleCircle, Position: detector.Position{X: 200, Y: 100}},
 			&detector.Symbol{Type: detector.Star, Position: detector.Position{X: 200, Y: 200}},
 		)
-		
+
 	case "medium":
 		// Program with variables, operators, and control flow
 		symbols = append(symbols,
@@ -31,7 +31,7 @@ func createBenchmarkSymbols(complexity string) []*detector.Symbol {
 			&detector.Symbol{Type: detector.Star, Position: detector.Position{X: 100, Y: 250}},
 			&detector.Symbol{Type: detector.Star, Position: detector.Position{X: 200, Y: 250}},
 		)
-		
+
 	case "complex":
 		// Complex program with functions, loops, and parallel blocks
 		symbols = append(symbols,
@@ -58,16 +58,16 @@ func createBenchmarkSymbols(complexity string) []*detector.Symbol {
 			&detector.Symbol{Type: detector.Star, Position: detector.Position{X: 350, Y: 300}},
 		)
 	}
-	
+
 	return symbols
 }
 
 func BenchmarkParse(b *testing.B) {
 	complexities := []string{"simple", "medium", "complex"}
-	
+
 	for _, complexity := range complexities {
 		symbols := createBenchmarkSymbols(complexity)
-		
+
 		b.Run(complexity, func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -79,7 +79,7 @@ func BenchmarkParse(b *testing.B) {
 
 func BenchmarkBuildSymbolGraph(b *testing.B) {
 	symbols := createBenchmarkSymbols("complex")
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		parser := NewParser()
@@ -90,7 +90,7 @@ func BenchmarkBuildSymbolGraph(b *testing.B) {
 
 func BenchmarkInferConnections(b *testing.B) {
 	symbols := createBenchmarkSymbols("complex")
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		parser := NewParser()
@@ -110,12 +110,12 @@ func BenchmarkParseStatement(b *testing.B) {
 		{"pentagon", &detector.Symbol{Type: detector.Pentagon}},
 		{"hexagon", &detector.Symbol{Type: detector.Hexagon}},
 	}
-	
+
 	parser := NewParser()
-	
+
 	for _, tc := range testCases {
 		node := &symbolNode{symbol: tc.symbol}
-		
+
 		b.Run(tc.name, func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -135,12 +135,12 @@ func BenchmarkParseExpression(b *testing.B) {
 		{"convergence", &detector.Symbol{Type: detector.Convergence}},
 		{"divergence", &detector.Symbol{Type: detector.Divergence}},
 	}
-	
+
 	parser := NewParser()
-	
+
 	for _, tc := range testCases {
 		node := &symbolNode{symbol: tc.symbol}
-		
+
 		b.Run(tc.name, func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {

@@ -66,7 +66,7 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 	if vertices >= 3 && vertices <= 6 && d.isRoundedSquare(contour, approx) {
 		return Square
 	}
-	
+
 	// Use improved square detection methods
 	if d.improveSquareDetection(contour) {
 		return Square

@@ -17,7 +17,7 @@ func createBenchmarkImage(size int) *image.Gray {
 			img.Set(x, y, color.Gray{255})
 		}
 	}
-	
+
 	// Draw outer circle
 	centerX, centerY := size/2, size/2
 	radius := size/2 - 20
@@ -31,7 +31,7 @@ func createBenchmarkImage(size int) *image.Gray {
 			}
 		}
 	}
-	
+
 	// Draw some shapes inside
 	// Square
 	for y := 100; y <= 150; y++ {
@@ -41,14 +41,14 @@ func createBenchmarkImage(size int) *image.Gray {
 			}
 		}
 	}
-	
+
 	// Triangle
 	for i := 0; i <= 50; i++ {
 		img.Set(200+i, 100+i, color.Gray{0})
 		img.Set(200+i, 100-i, color.Gray{0})
 		img.Set(200+i, 100, color.Gray{0})
 	}
-	
+
 	// Star
 	for i := -20; i <= 20; i++ {
 		img.Set(300+i, 300, color.Gray{0})
@@ -58,20 +58,20 @@ func createBenchmarkImage(size int) *image.Gray {
 			img.Set(300+i, 300-i, color.Gray{0})
 		}
 	}
-	
+
 	return img
 }
 
 func BenchmarkProcessImage(b *testing.B) {
 	sizes := []int{400, 800, 1200}
-	
+
 	for _, size := range sizes {
 		img := createBenchmarkImage(size)
-		
+
 		b.Run(fmt.Sprintf("size_%dx%d", size, size), func(b *testing.B) {
 			detector := NewDetector()
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				binary := detector.preprocessImage(img)
 				contours := detector.findContours(binary)
@@ -84,7 +84,7 @@ func BenchmarkProcessImage(b *testing.B) {
 func BenchmarkPreprocessing(b *testing.B) {
 	img := createBenchmarkImage(800)
 	detector := NewDetector()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = detector.preprocessImage(img)
@@ -95,7 +95,7 @@ func BenchmarkFindContours(b *testing.B) {
 	img := createBenchmarkImage(800)
 	detector := NewDetector()
 	binary := detector.preprocessImage(img)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = detector.findContours(binary)
@@ -112,9 +112,9 @@ func BenchmarkClassifyShape(b *testing.B) {
 		// Complex shape
 		createComplexContour(),
 	}
-	
+
 	detector := NewDetector()
-	
+
 	for idx, contour := range contours {
 		b.Run(fmt.Sprintf("contour_%d", idx), func(b *testing.B) {
 			b.ResetTimer()
@@ -154,7 +154,7 @@ func createComplexContour() Contour {
 	cx, cy := 200, 200
 	outerRadius := 50
 	innerRadius := 20
-	
+
 	for i := 0; i < 10; i++ {
 		angle := float64(i) * 2 * 3.14159 / 10
 		var r int
@@ -167,7 +167,6 @@ func createComplexContour() Contour {
 		y := cy + int(float64(r)*math.Sin(angle))
 		points = append(points, image.Point{X: x, Y: y})
 	}
-	
+
 	return Contour{Points: points}
 }
-

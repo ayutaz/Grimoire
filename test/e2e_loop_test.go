@@ -31,7 +31,7 @@ func TestE2E_LoopProgram(t *testing.T) {
 
 	// Make it executable on Unix
 	if runtime.GOOS != "windows" {
-		err = os.Chmod(binaryFile, 0755)
+		err = os.Chmod(binaryFile, 0o755)
 		require.NoError(t, err)
 	}
 
@@ -82,7 +82,7 @@ func TestE2E_ConditionalProgram(t *testing.T) {
 
 	// Make it executable on Unix
 	if runtime.GOOS != "windows" {
-		err = os.Chmod(binaryFile, 0755)
+		err = os.Chmod(binaryFile, 0o755)
 		require.NoError(t, err)
 	}
 
@@ -131,7 +131,7 @@ func TestE2E_ParallelProgram(t *testing.T) {
 
 	// Make it executable on Unix
 	if runtime.GOOS != "windows" {
-		err = os.Chmod(binaryFile, 0755)
+		err = os.Chmod(binaryFile, 0o755)
 		require.NoError(t, err)
 	}
 
@@ -184,7 +184,7 @@ func TestE2E_ComplexProgram(t *testing.T) {
 
 	// Make it executable on Unix
 	if runtime.GOOS != "windows" {
-		err = os.Chmod(binaryFile, 0755)
+		err = os.Chmod(binaryFile, 0o755)
 		require.NoError(t, err)
 	}
 

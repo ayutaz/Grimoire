@@ -141,7 +141,7 @@ func TestGrimoireError_Error(t *testing.T) {
 
 func TestGrimoireError_Unwrap(t *testing.T) {
 	innerErr := errors.New("inner error")
-	
+
 	tests := []struct {
 		name      string
 		err       *GrimoireError
@@ -170,7 +170,7 @@ func TestGrimoireError_Unwrap(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.err.Unwrap()
 			assert.Equal(t, tt.wantInner, got)
-			
+
 			// Test with errors.Is
 			if tt.wantInner != nil {
 				assert.True(t, errors.Is(tt.err, tt.wantInner))
@@ -182,7 +182,7 @@ func TestGrimoireError_Unwrap(t *testing.T) {
 func TestWithDetails(t *testing.T) {
 	err := NewError(ImageProcessingError, "processing failed")
 	err2 := err.WithDetails("PNG decode error")
-	
+
 	assert.Equal(t, err, err2) // Should return same pointer
 	assert.Equal(t, "PNG decode error", err.Details)
 	assert.Contains(t, err.Error(), "Details: PNG decode error")
@@ -191,7 +191,7 @@ func TestWithDetails(t *testing.T) {
 func TestWithLocation(t *testing.T) {
 	err := NewError(SyntaxError, "invalid symbol")
 	err2 := err.WithLocation("test.png", 10, 20)
-	
+
 	assert.Equal(t, err, err2) // Should return same pointer
 	assert.Equal(t, "test.png", err.FileName)
 	assert.Equal(t, 10, err.Line)
@@ -202,7 +202,7 @@ func TestWithLocation(t *testing.T) {
 func TestWithSuggestion(t *testing.T) {
 	err := NewError(NoSymbolsDetected, "no symbols found")
 	err2 := err.WithSuggestion("Check image quality")
-	
+
 	assert.Equal(t, err, err2) // Should return same pointer
 	assert.Equal(t, "Check image quality", err.Suggestion)
 	assert.Contains(t, err.Error(), "Suggestion: Check image quality")
@@ -212,7 +212,7 @@ func TestWithInnerError(t *testing.T) {
 	innerErr := errors.New("original error")
 	err := NewError(FileReadError, "cannot read")
 	err2 := err.WithInnerError(innerErr)
-	
+
 	assert.Equal(t, err, err2) // Should return same pointer
 	assert.Equal(t, innerErr, err.InnerError)
 	assert.Contains(t, err.Error(), "Caused by: original error")
@@ -253,7 +253,7 @@ func TestSuggestionInHelperFunctions(t *testing.T) {
 			err:  FileNotFoundError("test.png"),
 		},
 		{
-			name: "UnsupportedFormatError has suggestion", 
+			name: "UnsupportedFormatError has suggestion",
 			err:  UnsupportedFormatError("BMP"),
 		},
 		{
@@ -277,7 +277,7 @@ func TestSuggestionInHelperFunctions(t *testing.T) {
 func TestErrorImplementsStandardError(t *testing.T) {
 	var err error = NewError(FileNotFound, "test")
 	assert.NotNil(t, err)
-	
+
 	// Should work with standard error handling
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "FILE_NOT_FOUND")
@@ -309,13 +309,13 @@ func TestAllErrorTypes(t *testing.T) {
 			// Create error
 			err := NewError(errType, "test message")
 			assert.NotNil(t, err)
-			
+
 			// Check type
 			assert.Equal(t, errType, err.Type)
-			
+
 			// Check error string contains type
 			assert.Contains(t, err.Error(), string(errType))
-			
+
 			// Just verify no panic
 			assert.NotPanics(t, func() {
 				_ = err.Error()

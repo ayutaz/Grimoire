@@ -112,7 +112,7 @@ func TestRunCommand(t *testing.T) {
 	// Create a test image file
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "test.png")
-	
+
 	// Create an empty file to simulate image
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
@@ -133,7 +133,7 @@ func TestCompileCommand(t *testing.T) {
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "test.png")
 	outputFile := filepath.Join(tmpDir, "output.py")
-	
+
 	// Create an empty file to simulate image
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
@@ -167,14 +167,14 @@ func TestCompileCommand(t *testing.T) {
 			os.Stderr = w
 
 			err := Execute("test", "test", "test")
-			
+
 			w.Close()
 			os.Stdout = oldStdout
 			os.Stderr = oldStderr
 
 			// Will error because of invalid image
 			assert.Error(t, err)
-			
+
 			// Error output goes to stderr, not stdout
 			var buf bytes.Buffer
 			_, readErr := buf.ReadFrom(r)
@@ -182,7 +182,7 @@ func TestCompileCommand(t *testing.T) {
 				t.Fatalf("Failed to read output: %v", readErr)
 			}
 			output := buf.String()
-			
+
 			// Should have error message
 			assert.True(t, err != nil || output != "", "Should either error or produce output")
 		})
@@ -193,7 +193,7 @@ func TestDebugCommand(t *testing.T) {
 	// Create a test image file
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "test.png")
-	
+
 	// Create an empty file to simulate image
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
@@ -211,14 +211,14 @@ func TestDebugCommand(t *testing.T) {
 	os.Stderr = w
 
 	err = Execute("test", "test", "test")
-	
+
 	w.Close()
 	os.Stdout = oldStdout
 	os.Stderr = oldStderr
 
 	// Will error because of invalid image
 	assert.Error(t, err)
-	
+
 	// But should show debug attempt
 	var buf bytes.Buffer
 	_, readErr := buf.ReadFrom(r)
@@ -226,12 +226,12 @@ func TestDebugCommand(t *testing.T) {
 		t.Fatalf("Failed to read output: %v", readErr)
 	}
 	output := buf.String()
-	
+
 	assert.True(t,
-		strings.Contains(output, "Debug") || 
-		strings.Contains(output, "debug") ||
-		strings.Contains(output, "Error") ||
-		strings.Contains(output, "error"),
+		strings.Contains(output, "Debug") ||
+			strings.Contains(output, "debug") ||
+			strings.Contains(output, "Error") ||
+			strings.Contains(output, "error"),
 		"Should show debug or error output")
 }
 
@@ -276,7 +276,7 @@ func TestFileValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tmpFile := filepath.Join(t.TempDir(), tt.filename)
-			
+
 			// Create the file
 			f, err := os.Create(tmpFile)
 			require.NoError(t, err)
@@ -292,7 +292,7 @@ func TestFileValidation(t *testing.T) {
 			os.Stderr = w
 
 			err = Execute("test", "test", "test")
-			
+
 			w.Close()
 			os.Stderr = oldStderr
 
@@ -314,7 +314,7 @@ func TestDebugCommandCoverage(t *testing.T) {
 	// Create a valid PNG file
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "test.png")
-	
+
 	img := image.NewGray(image.Rect(0, 0, 100, 100))
 	// Draw a simple circle
 	for y := 0; y < 100; y++ {
@@ -328,7 +328,7 @@ func TestDebugCommandCoverage(t *testing.T) {
 			}
 		}
 	}
-	
+
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
 	err = png.Encode(f, img)
@@ -348,7 +348,7 @@ func TestDebugCommandCoverage(t *testing.T) {
 	os.Stderr = w
 
 	err = Execute("test", "test", "test")
-	
+
 	w.Close()
 	os.Stdout = oldStdout
 	os.Stderr = oldStderr
@@ -361,7 +361,7 @@ func TestDebugCommandCoverage(t *testing.T) {
 
 	// Should execute without error (may not detect outer circle, but that's ok)
 	// The important thing is that debug command runs
-	assert.True(t, err != nil || strings.Contains(output, "Debug") || strings.Contains(output, "==="), 
+	assert.True(t, err != nil || strings.Contains(output, "Debug") || strings.Contains(output, "==="),
 		"Debug command should either succeed or fail gracefully")
 }
 
@@ -369,7 +369,7 @@ func TestCompileWithOutputFileCoverage(t *testing.T) {
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "test.png")
 	outputFile := filepath.Join(tmpDir, "output.py")
-	
+
 	// Create a simple valid PNG with outer circle
 	img := image.NewGray(image.Rect(0, 0, 200, 200))
 	for y := 0; y < 200; y++ {
@@ -389,7 +389,7 @@ func TestCompileWithOutputFileCoverage(t *testing.T) {
 		img.Set(100+i, 100, color.Gray{0})
 		img.Set(100, 100+i, color.Gray{0})
 	}
-	
+
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
 	err = png.Encode(f, img)
@@ -401,14 +401,14 @@ func TestCompileWithOutputFileCoverage(t *testing.T) {
 	os.Args = []string{"grimoire", "compile", testImage, "-o", outputFile}
 	defer func() { os.Args = oldArgs }()
 
-	// Execute  
+	// Execute
 	err = Execute("test", "test", "test")
-	
+
 	// Check if output file was created (only if compile succeeded)
 	if err == nil {
 		_, statErr := os.Stat(outputFile)
 		assert.NoError(t, statErr, "Output file should be created")
-		
+
 		// Read the output file
 		content, readErr := os.ReadFile(outputFile)
 		if readErr == nil {
@@ -425,7 +425,7 @@ func TestRunCommandCoverage(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "hello.png")
-	
+
 	// Create image with outer circle and star
 	img := image.NewGray(image.Rect(0, 0, 300, 300))
 	for y := 0; y < 300; y++ {
@@ -449,14 +449,14 @@ func TestRunCommandCoverage(t *testing.T) {
 			img.Set(150+i, 150-i, color.Gray{0})
 		}
 	}
-	
+
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
 	err = png.Encode(f, img)
 	require.NoError(t, err)
 	f.Close()
 
-	// Test run command  
+	// Test run command
 	oldArgs := os.Args
 	os.Args = []string{"grimoire", "run", testImage}
 	defer func() { os.Args = oldArgs }()
@@ -479,7 +479,7 @@ func TestFormatErrorCoverage(t *testing.T) {
 			wantErr:   "FILE_NOT_FOUND",
 		},
 		{
-			name:      "directory instead of file",  
+			name:      "directory instead of file",
 			imagePath: "/tmp",
 			wantErr:   "Error:",
 		},
@@ -497,7 +497,7 @@ func TestFormatErrorCoverage(t *testing.T) {
 			os.Stderr = w
 
 			err := Execute("test", "test", "test")
-			
+
 			w.Close()
 			os.Stderr = oldStderr
 
@@ -547,7 +547,7 @@ func TestProcessImageCoverage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tmpDir := t.TempDir()
 			testImage := filepath.Join(tmpDir, "test.png")
-			
+
 			err := tt.setupImage(testImage)
 			require.NoError(t, err, "Failed to setup test image")
 
@@ -562,7 +562,7 @@ func TestProcessImageCoverage(t *testing.T) {
 			os.Stderr = w
 
 			err = Execute("test", "test", "test")
-			
+
 			w.Close()
 			os.Stderr = oldStderr
 
@@ -583,7 +583,7 @@ func TestDebugCommandDetailedCoverage(t *testing.T) {
 	// Test debug command with a more complex image that has multiple symbols
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "complex.png")
-	
+
 	// Create a complex image with outer circle, star, and other symbols
 	img := image.NewGray(image.Rect(0, 0, 400, 400))
 	// Fill with white
@@ -592,7 +592,7 @@ func TestDebugCommandDetailedCoverage(t *testing.T) {
 			img.Set(x, y, color.Gray{255})
 		}
 	}
-	
+
 	// Draw outer circle
 	for y := 0; y < 400; y++ {
 		for x := 0; x < 400; x++ {
@@ -604,7 +604,7 @@ func TestDebugCommandDetailedCoverage(t *testing.T) {
 			}
 		}
 	}
-	
+
 	// Add multiple symbols
 	// Star at center
 	for i := -15; i <= 15; i++ {
@@ -615,7 +615,7 @@ func TestDebugCommandDetailedCoverage(t *testing.T) {
 			img.Set(200+i, 200-i, color.Gray{0})
 		}
 	}
-	
+
 	// Add a square
 	for y := 100; y <= 130; y++ {
 		for x := 100; x <= 130; x++ {
@@ -624,7 +624,7 @@ func TestDebugCommandDetailedCoverage(t *testing.T) {
 			}
 		}
 	}
-	
+
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
 	err = png.Encode(f, img)
@@ -645,7 +645,7 @@ func TestDebugCommandDetailedCoverage(t *testing.T) {
 	os.Stderr = wErr
 
 	err = Execute("test", "test", "test")
-	
+
 	wOut.Close()
 	wErr.Close()
 	os.Stdout = oldStdout
@@ -659,20 +659,20 @@ func TestDebugCommandDetailedCoverage(t *testing.T) {
 	errOutput := bufErr.String()
 
 	// Should contain debug information
-	assert.True(t, 
-		strings.Contains(output, "Debug") || 
-		strings.Contains(output, "Detected") || 
-		strings.Contains(output, "Symbols") ||
-		strings.Contains(errOutput, "Error"),
+	assert.True(t,
+		strings.Contains(output, "Debug") ||
+			strings.Contains(output, "Detected") ||
+			strings.Contains(output, "Symbols") ||
+			strings.Contains(errOutput, "Error"),
 		"Should output debug information or error")
 }
 
 func TestFormatErrorAllPaths(t *testing.T) {
 	// Test all formatError code paths
 	tests := []struct {
-		name      string
-		setup     func() (string, func())
-		wantErr   string
+		name    string
+		setup   func() (string, func())
+		wantErr string
 	}{
 		{
 			name: "generic error",
@@ -683,8 +683,8 @@ func TestFormatErrorAllPaths(t *testing.T) {
 				f, err := os.Create(testFile)
 				require.NoError(t, err)
 				f.Close()
-				os.Chmod(testFile, 0000) // No permissions
-				return testFile, func() { os.Chmod(testFile, 0644) }
+				os.Chmod(testFile, 0o000) // No permissions
+				return testFile, func() { os.Chmod(testFile, 0o644) }
 			},
 			wantErr: "FILE_READ_ERROR",
 		},
@@ -705,7 +705,7 @@ func TestFormatErrorAllPaths(t *testing.T) {
 			os.Stderr = w
 
 			err := Execute("test", "test", "test")
-			
+
 			w.Close()
 			os.Stderr = oldStderr
 

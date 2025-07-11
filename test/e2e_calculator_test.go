@@ -23,7 +23,7 @@ func TestE2E_Calculator(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		binaryFile = "grimoire_test.exe"
 	}
-	
+
 	buildCmd := exec.Command("go", "build", "-o", binaryFile, "../cmd/grimoire")
 	buildCmd.Dir = "."
 	err := buildCmd.Run()
@@ -32,7 +32,7 @@ func TestE2E_Calculator(t *testing.T) {
 
 	// Make it executable on Unix
 	if runtime.GOOS != "windows" {
-		err = os.Chmod(binaryFile, 0755)
+		err = os.Chmod(binaryFile, 0o755)
 		require.NoError(t, err)
 	}
 
@@ -52,11 +52,11 @@ func TestE2E_Calculator(t *testing.T) {
 		// Test compile command
 		cmd := exec.Command(binaryName, "compile", calculatorPath)
 		output, _ := cmd.CombinedOutput()
-		
+
 		// Even if it fails, check that it attempted to process
 		outputStr := string(output)
 		t.Logf("Compile output: %s", outputStr)
-		
+
 		// Should generate Python code
 		assert.Contains(t, outputStr, "#!/usr/bin/env python3", "Should generate Python code")
 	})
@@ -65,11 +65,11 @@ func TestE2E_Calculator(t *testing.T) {
 		// Test debug command
 		cmd := exec.Command(binaryName, "debug", calculatorPath)
 		output, err := cmd.CombinedOutput()
-		
+
 		// Debug should provide detailed information
 		outputStr := string(output)
 		t.Logf("Debug output: %s", outputStr)
-		
+
 		if err == nil {
 			assert.Contains(t, outputStr, "Symbols:", "Should show symbols")
 			assert.Contains(t, outputStr, "Connections:", "Should show connections")
@@ -88,7 +88,7 @@ func TestE2E_AllExamples(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		binaryFile = "grimoire_test.exe"
 	}
-	
+
 	buildCmd := exec.Command("go", "build", "-o", binaryFile, "../cmd/grimoire")
 	buildCmd.Dir = "."
 	err := buildCmd.Run()
@@ -97,7 +97,7 @@ func TestE2E_AllExamples(t *testing.T) {
 
 	// Make it executable on Unix
 	if runtime.GOOS != "windows" {
-		err = os.Chmod(binaryFile, 0755)
+		err = os.Chmod(binaryFile, 0o755)
 		require.NoError(t, err)
 	}
 
@@ -117,7 +117,7 @@ func TestE2E_AllExamples(t *testing.T) {
 		if entry.IsDir() {
 			continue
 		}
-		
+
 		name := entry.Name()
 		if !strings.HasSuffix(name, ".png") && !strings.HasSuffix(name, ".jpg") {
 			continue
@@ -125,14 +125,14 @@ func TestE2E_AllExamples(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			imagePath := filepath.Join(examplesDir, name)
-			
+
 			// Test compile
 			cmd := exec.Command(binaryName, "compile", imagePath)
 			output, err := cmd.CombinedOutput()
-			
+
 			outputStr := string(output)
 			t.Logf("Processing %s: %s", name, outputStr)
-			
+
 			// At minimum, it should attempt to process the image
 			if err != nil {
 				// Some images might fail, but they should fail gracefully
@@ -154,7 +154,7 @@ func TestE2E_ErrorHandling(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		binaryFile = "grimoire_test.exe"
 	}
-	
+
 	buildCmd := exec.Command("go", "build", "-o", binaryFile, "../cmd/grimoire")
 	buildCmd.Dir = "."
 	err := buildCmd.Run()
@@ -163,7 +163,7 @@ func TestE2E_ErrorHandling(t *testing.T) {
 
 	// Make it executable on Unix
 	if runtime.GOOS != "windows" {
-		err = os.Chmod(binaryFile, 0755)
+		err = os.Chmod(binaryFile, 0o755)
 		require.NoError(t, err)
 	}
 
@@ -191,19 +191,19 @@ func TestE2E_ErrorHandling(t *testing.T) {
 			errContains: "unknown command",
 		},
 		{
-			name:        "no arguments",
-			args:        []string{},
-			wantErr:     false, // Should show help
+			name:    "no arguments",
+			args:    []string{},
+			wantErr: false, // Should show help
 		},
 		{
-			name:        "help flag",
-			args:        []string{"--help"},
-			wantErr:     false,
+			name:    "help flag",
+			args:    []string{"--help"},
+			wantErr: false,
 		},
 		{
-			name:        "version flag",
-			args:        []string{"--version"},
-			wantErr:     false,
+			name:    "version flag",
+			args:    []string{"--version"},
+			wantErr: false,
 		},
 	}
 
@@ -211,10 +211,10 @@ func TestE2E_ErrorHandling(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := exec.Command(binaryName, tt.args...)
 			output, err := cmd.CombinedOutput()
-			
+
 			outputStr := string(output)
 			t.Logf("Output: %s", outputStr)
-			
+
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.errContains != "" {
@@ -241,7 +241,7 @@ func TestE2E_CalculatorPerformance(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		binaryFile = "grimoire_test.exe"
 	}
-	
+
 	buildCmd := exec.Command("go", "build", "-ldflags", "-s -w", "-o", binaryFile, "../cmd/grimoire")
 	buildCmd.Dir = "."
 	err := buildCmd.Run()
@@ -250,7 +250,7 @@ func TestE2E_CalculatorPerformance(t *testing.T) {
 
 	// Make it executable on Unix
 	if runtime.GOOS != "windows" {
-		err = os.Chmod(binaryFile, 0755)
+		err = os.Chmod(binaryFile, 0o755)
 		require.NoError(t, err)
 	}
 
@@ -262,10 +262,10 @@ func TestE2E_CalculatorPerformance(t *testing.T) {
 	// Check binary size
 	info, err := os.Stat(binaryFile)
 	require.NoError(t, err)
-	
+
 	binarySize := info.Size()
 	t.Logf("Binary size: %.2f MB", float64(binarySize)/(1024*1024))
-	
+
 	// Binary should be reasonably small (under 5MB)
 	assert.Less(t, binarySize, int64(5*1024*1024), "Binary should be under 5MB")
 
@@ -273,7 +273,7 @@ func TestE2E_CalculatorPerformance(t *testing.T) {
 	cmd := exec.Command(binaryName, "--version")
 	err = cmd.Start()
 	require.NoError(t, err)
-	
+
 	err = cmd.Wait()
 	assert.NoError(t, err, "Version flag should exit successfully")
 }
