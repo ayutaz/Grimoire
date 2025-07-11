@@ -3,7 +3,6 @@ package detector
 import (
 	"fmt"
 	"image"
-	"image/color"
 	"math"
 	"os"
 )
