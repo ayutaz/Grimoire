@@ -84,16 +84,11 @@ linters:
     - gocognit
     - nestif
     - prealloc
-    - exportloopref  # Replaces scopelint
+    - copyloopvar    # Replaces exportloopref (deprecated in Go 1.22+)
     - bodyclose
     - stylecheck
   
   disable:
-    # Deprecated linters
-    - maligned
-    - interfacer
-    - golint
-    
     # Too strict or noisy
     - funlen
     - godox
@@ -103,9 +98,7 @@ linters:
     - wsl
     - whitespace
     - nlreturn
-    - gomnd
     - exhaustive
-    - exhaustivestruct
     - errorlint
     - noctx
     - sqlclosecheck
@@ -119,9 +112,6 @@ issues:
     - vendor
     - .git
     - .github
-    - .git/**
-    - .github/**
-    - vendor/**
   
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
