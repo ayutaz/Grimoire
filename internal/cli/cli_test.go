@@ -697,7 +697,7 @@ func TestFormatErrorAllPaths(t *testing.T) {
 			if runtime.GOOS == "windows" && tt.name == "generic error" {
 				t.Skip("Skipping permission test on Windows")
 			}
-			
+
 			testPath, cleanup := tt.setup()
 			defer cleanup()
 
