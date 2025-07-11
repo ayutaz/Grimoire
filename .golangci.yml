@@ -19,8 +19,12 @@ output:
 # Linter settings
 linters-settings:
   govet:
-    # Enable all analyzers
-    enable-all: true
+    # Disable some analyzers
+    disable:
+      - fieldalignment  # Memory optimization not critical for this project
+    enable:
+      - shadow
+      - nilness
   
   gocyclo:
     # Minimal code complexity to report
