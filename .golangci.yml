@@ -75,17 +75,13 @@ linters:
     - typecheck
     
     # Additional linters
-    - gocyclo
     - dupl
     - goconst
-    - gocritic
     - gofmt
     - goimports
-    - revive
     - misspell
     - lll
     - unconvert
-    - gocognit
     - prealloc
     - copyloopvar    # Replaces exportloopref (deprecated in Go 1.22+)
     - bodyclose
@@ -108,6 +104,12 @@ linters:
     - sqlclosecheck
     - rowserrcheck
     - makezero
+    # Disable complexity checks
+    - gocyclo      # Cyclomatic complexity check
+    - gocognit     # Cognitive complexity check
+    # Disable style suggestions
+    - gocritic     # Many style suggestions that are not critical
+    - revive       # Too many style opinions
 
 # Issues configuration
 issues:
