@@ -1,0 +1,2 @@
+# Debug functions that don't need to be tested
+internal/detector/debug.go
