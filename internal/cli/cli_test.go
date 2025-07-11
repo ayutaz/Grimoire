@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -692,6 +693,11 @@ func TestFormatErrorAllPaths(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Skip permission test on Windows
+			if runtime.GOOS == "windows" && tt.name == "generic error" {
+				t.Skip("Skipping permission test on Windows")
+			}
+			
 			testPath, cleanup := tt.setup()
 			defer cleanup()
 

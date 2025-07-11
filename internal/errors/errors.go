@@ -152,7 +152,7 @@ func NoOuterCircleError() *GrimoireError {
 }
 
 // SyntaxErrorAt creates a syntax error with location
-func SyntaxErrorAt(message string, symbolType string, x, y float64) *GrimoireError {
+func SyntaxErrorAt(message, symbolType string, x, y float64) *GrimoireError {
 	return NewError(SyntaxError, message).
 		WithDetails(fmt.Sprintf("Symbol type: %s at position (%.0f, %.0f)", symbolType, x, y))
 }
