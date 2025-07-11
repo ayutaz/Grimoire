@@ -42,6 +42,22 @@ build-linux:
 build-windows:
 	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-amd64.exe cmd/grimoire/main.go
 
+# Build optimized binaries for release
+build-release: clean-dist
+	@echo "Building optimized binaries for all platforms..."
+	@mkdir -p dist
+	GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)" -o dist/$(BINARY_NAME)-darwin-amd64 cmd/grimoire/main.go
+	GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)" -o dist/$(BINARY_NAME)-darwin-arm64 cmd/grimoire/main.go
+	GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)" -o dist/$(BINARY_NAME)-linux-amd64 cmd/grimoire/main.go
+	GOOS=linux GOARCH=arm64 go build -ldflags "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)" -o dist/$(BINARY_NAME)-linux-arm64 cmd/grimoire/main.go
+	GOOS=windows GOARCH=amd64 go build -ldflags "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)" -o dist/$(BINARY_NAME)-windows-amd64.exe cmd/grimoire/main.go
+	@echo "Build complete. Binary sizes:"
+	@ls -lh dist/
+
+# Clean dist directory
+clean-dist:
+	rm -rf dist/
+
 # Install dependencies
 deps:
 	go mod download
