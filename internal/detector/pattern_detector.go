@@ -1,8 +1,10 @@
 package detector
 
 import (
+	"fmt"
 	"image"
 	"image/color"
+	"os"
 )
 
 // detectInternalPattern analyzes the pattern inside a symbol
@@ -12,16 +14,17 @@ func (d *Detector) detectInternalPattern(contour Contour, binary *image.Gray) st
 	// Create a mask for the contour region
 	mask := d.createContourMask(contour, binary.Bounds())
 	
-	// Count white pixels inside the contour
-	whitePixels := 0
+	// Count black pixels inside the contour (inverted from binary image)
+	blackPixels := 0
 	totalPixels := 0
 	
 	for y := bbox.Min.Y; y < bbox.Max.Y; y++ {
 		for x := bbox.Min.X; x < bbox.Max.X; x++ {
 			if mask.GrayAt(x, y).Y > 0 {
 				totalPixels++
-				if binary.GrayAt(x, y).Y > 128 {
-					whitePixels++
+				// In binary image, black pixels (value < 128) represent ink/content
+				if binary.GrayAt(x, y).Y < 128 {
+					blackPixels++
 				}
 			}
 		}
@@ -31,7 +34,12 @@ func (d *Detector) detectInternalPattern(contour Contour, binary *image.Gray) st
 		return "empty"
 	}
 	
-	fillRatio := float64(whitePixels) / float64(totalPixels)
+	fillRatio := float64(blackPixels) / float64(totalPixels)
+	
+	if os.Getenv("GRIMOIRE_DEBUG") != "" {
+		fmt.Printf("Pattern detection: bbox=(%d,%d,%d,%d), black=%d, total=%d, ratio=%.2f\n",
+			bbox.Min.X, bbox.Min.Y, bbox.Max.X, bbox.Max.Y, blackPixels, totalPixels, fillRatio)
+	}
 	
 	// Analyze pattern based on fill ratio and distribution
 	if fillRatio < 0.1 {
@@ -100,15 +108,29 @@ func (d *Detector) analyzeSparseFill(contour Contour, binary *image.Gray, mask *
 	visited := make(map[image.Point]bool)
 	dotCount := 0
 	
+	if os.Getenv("GRIMOIRE_DEBUG") != "" {
+		fmt.Printf("analyzeSparseFill: analyzing pattern at (%d,%d)\n", contour.Center.X, contour.Center.Y)
+	}
+	
 	for y := bbox.Min.Y; y < bbox.Max.Y; y++ {
 		for x := bbox.Min.X; x < bbox.Max.X; x++ {
 			pt := image.Point{X: x, Y: y}
-			if mask.GrayAt(x, y).Y > 0 && binary.GrayAt(x, y).Y > 128 && !visited[pt] {
-				// Found a white pixel, count the connected component
-				d.markConnectedComponent(binary, mask, pt, visited)
-				dotCount++
+			// Look for black pixels (ink) instead of white pixels
+			if mask.GrayAt(x, y).Y > 0 && binary.GrayAt(x, y).Y < 128 && !visited[pt] {
+				// Found a black pixel, count the connected component
+				componentSize := d.markConnectedComponent(binary, mask, pt, visited)
+				if componentSize > 5 { // Only count components with more than 5 pixels
+					dotCount++
+					if os.Getenv("GRIMOIRE_DEBUG") != "" {
+						fmt.Printf("  Found dot %d at (%d,%d) with size %d\n", dotCount, x, y, componentSize)
+					}
+				}
 			}
 		}
+	}
+	
+	if os.Getenv("GRIMOIRE_DEBUG") != "" {
+		fmt.Printf("  Total dots found: %d\n", dotCount)
 	}
 	
 	switch dotCount {
@@ -131,9 +153,77 @@ func (d *Detector) analyzeMediumFill(contour Contour, binary *image.Gray, mask *
 	// Check for line patterns by analyzing horizontal and vertical projections
 	bbox := contour.getBoundingBox()
 	
+	if os.Getenv("GRIMOIRE_DEBUG") != "" {
+		fmt.Printf("analyzeMediumFill: analyzing pattern at (%d,%d)\n", contour.Center.X, contour.Center.Y)
+		// Try analyzing as sparse fill to check for dots
+		visited := make(map[image.Point]bool)
+		dotCount := 0
+		for y := bbox.Min.Y; y < bbox.Max.Y; y++ {
+			for x := bbox.Min.X; x < bbox.Max.X; x++ {
+				pt := image.Point{X: x, Y: y}
+				if mask.GrayAt(x, y).Y > 0 && binary.GrayAt(x, y).Y < 128 && !visited[pt] {
+					componentSize := d.markConnectedComponent(binary, mask, pt, visited)
+					if componentSize > 5 {
+						dotCount++
+						fmt.Printf("  Found potential dot %d at (%d,%d) with size %d\n", dotCount, x, y, componentSize)
+					}
+				}
+			}
+		}
+		fmt.Printf("  Medium fill detected %d potential dots\n", dotCount)
+	}
+	
+	// Check if it might be dots instead of lines
+	// If we have a small number of distinct components, it's likely dots
+	visited := make(map[image.Point]bool)
+	componentCount := 0
+	largestComponent := 0
+	for y := bbox.Min.Y; y < bbox.Max.Y; y++ {
+		for x := bbox.Min.X; x < bbox.Max.X; x++ {
+			pt := image.Point{X: x, Y: y}
+			if mask.GrayAt(x, y).Y > 0 && binary.GrayAt(x, y).Y < 128 && !visited[pt] {
+				componentSize := d.markConnectedComponent(binary, mask, pt, visited)
+				if componentSize > 5 { // Count all components
+					componentCount++
+					if componentSize > largestComponent {
+						largestComponent = componentSize
+					}
+				}
+			}
+		}
+	}
+	
+	// If we have 1-3 components, check if they are dots
+	if componentCount >= 1 && componentCount <= 3 {
+		// If the largest component is less than 70% of total black pixels, it's likely dots
+		totalBlack := 0
+		for y := bbox.Min.Y; y < bbox.Max.Y; y++ {
+			for x := bbox.Min.X; x < bbox.Max.X; x++ {
+				if mask.GrayAt(x, y).Y > 0 && binary.GrayAt(x, y).Y < 128 {
+					totalBlack++
+				}
+			}
+		}
+		
+		if float64(largestComponent) < float64(totalBlack)*0.7 || componentCount <= 3 {
+			switch componentCount {
+			case 1:
+				return "dot"
+			case 2:
+				return "double_dot"
+			case 3:
+				return "triple_dot"
+			}
+		}
+	}
+	
 	// Count horizontal and vertical lines
 	horizontalLines := d.countLines(binary, mask, bbox, true)
 	verticalLines := d.countLines(binary, mask, bbox, false)
+	
+	if os.Getenv("GRIMOIRE_DEBUG") != "" {
+		fmt.Printf("  Horizontal lines: %d, Vertical lines: %d\n", horizontalLines, verticalLines)
+	}
 	
 	if horizontalLines > verticalLines*2 {
 		return "horizontal_lines"
@@ -162,9 +252,10 @@ func (d *Detector) analyzeDenseFill(contour Contour, binary *image.Gray, mask *i
 }
 
 // markConnectedComponent marks all pixels in a connected component as visited
-func (d *Detector) markConnectedComponent(binary, mask *image.Gray, start image.Point, visited map[image.Point]bool) {
+func (d *Detector) markConnectedComponent(binary, mask *image.Gray, start image.Point, visited map[image.Point]bool) int {
 	bounds := binary.Bounds()
 	queue := []image.Point{start}
+	componentSize := 0
 	
 	for len(queue) > 0 {
 		pt := queue[0]
@@ -175,6 +266,7 @@ func (d *Detector) markConnectedComponent(binary, mask *image.Gray, start image.
 		}
 		
 		visited[pt] = true
+		componentSize++
 		
 		// Check 4-connected neighbors
 		neighbors := []image.Point{
@@ -189,11 +281,13 @@ func (d *Detector) markConnectedComponent(binary, mask *image.Gray, start image.
 				n.Y >= bounds.Min.Y && n.Y < bounds.Max.Y &&
 				!visited[n] &&
 				mask.GrayAt(n.X, n.Y).Y > 0 &&
-				binary.GrayAt(n.X, n.Y).Y > 128 {
+				binary.GrayAt(n.X, n.Y).Y < 128 {
 				queue = append(queue, n)
 			}
 		}
 	}
+	
+	return componentSize
 }
 
 // countLines counts the number of lines in horizontal or vertical direction
