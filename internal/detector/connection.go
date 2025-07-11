@@ -71,7 +71,6 @@ type Line struct {
 	End   image.Point
 }
 
-
 // detectLines detects lines using simplified Hough transform
 func (d *Detector) detectLines(edges *image.Gray) []Line {
 	lines := []Line{}

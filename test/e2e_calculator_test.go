@@ -220,11 +220,9 @@ func TestE2E_ErrorHandling(t *testing.T) {
 				if tt.errContains != "" {
 					assert.Contains(t, outputStr, tt.errContains)
 				}
-			} else {
+			} else if err != nil && !strings.Contains(outputStr, "help") {
 				// Command might succeed or show help
-				if err != nil && !strings.Contains(outputStr, "help") {
-					t.Errorf("Unexpected error: %v", err)
-				}
+				t.Errorf("Unexpected error: %v", err)
 			}
 		})
 	}

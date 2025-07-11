@@ -457,7 +457,7 @@ func (p *Parser) parseLoop(node *symbolNode) Statement {
 			Body:    body,
 		}
 	}
-	
+
 	// While loop
 	condition := p.parseCondition(node)
 	return &WhileLoop{
@@ -762,13 +762,14 @@ func (p *Parser) groupChildrenByAngle(node *symbolNode) [][]*symbolNode {
 		dy := child.symbol.Position.Y - centerY
 
 		var group int
-		if dx >= 0 && dy >= 0 {
+		switch {
+		case dx >= 0 && dy >= 0:
 			group = 0 // Top-right
-		} else if dx < 0 && dy >= 0 {
+		case dx < 0 && dy >= 0:
 			group = 1 // Top-left
-		} else if dx < 0 && dy < 0 {
+		case dx < 0 && dy < 0:
 			group = 2 // Bottom-left
-		} else {
+		default:
 			group = 3 // Bottom-right
 		}
 

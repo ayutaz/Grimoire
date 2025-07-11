@@ -22,7 +22,7 @@ func TestE2E_LoopProgram(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		binaryFile = "grimoire_test.exe"
 	}
-	
+
 	buildCmd := exec.Command("go", "build", "-o", binaryFile, "../cmd/grimoire")
 	buildCmd.Dir = "."
 	err := buildCmd.Run()
@@ -49,10 +49,10 @@ func TestE2E_LoopProgram(t *testing.T) {
 	// Test loop compilation
 	cmd := exec.Command(binaryName, "compile", loopPath)
 	output, err := cmd.CombinedOutput()
-	
+
 	outputStr := string(output)
 	t.Logf("Loop compile output: %s", outputStr)
-	
+
 	// Should compile successfully
 	if err != nil {
 		t.Logf("Compilation error (expected if no loop symbol): %v", err)
@@ -73,7 +73,7 @@ func TestE2E_ConditionalProgram(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		binaryFile = "grimoire_test.exe"
 	}
-	
+
 	buildCmd := exec.Command("go", "build", "-o", binaryFile, "../cmd/grimoire")
 	buildCmd.Dir = "."
 	err := buildCmd.Run()
@@ -100,10 +100,10 @@ func TestE2E_ConditionalProgram(t *testing.T) {
 	// Test conditional compilation
 	cmd := exec.Command(binaryName, "compile", conditionalPath)
 	output, err := cmd.CombinedOutput()
-	
+
 	outputStr := string(output)
 	t.Logf("Conditional compile output: %s", outputStr)
-	
+
 	// Should generate conditional code
 	if err == nil {
 		// Check for if/else structure in output
@@ -122,7 +122,7 @@ func TestE2E_ParallelProgram(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		binaryFile = "grimoire_test.exe"
 	}
-	
+
 	buildCmd := exec.Command("go", "build", "-o", binaryFile, "../cmd/grimoire")
 	buildCmd.Dir = "."
 	err := buildCmd.Run()
@@ -149,10 +149,10 @@ func TestE2E_ParallelProgram(t *testing.T) {
 	// Test parallel compilation
 	cmd := exec.Command(binaryName, "compile", parallelPath)
 	output, err := cmd.CombinedOutput()
-	
+
 	outputStr := string(output)
 	t.Logf("Parallel compile output: %s", outputStr)
-	
+
 	// Should compile successfully
 	if err != nil {
 		t.Logf("Compilation error (expected if no hexagon symbol): %v", err)
@@ -175,7 +175,7 @@ func TestE2E_ComplexProgram(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		binaryFile = "grimoire_test.exe"
 	}
-	
+
 	buildCmd := exec.Command("go", "build", "-o", binaryFile, "../cmd/grimoire")
 	buildCmd.Dir = "."
 	err := buildCmd.Run()
@@ -202,7 +202,7 @@ func TestE2E_ComplexProgram(t *testing.T) {
 			"../examples/images/factorial.png",
 			"../examples/images/nested_loops.png",
 		}
-		
+
 		found := false
 		for _, path := range alternativePaths {
 			if _, checkErr := os.Stat(path); checkErr == nil {
@@ -211,7 +211,7 @@ func TestE2E_ComplexProgram(t *testing.T) {
 				break
 			}
 		}
-		
+
 		if !found {
 			t.Skip("Skipping test: no complex example found")
 		}
@@ -220,18 +220,18 @@ func TestE2E_ComplexProgram(t *testing.T) {
 	// Test complex program in debug mode to see full analysis
 	cmd := exec.Command(binaryName, "debug", complexPath)
 	output, err := cmd.CombinedOutput()
-	
+
 	outputStr := string(output)
 	t.Logf("Complex debug output: %s", outputStr)
-	
+
 	// Should detect multiple symbols and connections
 	if err == nil {
 		lines := strings.Split(outputStr, "\n")
-		
+
 		// Count detected symbols
 		symbolCount := 0
 		connectionCount := 0
-		
+
 		for _, line := range lines {
 			if strings.Contains(line, "Type:") {
 				symbolCount++
@@ -240,9 +240,9 @@ func TestE2E_ComplexProgram(t *testing.T) {
 				connectionCount++
 			}
 		}
-		
+
 		t.Logf("Detected %d symbols and %d connections", symbolCount, connectionCount)
-		
+
 		// Complex programs should have multiple symbols and connections
 		assert.Greater(t, symbolCount, 3, "Complex program should have more than 3 symbols")
 		if symbolCount > 3 {

@@ -42,13 +42,14 @@ func (d *Detector) detectInternalPattern(contour Contour, binary *image.Gray) st
 	}
 
 	// Analyze pattern based on fill ratio and distribution
-	if fillRatio < 0.1 {
-		return "empty"
-	} else if fillRatio < 0.3 {
+	switch {
+	case fillRatio < 0.1:
+		return PatternEmpty
+	case fillRatio < 0.3:
 		return d.analyzeSparseFill(contour, binary, mask)
-	} else if fillRatio < 0.7 {
+	case fillRatio < 0.7:
 		return d.analyzeMediumFill(contour, binary, mask)
-	} else {
+	default:
 		return d.analyzeDenseFill(contour, binary, mask)
 	}
 }
