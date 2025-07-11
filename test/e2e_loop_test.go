@@ -205,7 +205,7 @@ func TestE2E_ComplexProgram(t *testing.T) {
 		
 		found := false
 		for _, path := range alternativePaths {
-			if _, err := os.Stat(path); err == nil {
+			if _, checkErr := os.Stat(path); checkErr == nil {
 				complexPath = path
 				found = true
 				break

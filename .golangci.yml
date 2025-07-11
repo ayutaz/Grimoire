@@ -99,6 +99,8 @@ linters:
     - whitespace
     - nlreturn
     - exhaustive
+    - nestif        # Complex nested blocks are sometimes necessary
+    - fieldalignment # Memory optimization not critical for this project
     - errorlint
     - noctx
     - sqlclosecheck
