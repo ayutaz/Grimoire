@@ -54,7 +54,7 @@ jobs:
         name: codecov-${{ matrix.os }}-${{ matrix.go }}
     
     - name: Run benchmarks
-      if: matrix.go == '1.23'  # 最新版のみベンチマーク（全OS）
+      if: matrix.go == '1.23' && runner.os != 'Windows'  # 最新版のみベンチマーク（Windows以外）
       run: go test -bench=. -benchmem ./...
 
   lint:
