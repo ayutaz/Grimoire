@@ -8,12 +8,6 @@ run:
   # Include test files
   tests: true
 
-  # Which dirs to skip
-  exclude-dirs:
-    - vendor
-    - .git
-    - .github
-
 # Output configuration
 output:
   # Print lines of code with issue
@@ -120,6 +114,15 @@ linters:
 
 # Issues configuration
 issues:
+  # Directories to exclude from analysis
+  exclude-dirs:
+    - vendor
+    - .git
+    - .github
+    - .git/**
+    - .github/**
+    - vendor/**
+  
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
     # Exclude test files from some linters
