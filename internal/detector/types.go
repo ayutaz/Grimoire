@@ -44,6 +44,18 @@ const (
 	Unknown          SymbolType = "unknown"
 )
 
+// Pattern constants
+const (
+	PatternEmpty      = "empty"
+	PatternDot        = "dot"
+	PatternDoubleDot  = "double_dot"
+	PatternTripleDot  = "triple_dot"
+	PatternLines      = "lines"
+	PatternTripleLine = "triple_line"
+	PatternCross      = "cross"
+	PatternHalfCircle = "half_circle"
+)
+
 // Position represents a position in the image
 type Position struct {
 	X float64

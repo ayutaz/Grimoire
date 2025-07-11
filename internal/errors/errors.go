@@ -57,11 +57,12 @@ func (e *GrimoireError) Error() string {
 
 	// Add location if available
 	if e.FileName != "" {
-		if e.Line > 0 && e.Column > 0 {
+		switch {
+		case e.Line > 0 && e.Column > 0:
 			parts = append(parts, fmt.Sprintf("  at %s:%d:%d", e.FileName, e.Line, e.Column))
-		} else if e.Line > 0 {
+		case e.Line > 0:
 			parts = append(parts, fmt.Sprintf("  at %s:%d", e.FileName, e.Line))
-		} else {
+		default:
 			parts = append(parts, fmt.Sprintf("  in %s", e.FileName))
 		}
 	}

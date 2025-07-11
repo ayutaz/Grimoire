@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	_ "image/jpeg"
-	_ "image/png"
+	_ "image/jpeg" // for jpeg image format support
+	_ "image/png"  // for png image format support
 	"math"
 	"os"
 	"path/filepath"
@@ -215,7 +215,7 @@ func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.G
 		}
 
 		// Detect internal pattern for shapes that can contain patterns
-		pattern := "empty"
+		pattern := PatternEmpty
 		if symbolType == Square || symbolType == Circle || symbolType == Pentagon ||
 			symbolType == Hexagon || symbolType == Star {
 			pattern = d.detectInternalPattern(contour, binary)

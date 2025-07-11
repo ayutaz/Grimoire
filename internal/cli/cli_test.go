@@ -644,7 +644,7 @@ func TestDebugCommandDetailedCoverage(t *testing.T) {
 	os.Stdout = wOut
 	os.Stderr = wErr
 
-	err = Execute("test", "test", "test")
+	_ = Execute("test", "test", "test")
 
 	wOut.Close()
 	wErr.Close()

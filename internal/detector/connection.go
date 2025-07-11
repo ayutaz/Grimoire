@@ -72,32 +72,6 @@ type Line struct {
 	End   image.Point
 }
 
-// detectEdges performs edge detection
-func (d *Detector) detectEdges(binary *image.Gray) *image.Gray {
-	bounds := binary.Bounds()
-	edges := image.NewGray(bounds)
-
-	// Simple edge detection using gradient
-	for y := bounds.Min.Y + 1; y < bounds.Max.Y-1; y++ {
-		for x := bounds.Min.X + 1; x < bounds.Max.X-1; x++ {
-			// Sobel operator
-			gx := int(binary.GrayAt(x+1, y-1).Y) + 2*int(binary.GrayAt(x+1, y).Y) + int(binary.GrayAt(x+1, y+1).Y) -
-				int(binary.GrayAt(x-1, y-1).Y) - 2*int(binary.GrayAt(x-1, y).Y) - int(binary.GrayAt(x-1, y+1).Y)
-
-			gy := int(binary.GrayAt(x-1, y+1).Y) + 2*int(binary.GrayAt(x, y+1).Y) + int(binary.GrayAt(x+1, y+1).Y) -
-				int(binary.GrayAt(x-1, y-1).Y) - 2*int(binary.GrayAt(x, y-1).Y) - int(binary.GrayAt(x+1, y-1).Y)
-
-			magnitude := int(math.Sqrt(float64(gx*gx + gy*gy)))
-			if magnitude > 50 { // Lower threshold for better edge detection
-				edges.Set(x, y, color.Gray{255})
-			} else {
-				edges.Set(x, y, color.Gray{0})
-			}
-		}
-	}
-
-	return edges
-}
 
 // detectLines detects lines using simplified Hough transform
 func (d *Detector) detectLines(edges *image.Gray) []Line {
@@ -468,19 +442,17 @@ func (d *Detector) determineConnectionDirection(sym1, sym2 *Symbol) (*Symbol, *S
 	type1IsOutput := sym1.Type == Star
 	type2IsOutput := sym2.Type == Star
 
+	switch {
 	// Data -> Operator
-	if type1IsData && type2IsOperator {
+	case type1IsData && type2IsOperator:
 		return sym1, sym2
-	}
-	if type2IsData && type1IsOperator {
+	case type2IsData && type1IsOperator:
 		return sym2, sym1
-	}
 
 	// Operator -> Output
-	if type1IsOperator && type2IsOutput {
+	case type1IsOperator && type2IsOutput:
 		return sym1, sym2
-	}
-	if type2IsOperator && type1IsOutput {
+	case type2IsOperator && type1IsOutput:
 		return sym2, sym1
 	}
 

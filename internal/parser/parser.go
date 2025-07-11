@@ -454,13 +454,13 @@ func (p *Parser) parseLoop(node *symbolNode) Statement {
 			Step:    step,
 			Body:    body,
 		}
-	} else {
-		// While loop
-		condition := p.parseCondition(node)
-		return &WhileLoop{
-			Condition: condition,
-			Body:      body,
-		}
+	}
+	
+	// While loop
+	condition := p.parseCondition(node)
+	return &WhileLoop{
+		Condition: condition,
+		Body:      body,
 	}
 }
 
