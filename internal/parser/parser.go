@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/ayutaz/grimoire/internal/detector"
+	grimoireErrors "github.com/ayutaz/grimoire/internal/errors"
 )
 
 // symbolNode wraps a symbol with parsing metadata
@@ -43,6 +44,12 @@ func (p *Parser) Parse(symbols []*detector.Symbol, connections []detector.Connec
 	p.symbols = symbols
 	p.connections = connections
 	
+	// Validate input
+	if len(symbols) == 0 {
+		return nil, grimoireErrors.NewError(grimoireErrors.SyntaxError, "No symbols to parse").
+			WithDetails("The input contains no detected symbols")
+	}
+	
 	// Build symbol graph
 	p.buildSymbolGraph()
 	
@@ -76,7 +83,7 @@ func (p *Parser) Parse(symbols []*detector.Symbol, connections []detector.Connec
 	}
 
 	if outerCircle == nil {
-		return nil, fmt.Errorf("no outer circle detected: all Grimoire programs must be enclosed in a magic circle")
+		return nil, grimoireErrors.NoOuterCircleError()
 	}
 
 	// Find main entry (double circle)
@@ -124,6 +131,16 @@ func (p *Parser) Parse(symbols []*detector.Symbol, connections []detector.Connec
 				break
 			}
 		}
+	}
+	
+	// Check if we have any errors
+	if len(p.errors) > 0 {
+		// Combine all errors into a single error message
+		errorMsg := "Parser encountered errors:"
+		for _, err := range p.errors {
+			errorMsg += "\n  - " + err.Error()
+		}
+		return nil, grimoireErrors.NewError(grimoireErrors.SyntaxError, errorMsg)
 	}
 
 	return &Program{
@@ -333,6 +350,15 @@ func (p *Parser) parseStatement(node *symbolNode) Statement {
 	node.visited = true
 	symbol := node.symbol
 	
+	// Track parsing errors
+	defer func() {
+		if r := recover(); r != nil {
+			err := grimoireErrors.NewError(grimoireErrors.SyntaxError, fmt.Sprintf("Panic during parsing: %v", r)).
+				WithDetails(fmt.Sprintf("Symbol: %s at (%.0f, %.0f)", symbol.Type, symbol.Position.X, symbol.Position.Y))
+			p.errors = append(p.errors, err)
+		}
+	}()
+	
 	switch symbol.Type {
 	case detector.Star:
 		return p.parseOutputStatement(node)
@@ -357,6 +383,9 @@ func (p *Parser) parseStatement(node *symbolNode) Statement {
 			}
 			return nil
 		}
+		// Report unexpected symbol
+		err := grimoireErrors.UnexpectedSymbolError(string(symbol.Type), "statement symbol", symbol.Position.X, symbol.Position.Y)
+		p.errors = append(p.errors, err)
 		return nil
 	}
 }
@@ -532,7 +561,7 @@ func (p *Parser) parseLiteral(node *symbolNode) *Literal {
 func (p *Parser) parseFunctionCall(node *symbolNode) *FunctionCall {
 	if node.visited {
 		return &FunctionCall{
-			Function:  nil,
+			Function:  &Identifier{Name: "print"},
 			Arguments: []Expression{},
 			DataType:  Void,
 		}
@@ -589,6 +618,15 @@ func (p *Parser) parseBinaryOp(node *symbolNode) *BinaryOp {
 				operands = append(operands, expr)
 			}
 		}
+	}
+	
+	// Validate operands
+	if len(operands) < 2 {
+		err := grimoireErrors.NewError(grimoireErrors.UnbalancedExpression, 
+			fmt.Sprintf("Binary operator %s requires two operands, found %d", symbol.Type, len(operands))).
+			WithDetails(fmt.Sprintf("At position (%.0f, %.0f)", symbol.Position.X, symbol.Position.Y)).
+			WithSuggestion("Ensure the operator is connected to two operand symbols")
+		p.errors = append(p.errors, err)
 	}
 	
 	// Ensure we have two operands
