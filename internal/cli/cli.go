@@ -86,15 +86,21 @@ func debugCommand(cmd *cobra.Command, args []string) error {
 	imagePath := args[0]
 
 	// Detect symbols
-	symbols, err := detector.DetectSymbols(imagePath)
+	symbols, connections, err := detector.DetectSymbols(imagePath)
 	if err != nil {
 		return fmt.Errorf("failed to detect symbols: %w", err)
 	}
 
 	// Display debug information
-	fmt.Printf("Detected %d symbols in %s:\n", len(symbols), filepath.Base(imagePath))
+	fmt.Printf("Detected %d symbols and %d connections in %s:\n", len(symbols), len(connections), filepath.Base(imagePath))
 	for i, symbol := range symbols {
 		fmt.Printf("[%d] %+v\n", i, symbol)
+	}
+	if len(connections) > 0 {
+		fmt.Println("\nConnections:")
+		for i, conn := range connections {
+			fmt.Printf("[%d] %s -> %s (%s)\n", i, conn.From.Type, conn.To.Type, conn.ConnectionType)
+		}
 	}
 
 	return nil
@@ -102,13 +108,13 @@ func debugCommand(cmd *cobra.Command, args []string) error {
 
 func processImage(imagePath string) (string, error) {
 	// 1. Detect symbols
-	symbols, err := detector.DetectSymbols(imagePath)
+	symbols, connections, err := detector.DetectSymbols(imagePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to detect symbols: %w", err)
 	}
 
 	// 2. Parse to AST
-	ast, err := parser.Parse(symbols)
+	ast, err := parser.Parse(symbols, connections)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse: %w", err)
 	}

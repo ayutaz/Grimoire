@@ -33,24 +33,24 @@ func NewDetector() *Detector {
 }
 
 // DetectSymbols detects all symbols in the given image file
-func DetectSymbols(imagePath string) ([]*Symbol, error) {
+func DetectSymbols(imagePath string) ([]*Symbol, []Connection, error) {
 	detector := NewDetector()
 	return detector.Detect(imagePath)
 }
 
 // Detect performs symbol detection on the image
-func (d *Detector) Detect(imagePath string) ([]*Symbol, error) {
+func (d *Detector) Detect(imagePath string) ([]*Symbol, []Connection, error) {
 	// Open image file
 	file, err := os.Open(imagePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open image: %w", err)
+		return nil, nil, fmt.Errorf("failed to open image: %w", err)
 	}
 	defer file.Close()
 
 	// Decode image
 	img, _, err := image.Decode(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode image: %w", err)
+		return nil, nil, fmt.Errorf("failed to decode image: %w", err)
 	}
 
 	// Convert to grayscale
@@ -84,9 +84,9 @@ func (d *Detector) Detect(imagePath string) ([]*Symbol, error) {
 	symbols = d.deduplicateNearbyStars(symbols)
 
 	// Detect connections
-	// TODO: Implement connection detection
+	connections := d.detectConnections(binary, symbols)
 
-	return symbols, nil
+	return symbols, connections, nil
 }
 
 // toGrayscale converts an image to grayscale

@@ -32,14 +32,15 @@ func NewParser() *Parser {
 }
 
 // Parse converts symbols to AST
-func Parse(symbols []*detector.Symbol) (*Program, error) {
+func Parse(symbols []*detector.Symbol, connections []detector.Connection) (*Program, error) {
 	parser := NewParser()
-	return parser.Parse(symbols)
+	return parser.Parse(symbols, connections)
 }
 
 // Parse performs the parsing
-func (p *Parser) Parse(symbols []*detector.Symbol) (*Program, error) {
+func (p *Parser) Parse(symbols []*detector.Symbol, connections []detector.Connection) (*Program, error) {
 	p.symbols = symbols
+	p.connections = connections
 	
 	// Build symbol graph
 	p.buildSymbolGraph()
@@ -122,8 +123,13 @@ func (p *Parser) buildSymbolGraph() {
 		}
 	}
 	
-	// Since we don't have explicit connections yet, infer them
-	p.inferConnections()
+	// Use explicit connections if available
+	if len(p.connections) > 0 {
+		p.applyConnections()
+	} else {
+		// Otherwise infer connections
+		p.inferConnections()
+	}
 }
 
 // inferConnections infers connections based on symbol positions
@@ -753,4 +759,29 @@ func distance(p1, p2 detector.Position) float64 {
 
 func abs(x float64) float64 {
 	return math.Abs(x)
+}
+
+// applyConnections applies explicit connections to the symbol graph
+func (p *Parser) applyConnections() {
+	for _, conn := range p.connections {
+		// Find the indices of the connected symbols
+		fromIdx := -1
+		toIdx := -1
+		
+		for i, sym := range p.symbols {
+			if sym == conn.From {
+				fromIdx = i
+			}
+			if sym == conn.To {
+				toIdx = i
+			}
+		}
+		
+		if fromIdx >= 0 && toIdx >= 0 {
+			fromNode := p.symbolGraph[fromIdx]
+			toNode := p.symbolGraph[toIdx]
+			fromNode.children = append(fromNode.children, toNode)
+			toNode.parent = fromNode
+		}
+	}
 }
