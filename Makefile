@@ -1,4 +1,9 @@
-.PHONY: all build test clean run-example install deps lint fmt
+.PHONY: all build test clean run-example install deps lint fmt check-version
+
+# Go version check
+MIN_GO_VERSION = 1.21
+GO_VERSION := $(shell go version | cut -d' ' -f3 | cut -d'.' -f2)
+GO_VERSION_CHECK := $(shell echo "$(GO_VERSION) >= 21" | bc)
 
 # Variables
 BINARY_NAME=grimoire
@@ -9,10 +14,18 @@ DATE=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
 LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
 
 # Default target
-all: build
+all: check-version build
+
+# Check Go version
+check-version:
+	@if [ "$(GO_VERSION_CHECK)" != "1" ]; then \
+		echo "Error: Go version $(MIN_GO_VERSION) or higher is required"; \
+		echo "Current version: $(shell go version)"; \
+		exit 1; \
+	fi
 
 # Build the binary
-build:
+build: check-version
 	go build $(LDFLAGS) -o $(BINARY_NAME) cmd/grimoire/main.go
 
 # Build for all platforms
