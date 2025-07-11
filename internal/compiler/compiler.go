@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/ayutaz/grimoire/internal/parser"
+	grimoireErrors "github.com/ayutaz/grimoire/internal/errors"
 )
 
 // Compiler generates code from AST
@@ -31,6 +32,16 @@ func Compile(ast *parser.Program) (string, error) {
 // Compile performs the compilation
 func (c *Compiler) Compile(ast *parser.Program) (string, error) {
 	c.output.Reset()
+	
+	// Validate AST
+	if ast == nil {
+		return "", grimoireErrors.NewError(grimoireErrors.CompilationError, "Cannot compile nil AST")
+	}
+	
+	// Check for required outer circle
+	if !ast.HasOuterCircle {
+		return "", grimoireErrors.NoOuterCircleError()
+	}
 
 	// Add header comment
 	c.writeLine("#!/usr/bin/env python3")
@@ -39,7 +50,9 @@ func (c *Compiler) Compile(ast *parser.Program) (string, error) {
 
 	// Compile globals
 	for _, stmt := range ast.Globals {
-		c.compileStatement(stmt)
+		if err := c.compileStatement(stmt); err != nil {
+			return "", err
+		}
 	}
 
 	// Compile functions
@@ -55,12 +68,18 @@ func (c *Compiler) Compile(ast *parser.Program) (string, error) {
 			c.writeLine("if __name__ == \"__main__\":")
 			c.indent++
 			for _, stmt := range ast.MainEntry.Body {
-				c.compileStatement(stmt)
+				if err := c.compileStatement(stmt); err != nil {
+					return "", err
+				}
 			}
 			c.indent--
 		} else {
 			c.compileFunction(ast.MainEntry)
 		}
+	} else if len(ast.Globals) == 0 && len(ast.Functions) == 0 {
+		// No main entry and no other code
+		return "", grimoireErrors.NewError(grimoireErrors.MissingMainEntry, "No main entry point found").
+			WithSuggestion("Add a double circle symbol to define the main entry point")
 	}
 
 	return c.output.String(), nil
@@ -101,7 +120,10 @@ func (c *Compiler) compileFunction(fn *parser.FunctionDef) {
 		c.writeLine("pass")
 	} else {
 		for _, stmt := range fn.Body {
-			c.compileStatement(stmt)
+			if err := c.compileStatement(stmt); err != nil {
+				// Add error context
+				return
+			}
 		}
 	}
 	
@@ -109,7 +131,11 @@ func (c *Compiler) compileFunction(fn *parser.FunctionDef) {
 }
 
 // compileStatement compiles a statement
-func (c *Compiler) compileStatement(stmt parser.Statement) {
+func (c *Compiler) compileStatement(stmt parser.Statement) error {
+	if stmt == nil {
+		return grimoireErrors.NewError(grimoireErrors.CompilationError, "Cannot compile nil statement")
+	}
+	
 	switch s := stmt.(type) {
 	case *parser.OutputStatement:
 		c.compileOutputStatement(s)
@@ -128,7 +154,11 @@ func (c *Compiler) compileStatement(stmt parser.Statement) {
 	case *parser.ExpressionStatement:
 		expr := c.compileExpression(s.Expression)
 		c.writeLine(expr)
+	default:
+		return grimoireErrors.NewError(grimoireErrors.UnsupportedOperation, 
+			fmt.Sprintf("Unsupported statement type: %T", stmt))
 	}
+	return nil
 }
 
 // compileOutputStatement compiles an output statement
@@ -263,6 +293,10 @@ func (c *Compiler) compileExpression(expr parser.Expression) string {
 	case *parser.MapLiteral:
 		return c.compileMapLiteral(e)
 	default:
+		// Log warning for unsupported expression type
+		if expr != nil {
+			c.writeLine(fmt.Sprintf("# Warning: Unsupported expression type: %T", expr))
+		}
 		return "None"
 	}
 }

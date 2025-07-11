@@ -5,11 +5,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/ayutaz/grimoire/internal/compiler"
 	"github.com/ayutaz/grimoire/internal/detector"
 	"github.com/ayutaz/grimoire/internal/parser"
+	grimoireErrors "github.com/ayutaz/grimoire/internal/errors"
 )
 
 // Execute runs the CLI
@@ -57,11 +59,16 @@ func runCommand(cmd *cobra.Command, args []string) error {
 	// Process the image
 	code, err := processImage(imagePath)
 	if err != nil {
-		return err
+		return formatError(err, imagePath)
 	}
 
 	// Execute the generated code
-	return executePython(code)
+	if err := executePython(code); err != nil {
+		return grimoireErrors.NewError(grimoireErrors.ExecutionError, "Failed to execute generated Python code").
+			WithInnerError(err).
+			WithSuggestion("Check that Python 3 is installed and in your PATH")
+	}
+	return nil
 }
 
 func compileCommand(cmd *cobra.Command, args []string) error {
@@ -71,14 +78,20 @@ func compileCommand(cmd *cobra.Command, args []string) error {
 	// Process the image
 	code, err := processImage(imagePath)
 	if err != nil {
-		return err
+		return formatError(err, imagePath)
 	}
 
 	// Output the code
 	if outputPath != "" {
-		return os.WriteFile(outputPath, []byte(code), 0644)
+		if err := os.WriteFile(outputPath, []byte(code), 0644); err != nil {
+			return grimoireErrors.NewError(grimoireErrors.FileWriteError, "Failed to write output file").
+				WithInnerError(err).
+				WithLocation(outputPath, 0, 0)
+		}
+		fmt.Printf("Successfully compiled to %s\n", outputPath)
+	} else {
+		fmt.Print(code)
 	}
-	fmt.Print(code)
 	return nil
 }
 
@@ -88,18 +101,23 @@ func debugCommand(cmd *cobra.Command, args []string) error {
 	// Detect symbols
 	symbols, connections, err := detector.DetectSymbols(imagePath)
 	if err != nil {
-		return fmt.Errorf("failed to detect symbols: %w", err)
+		return formatError(err, imagePath)
 	}
 
 	// Display debug information
-	fmt.Printf("Detected %d symbols and %d connections in %s:\n", len(symbols), len(connections), filepath.Base(imagePath))
+	fmt.Printf("\n=== Debug Information for %s ===\n", filepath.Base(imagePath))
+	fmt.Printf("Detected %d symbols and %d connections\n\n", len(symbols), len(connections))
+	
+	fmt.Println("Symbols:")
 	for i, symbol := range symbols {
-		fmt.Printf("[%d] %+v\n", i, symbol)
+		fmt.Printf("  [%d] Type: %-15s Position: (%.0f, %.0f) Size: %.1f Pattern: %s\n", 
+			i, symbol.Type, symbol.Position.X, symbol.Position.Y, symbol.Size, symbol.Pattern)
 	}
+	
 	if len(connections) > 0 {
 		fmt.Println("\nConnections:")
 		for i, conn := range connections {
-			fmt.Printf("[%d] %s -> %s (%s)\n", i, conn.From.Type, conn.To.Type, conn.ConnectionType)
+			fmt.Printf("  [%d] %s -> %s (%s)\n", i, conn.From.Type, conn.To.Type, conn.ConnectionType)
 		}
 	}
 
@@ -110,19 +128,19 @@ func processImage(imagePath string) (string, error) {
 	// 1. Detect symbols
 	symbols, connections, err := detector.DetectSymbols(imagePath)
 	if err != nil {
-		return "", fmt.Errorf("failed to detect symbols: %w", err)
+		return "", err // Already formatted error
 	}
 
 	// 2. Parse to AST
 	ast, err := parser.Parse(symbols, connections)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse: %w", err)
+		return "", err // Already formatted error
 	}
 
 	// 3. Compile to Python
 	code, err := compiler.Compile(ast)
 	if err != nil {
-		return "", fmt.Errorf("failed to compile: %w", err)
+		return "", err // Already formatted error
 	}
 
 	return code, nil
@@ -132,13 +150,14 @@ func executePython(code string) error {
 	// Create a temporary Python file
 	tmpFile, err := os.CreateTemp("", "grimoire_*.py")
 	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
+		return err
 	}
 	defer os.Remove(tmpFile.Name())
 
 	// Write the code
 	if _, err := tmpFile.WriteString(code); err != nil {
-		return fmt.Errorf("failed to write code: %w", err)
+		tmpFile.Close()
+		return err
 	}
 	tmpFile.Close()
 
@@ -148,4 +167,21 @@ func executePython(code string) error {
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
+}
+
+// formatError formats an error for user-friendly display
+func formatError(err error, imagePath string) error {
+	if grimoireErrors.IsGrimoireError(err) {
+		// Already formatted
+		return err
+	}
+	
+	// Wrap generic errors
+	if strings.Contains(err.Error(), "no such file") {
+		return grimoireErrors.FileNotFoundError(imagePath)
+	}
+	
+	return grimoireErrors.NewError(grimoireErrors.ExecutionError, "An error occurred").
+		WithInnerError(err).
+		WithLocation(imagePath, 0, 0)
 }
