@@ -57,8 +57,8 @@ func TestE2E_Calculator(t *testing.T) {
 		outputStr := string(output)
 		t.Logf("Compile output: %s", outputStr)
 		
-		// Should at least detect symbols
-		assert.Contains(t, outputStr, "Detected", "Should detect some symbols")
+		// Should generate Python code
+		assert.Contains(t, outputStr, "#!/usr/bin/env python3", "Should generate Python code")
 	})
 
 	t.Run("debug_calculator", func(t *testing.T) {
@@ -71,8 +71,8 @@ func TestE2E_Calculator(t *testing.T) {
 		t.Logf("Debug output: %s", outputStr)
 		
 		if err == nil {
-			assert.Contains(t, outputStr, "Symbol Detection", "Should show symbol detection")
-			assert.Contains(t, outputStr, "Connections", "Should show connections")
+			assert.Contains(t, outputStr, "Symbols:", "Should show symbols")
+			assert.Contains(t, outputStr, "Connections:", "Should show connections")
 		}
 	})
 }
@@ -182,7 +182,7 @@ func TestE2E_ErrorHandling(t *testing.T) {
 			name:        "missing file",
 			args:        []string{"compile", "nonexistent.png"},
 			wantErr:     true,
-			errContains: "no such file",
+			errContains: "FILE_NOT_FOUND",
 		},
 		{
 			name:        "invalid command",
@@ -201,8 +201,8 @@ func TestE2E_ErrorHandling(t *testing.T) {
 			wantErr:     false,
 		},
 		{
-			name:        "version command",
-			args:        []string{"version"},
+			name:        "version flag",
+			args:        []string{"--version"},
 			wantErr:     false,
 		},
 	}
@@ -269,11 +269,11 @@ func TestE2E_CalculatorPerformance(t *testing.T) {
 	// Binary should be reasonably small (under 5MB)
 	assert.Less(t, binarySize, int64(5*1024*1024), "Binary should be under 5MB")
 
-	// Test startup time with version command
-	cmd := exec.Command(binaryName, "version")
+	// Test startup time with version flag
+	cmd := exec.Command(binaryName, "--version")
 	err = cmd.Start()
 	require.NoError(t, err)
 	
 	err = cmd.Wait()
-	assert.NoError(t, err, "Version command should exit successfully")
+	assert.NoError(t, err, "Version flag should exit successfully")
 }
