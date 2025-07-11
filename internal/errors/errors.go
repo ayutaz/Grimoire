@@ -3,6 +3,8 @@ package errors
 import (
 	"fmt"
 	"strings"
+	
+	"github.com/ayutaz/grimoire/internal/i18n"
 )
 
 // ErrorType represents the type of error
@@ -52,34 +54,35 @@ type GrimoireError struct {
 func (e *GrimoireError) Error() string {
 	var parts []string
 
-	// Main error message
-	parts = append(parts, fmt.Sprintf("[%s] %s", e.Type, e.Message))
+	// Main error message with localized error type
+	errorTypeStr := getLocalizedErrorType(e.Type)
+	parts = append(parts, fmt.Sprintf("[%s] %s", errorTypeStr, e.Message))
 
 	// Add location if available
 	if e.FileName != "" {
 		switch {
 		case e.Line > 0 && e.Column > 0:
-			parts = append(parts, fmt.Sprintf("  at %s:%d:%d", e.FileName, e.Line, e.Column))
+			parts = append(parts, i18n.Tf("error.at_location", e.FileName, e.Line, e.Column))
 		case e.Line > 0:
-			parts = append(parts, fmt.Sprintf("  at %s:%d", e.FileName, e.Line))
+			parts = append(parts, i18n.Tf("error.at_line", e.FileName, e.Line))
 		default:
-			parts = append(parts, fmt.Sprintf("  in %s", e.FileName))
+			parts = append(parts, i18n.Tf("error.in_file", e.FileName))
 		}
 	}
 
 	// Add details if available
 	if e.Details != "" {
-		parts = append(parts, fmt.Sprintf("  Details: %s", e.Details))
+		parts = append(parts, i18n.Tf("error.details", e.Details))
 	}
 
 	// Add suggestion if available
 	if e.Suggestion != "" {
-		parts = append(parts, fmt.Sprintf("  Suggestion: %s", e.Suggestion))
+		parts = append(parts, i18n.Tf("error.suggestion", e.Suggestion))
 	}
 
 	// Add inner error if available
 	if e.InnerError != nil {
-		parts = append(parts, fmt.Sprintf("  Caused by: %v", e.InnerError))
+		parts = append(parts, i18n.Tf("error.caused_by", e.InnerError))
 	}
 
 	return strings.Join(parts, "\n")
@@ -128,40 +131,40 @@ func (e *GrimoireError) WithInnerError(err error) *GrimoireError {
 
 // FileNotFoundError creates a file not found error
 func FileNotFoundError(path string) *GrimoireError {
-	return NewError(FileNotFound, fmt.Sprintf("Image file not found: %s", path)).
-		WithSuggestion("Please check the file path and ensure the file exists")
+	return NewError(FileNotFound, i18n.Tf("msg.image_file_not_found", path)).
+		WithSuggestion(i18n.T("suggest.check_file_path"))
 }
 
 // UnsupportedFormatError creates an unsupported format error
 func UnsupportedFormatError(format string) *GrimoireError {
-	return NewError(UnsupportedFormat, fmt.Sprintf("Unsupported image format: %s", format)).
-		WithSuggestion("Grimoire supports PNG and JPEG image formats")
+	return NewError(UnsupportedFormat, i18n.Tf("msg.unsupported_image_format", format)).
+		WithSuggestion(i18n.T("suggest.supported_formats"))
 }
 
 // NoSymbolsError creates a no symbols detected error
 func NoSymbolsError() *GrimoireError {
-	return NewError(NoSymbolsDetected, "No symbols were detected in the image").
-		WithSuggestion("Ensure the image contains clear magical symbols with good contrast")
+	return NewError(NoSymbolsDetected, i18n.T("msg.no_symbols_detected")).
+		WithSuggestion(i18n.T("suggest.ensure_clear_symbols"))
 }
 
 // NoOuterCircleError creates a no outer circle error
 func NoOuterCircleError() *GrimoireError {
-	return NewError(NoOuterCircle, "No outer circle detected in the magic diagram").
-		WithDetails("All Grimoire programs must be enclosed in a magic circle").
-		WithSuggestion("Draw a clear circle around your entire program")
+	return NewError(NoOuterCircle, i18n.T("msg.no_outer_circle")).
+		WithDetails(i18n.T("detail.all_programs_need_circle")).
+		WithSuggestion(i18n.T("suggest.draw_clear_circle"))
 }
 
 // SyntaxErrorAt creates a syntax error with location
 func SyntaxErrorAt(message, symbolType string, x, y float64) *GrimoireError {
 	return NewError(SyntaxError, message).
-		WithDetails(fmt.Sprintf("Symbol type: %s at position (%.0f, %.0f)", symbolType, x, y))
+		WithDetails(i18n.Tf("detail.symbol_type_at_position", symbolType, x, y))
 }
 
 // UnexpectedSymbolError creates an unexpected symbol error
 func UnexpectedSymbolError(symbolType, expected string, x, y float64) *GrimoireError {
-	return NewError(UnexpectedSymbol, fmt.Sprintf("Unexpected symbol: %s", symbolType)).
-		WithDetails(fmt.Sprintf("Expected: %s at position (%.0f, %.0f)", expected, x, y)).
-		WithSuggestion("Check the symbol placement and connections in your diagram")
+	return NewError(UnexpectedSymbol, i18n.Tf("msg.unexpected_symbol", symbolType)).
+		WithDetails(i18n.Tf("detail.expected_at_position", expected, x, y)).
+		WithSuggestion(i18n.T("suggest.check_symbol_placement"))
 }
 
 // IsGrimoireError checks if an error is a GrimoireError
@@ -176,4 +179,44 @@ func GetErrorType(err error) (ErrorType, bool) {
 		return ge.Type, true
 	}
 	return "", false
+}
+
+// getLocalizedErrorType returns the localized error type string
+func getLocalizedErrorType(errorType ErrorType) string {
+	switch errorType {
+	case FileNotFound:
+		return i18n.T("error.file_not_found")
+	case UnsupportedFormat:
+		return i18n.T("error.unsupported_format")
+	case FileReadError:
+		return i18n.T("error.file_read_error")
+	case FileWriteError:
+		return i18n.T("error.file_write_error")
+	case NoSymbolsDetected:
+		return i18n.T("error.no_symbols_detected")
+	case NoOuterCircle:
+		return i18n.T("error.no_outer_circle")
+	case InvalidSymbolShape:
+		return i18n.T("error.invalid_symbol_shape")
+	case ImageProcessingError:
+		return i18n.T("error.image_processing_error")
+	case SyntaxError:
+		return i18n.T("error.syntax_error")
+	case UnexpectedSymbol:
+		return i18n.T("error.unexpected_symbol")
+	case MissingMainEntry:
+		return i18n.T("error.missing_main_entry")
+	case InvalidConnection:
+		return i18n.T("error.invalid_connection")
+	case UnbalancedExpression:
+		return i18n.T("error.unbalanced_expression")
+	case CompilationError:
+		return i18n.T("error.compilation_error")
+	case UnsupportedOperation:
+		return i18n.T("error.unsupported_operation")
+	case ExecutionError:
+		return i18n.T("error.execution_error")
+	default:
+		return string(errorType)
+	}
 }

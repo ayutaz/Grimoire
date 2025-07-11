@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ayutaz/grimoire/internal/cli"
+	"github.com/ayutaz/grimoire/internal/i18n"
 )
 
 var (
@@ -23,13 +24,13 @@ func run() int {
 
 	// CLIの実行
 	if err := cli.Execute(version, commit, date); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, i18n.T("error.error_prefix"), err)
 		return 1
 	}
 
 	// デバッグモードの場合は実行時間を表示
 	if os.Getenv("GRIMOIRE_DEBUG") != "" {
-		fmt.Fprintf(os.Stderr, "Execution time: %v\n", time.Since(start))
+		fmt.Fprintf(os.Stderr, i18n.T("error.execution_time"), time.Since(start))
 	}
 
 	return 0

@@ -10,24 +10,27 @@ import (
 	"github.com/ayutaz/grimoire/internal/compiler"
 	"github.com/ayutaz/grimoire/internal/detector"
 	grimoireErrors "github.com/ayutaz/grimoire/internal/errors"
+	"github.com/ayutaz/grimoire/internal/i18n"
 	"github.com/ayutaz/grimoire/internal/parser"
 	"github.com/spf13/cobra"
 )
 
 // Execute runs the CLI
 func Execute(version, commit, date string) error {
+	// Initialize i18n before creating commands
+	i18n.Init()
+	
 	rootCmd := &cobra.Command{
 		Use:   "grimoire",
-		Short: "A visual programming language using magic circles",
-		Long: `Grimoire is a visual programming language where programs are expressed as magic circles.
-Draw your spells and watch them come to life!`,
+		Short: i18n.T("cli.description_short"),
+		Long:  i18n.T("cli.description_long"),
 		Version: fmt.Sprintf("%s (commit: %s, built: %s)", version, commit, date),
 	}
 
 	// Run command
 	runCmd := &cobra.Command{
 		Use:   "run [image]",
-		Short: "Run a Grimoire program",
+		Short: i18n.T("cli.run_description"),
 		Args:  cobra.ExactArgs(1),
 		RunE:  runCommand,
 	}
@@ -35,20 +38,34 @@ Draw your spells and watch them come to life!`,
 	// Compile command
 	compileCmd := &cobra.Command{
 		Use:   "compile [image]",
-		Short: "Compile a Grimoire program to Python",
+		Short: i18n.T("cli.compile_description"),
 		Args:  cobra.ExactArgs(1),
 		RunE:  compileCommand,
 	}
-	compileCmd.Flags().StringP("output", "o", "", "Output file path")
+	compileCmd.Flags().StringP("output", "o", "", i18n.T("cli.output_flag_description"))
 
 	// Debug command
 	debugCmd := &cobra.Command{
 		Use:   "debug [image]",
-		Short: "Debug a Grimoire program (show detected symbols)",
+		Short: i18n.T("cli.debug_description"),
 		Args:  cobra.ExactArgs(1),
 		RunE:  debugCommand,
 	}
 
+	// Add global language flag
+	rootCmd.PersistentFlags().StringP("lang", "l", "", i18n.T("cli.language_flag_description"))
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		if lang, _ := cmd.Flags().GetString("lang"); lang != "" {
+			switch strings.ToLower(lang) {
+			case "ja", "japanese":
+				i18n.SetLanguage(i18n.Japanese)
+			case "en", "english":
+				i18n.SetLanguage(i18n.English)
+			}
+		}
+		return nil
+	}
+	
 	rootCmd.AddCommand(runCmd, compileCmd, debugCmd)
 	return rootCmd.Execute()
 }
@@ -64,9 +81,9 @@ func runCommand(_ *cobra.Command, args []string) error {
 
 	// Execute the generated code
 	if err := executePython(code); err != nil {
-		return grimoireErrors.NewError(grimoireErrors.ExecutionError, "Failed to execute generated Python code").
+		return grimoireErrors.NewError(grimoireErrors.ExecutionError, i18n.T("msg.failed_execute_python")).
 			WithInnerError(err).
-			WithSuggestion("Check that Python 3 is installed and in your PATH")
+			WithSuggestion(i18n.T("suggest.check_python_installed"))
 	}
 	return nil
 }
@@ -84,11 +101,11 @@ func compileCommand(cmd *cobra.Command, args []string) error {
 	// Output the code
 	if outputPath != "" {
 		if err := os.WriteFile(outputPath, []byte(code), 0o644); err != nil {
-			return grimoireErrors.NewError(grimoireErrors.FileWriteError, "Failed to write output file").
+			return grimoireErrors.NewError(grimoireErrors.FileWriteError, i18n.T("msg.failed_write_output")).
 				WithInnerError(err).
 				WithLocation(outputPath, 0, 0)
 		}
-		fmt.Printf("Successfully compiled to %s\n", outputPath)
+		fmt.Printf(i18n.T("cli.compile_success"), outputPath)
 	} else {
 		fmt.Print(code)
 	}
@@ -105,19 +122,19 @@ func debugCommand(_ *cobra.Command, args []string) error {
 	}
 
 	// Display debug information
-	fmt.Printf("\n=== Debug Information for %s ===\n", filepath.Base(imagePath))
-	fmt.Printf("Detected %d symbols and %d connections\n\n", len(symbols), len(connections))
+	fmt.Printf(i18n.T("debug.header"), filepath.Base(imagePath))
+	fmt.Printf(i18n.T("debug.detected_summary"), len(symbols), len(connections))
 
-	fmt.Println("Symbols:")
+	fmt.Println(i18n.T("debug.symbols_header"))
 	for i, symbol := range symbols {
-		fmt.Printf("  [%d] Type: %-15s Position: (%.0f, %.0f) Size: %.1f Pattern: %s\n",
+		fmt.Printf(i18n.T("debug.symbol_info"),
 			i, symbol.Type, symbol.Position.X, symbol.Position.Y, symbol.Size, symbol.Pattern)
 	}
 
 	if len(connections) > 0 {
-		fmt.Println("\nConnections:")
+		fmt.Println(i18n.T("debug.connections_header"))
 		for i, conn := range connections {
-			fmt.Printf("  [%d] %s -> %s (%s)\n", i, conn.From.Type, conn.To.Type, conn.ConnectionType)
+			fmt.Printf(i18n.T("debug.connection_info"), i, conn.From.Type, conn.To.Type, conn.ConnectionType)
 		}
 	}
 
@@ -181,7 +198,7 @@ func formatError(err error, imagePath string) error {
 		return grimoireErrors.FileNotFoundError(imagePath)
 	}
 
-	return grimoireErrors.NewError(grimoireErrors.ExecutionError, "An error occurred").
+	return grimoireErrors.NewError(grimoireErrors.ExecutionError, i18n.T("msg.error_occurred")).
 		WithInnerError(err).
 		WithLocation(imagePath, 0, 0)
 }

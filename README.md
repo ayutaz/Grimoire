@@ -106,6 +106,12 @@ grimoire compile magic_circle.png -o output.py
 
 # デバッグモード
 grimoire debug magic_circle.png
+
+# 英語モードで実行（デフォルトは日本語）
+grimoire run magic_circle.png --lang en
+# または環境変数で設定
+export GRIMOIRE_LANG=en
+grimoire run magic_circle.png
 ```
 
 ## 📝 プログラム例
