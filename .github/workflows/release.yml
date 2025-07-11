@@ -1,0 +1,109 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  GO_VERSION: '1.23'
+
+jobs:
+  build-release:
+    name: Build Release Binaries
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    
+    - name: Build optimized binaries
+      run: |
+        make build-release
+        cd dist
+        # Create checksums
+        sha256sum * > checksums.txt
+        # Create archives for each platform
+        tar -czf grimoire-darwin-amd64.tar.gz grimoire-darwin-amd64
+        tar -czf grimoire-darwin-arm64.tar.gz grimoire-darwin-arm64
+        tar -czf grimoire-linux-amd64.tar.gz grimoire-linux-amd64
+        tar -czf grimoire-linux-arm64.tar.gz grimoire-linux-arm64
+        zip grimoire-windows-amd64.zip grimoire-windows-amd64.exe
+        ls -la
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-binaries
+        path: |
+          dist/*.tar.gz
+          dist/*.zip
+          dist/checksums.txt
+        retention-days: 1
+
+  create-release:
+    name: Create GitHub Release
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for release notes
+    
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: release-binaries
+        path: dist
+    
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        # Get the previous tag
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        CURRENT_TAG=${GITHUB_REF#refs/tags/}
+        
+        echo "## Release $CURRENT_TAG" > release_notes.md
+        echo "" >> release_notes.md
+        
+        if [ -n "$PREV_TAG" ]; then
+          echo "### Changes since $PREV_TAG" >> release_notes.md
+          echo "" >> release_notes.md
+          
+          # Get commit messages
+          git log $PREV_TAG..$CURRENT_TAG --pretty=format:"- %s (%an)" >> release_notes.md
+        else
+          echo "### Initial Release" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "First release of Grimoire - A pure symbolic programming language" >> release_notes.md
+        fi
+        
+        echo "" >> release_notes.md
+        echo "### Installation" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "1. Download the appropriate binary for your platform" >> release_notes.md
+        echo "2. Extract the archive" >> release_notes.md
+        echo "3. Make it executable (Unix/macOS): \`chmod +x grimoire-*\`" >> release_notes.md
+        echo "4. Move to your PATH: \`sudo mv grimoire-* /usr/local/bin/grimoire\`" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "### Checksums" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "\`\`\`" >> release_notes.md
+        cat dist/checksums.txt >> release_notes.md
+        echo "\`\`\`" >> release_notes.md
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: dist/*
+        body_path: release_notes.md
+        draft: false
+        prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
+        generate_release_notes: false  # We generate our own
