@@ -26,10 +26,19 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
     
+    - name: Get Go paths
+      id: go-paths
+      run: |
+        echo "mod-cache=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
+        echo "build-cache=$(go env GOCACHE)" >> $GITHUB_OUTPUT
+    
     - name: Cache Go modules
       uses: actions/cache@v4
+      continue-on-error: true
       with:
-        path: ~/go/pkg/mod
+        path: |
+          ${{ steps.go-paths.outputs.mod-cache }}
+          ${{ steps.go-paths.outputs.build-cache }}
         key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-${{ matrix.go }}-
