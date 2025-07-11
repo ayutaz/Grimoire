@@ -220,25 +220,26 @@ func (p *Parser) inferConnections() {
 
 	// Connect stars to nearest expressions above
 	for _, node := range symbolsToConnect {
-		if node.symbol.Type == detector.Star {
-			starPos := node.symbol.Position
-			var nearest *symbolNode
-			minDist := 999999.0
+		if node.symbol.Type != detector.Star {
+			continue
+		}
+		starPos := node.symbol.Position
+		var nearest *symbolNode
+		minDist := 999999.0
 
-			for _, other := range symbolsToConnect {
-				if other != node && other.symbol.Position.Y < starPos.Y {
-					dist := distance(starPos, other.symbol.Position)
-					if dist < minDist {
-						minDist = dist
-						nearest = other
-					}
+		for _, other := range symbolsToConnect {
+			if other != node && other.symbol.Position.Y < starPos.Y {
+				dist := distance(starPos, other.symbol.Position)
+				if dist < minDist {
+					minDist = dist
+					nearest = other
 				}
 			}
+		}
 
-			if nearest != nil && minDist < 150 {
-				nearest.children = append(nearest.children, node)
-				node.parent = nearest
-			}
+		if nearest != nil && minDist < 150 {
+			nearest.children = append(nearest.children, node)
+			node.parent = nearest
 		}
 	}
 }

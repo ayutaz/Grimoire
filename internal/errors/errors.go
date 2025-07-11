@@ -158,7 +158,7 @@ func SyntaxErrorAt(message string, symbolType string, x, y float64) *GrimoireErr
 }
 
 // UnexpectedSymbolError creates an unexpected symbol error
-func UnexpectedSymbolError(symbolType string, expected string, x, y float64) *GrimoireError {
+func UnexpectedSymbolError(symbolType, expected string, x, y float64) *GrimoireError {
 	return NewError(UnexpectedSymbol, fmt.Sprintf("Unexpected symbol: %s", symbolType)).
 		WithDetails(fmt.Sprintf("Expected: %s at position (%.0f, %.0f)", expected, x, y)).
 		WithSuggestion("Check the symbol placement and connections in your diagram")
