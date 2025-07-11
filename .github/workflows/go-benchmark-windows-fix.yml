@@ -1,0 +1,48 @@
+name: Windows Benchmark Test Fix
+
+on:
+  workflow_dispatch:  # 手動実行用
+
+env:
+  GO_VERSION: '1.23'
+
+jobs:
+  test-benchmark-windows:
+    name: Test Benchmark on Windows
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    
+    - name: Test benchmark with cmd.exe
+      shell: cmd
+      run: |
+        echo "Testing with cmd.exe"
+        go test -bench=. -benchmem ./...
+    
+    - name: Test benchmark with PowerShell (quoted)
+      shell: pwsh
+      run: |
+        Write-Host "Testing with PowerShell (quoted)"
+        go test -bench="." -benchmem ./...
+    
+    - name: Test benchmark with PowerShell (space)
+      shell: pwsh
+      run: |
+        Write-Host "Testing with PowerShell (space)"
+        go test -bench . -benchmem ./...
+    
+    - name: Test benchmark with PowerShell (per package)
+      shell: pwsh
+      run: |
+        Write-Host "Testing with PowerShell (per package)"
+        $packages = go list ./...
+        foreach ($pkg in $packages) {
+          Write-Host "Testing package: $pkg"
+          go test -bench="." -benchmem $pkg
+        }

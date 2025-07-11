@@ -73,7 +73,12 @@ test-coverage: test
 
 # Run benchmarks
 bench:
-	go test -bench=. -benchmem ./...
+	@if [ "$(OS)" = "Windows_NT" ]; then \
+		echo "Running benchmarks on Windows..."; \
+		cmd.exe /c "go test -bench=. -benchmem ./..."; \
+	else \
+		go test -bench=. -benchmem ./...; \
+	fi
 
 # Lint the code
 lint:
