@@ -5,23 +5,17 @@ run:
   # Timeout for analysis
   timeout: 5m
   
-  # Go version to target
-  go: '1.21'
-
   # Include test files
   tests: true
 
   # Which dirs to skip
-  skip-dirs:
+  exclude-dirs:
     - vendor
     - .git
     - .github
 
 # Output configuration
 output:
-  # Format of output
-  format: colored-line-number
-  
   # Print lines of code with issue
   print-issued-lines: true
   
@@ -31,8 +25,8 @@ output:
 # Linter settings
 linters-settings:
   govet:
-    # Check for shadowed variables
-    check-shadowing: true
+    # Enable all analyzers
+    enable-all: true
   
   gocyclo:
     # Minimal code complexity to report
@@ -69,22 +63,6 @@ linters-settings:
     disabled-checks:
       - hugeParam # Can be noisy for large structs
       - rangeValCopy # Sometimes copying is intentional
-  
-  gosimple:
-    # Go version to target
-    go: '1.21'
-  
-  staticcheck:
-    # Go version to target
-    go: '1.21'
-  
-  stylecheck:
-    # Go version to target
-    go: '1.21'
-  
-  unused:
-    # Go version to target
-    go: '1.21'
 
 # Linters to enable
 linters:
