@@ -13,6 +13,11 @@ import (
 	grimoireErrors "github.com/ayutaz/grimoire/internal/errors"
 )
 
+// Config holds detector configuration
+type Config struct {
+	Debug bool
+}
+
 // Detector handles symbol detection from images
 type Detector struct {
 	minContourArea    int
@@ -21,10 +26,11 @@ type Detector struct {
 	blurKernelSize    int
 	adaptiveBlockSize int
 	morphKernelSize   int
+	debug             bool
 }
 
 // NewDetector creates a new detector with default settings
-func NewDetector() *Detector {
+func NewDetector(cfg Config) *Detector {
 	return &Detector{
 		minContourArea:    50,   // Lower to detect small stars
 		circleThreshold:   0.85, // Higher threshold to distinguish squares from circles
@@ -32,12 +38,14 @@ func NewDetector() *Detector {
 		blurKernelSize:    3, // Reduced blur to preserve edges
 		adaptiveBlockSize: 11,
 		morphKernelSize:   2, // Reduced to prevent breaking thin lines
+		debug:             cfg.Debug,
 	}
 }
 
+
 // DetectSymbols detects all symbols in the given image file
 func DetectSymbols(imagePath string) ([]*Symbol, []Connection, error) {
-	detector := NewDetector()
+	detector := NewDetector(Config{Debug: false})
 	return detector.Detect(imagePath)
 }
 

@@ -36,6 +36,12 @@ const (
 
 	// Runtime errors
 	ExecutionError ErrorType = "EXECUTION_ERROR"
+	
+	// Validation errors
+	ValidationError ErrorType = "VALIDATION_ERROR"
+	
+	// I/O errors
+	IOError ErrorType = "IO_ERROR"
 )
 
 // GrimoireError represents a custom error with context

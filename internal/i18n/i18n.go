@@ -146,6 +146,8 @@ func (l *Localizer) loadMessages() {
 		{ID: "error.compilation_error", En: "COMPILATION_ERROR", Ja: "コンパイルエラー"},
 		{ID: "error.unsupported_operation", En: "UNSUPPORTED_OPERATION", Ja: "サポートされていない操作"},
 		{ID: "error.execution_error", En: "EXECUTION_ERROR", Ja: "実行エラー"},
+		{ID: "error.validation_error", En: "VALIDATION_ERROR", Ja: "検証エラー"},
+		{ID: "error.io_error", En: "IO_ERROR", Ja: "I/Oエラー"},
 
 		// Error messages
 		{ID: "msg.image_file_not_found", En: "Image file not found: %s", Ja: "画像ファイルが見つかりません: %s"},
@@ -176,7 +178,12 @@ func (l *Localizer) loadMessages() {
 		{ID: "cli.run_description", En: "Run a Grimoire program", Ja: "Grimoireプログラムを実行"},
 		{ID: "cli.compile_description", En: "Compile a Grimoire program to Python", Ja: "GrimoireプログラムをPythonにコンパイル"},
 		{ID: "cli.debug_description", En: "Debug a Grimoire program (show detected symbols)", Ja: "Grimoireプログラムをデバッグ（検出されたシンボルを表示）"},
+		{ID: "cli.validate_description", En: "Validate a magic circle for correctness", Ja: "魔法陣の正しさを検証"},
+		{ID: "cli.format_description", En: "Format and beautify a magic circle", Ja: "魔法陣をフォーマットして美しくする"},
+		{ID: "cli.optimize_description", En: "Optimize a magic circle program", Ja: "魔法陣プログラムを最適化"},
 		{ID: "cli.output_flag_description", En: "Output file path", Ja: "出力ファイルパス"},
+		{ID: "cli.format_output_flag_description", En: "Output formatted image path", Ja: "フォーマット済み画像の出力パス"},
+		{ID: "cli.optimize_output_flag_description", En: "Output optimized code path (use - for stdout)", Ja: "最適化されたコードの出力パス（標準出力には-を使用）"},
 		{ID: "cli.language_flag_description", En: "Language (en/ja)", Ja: "言語 (en/ja)"},
 		{ID: "cli.compile_success", En: "Successfully compiled to %s\n", Ja: "%s へのコンパイルに成功しました\n"},
 
@@ -187,6 +194,33 @@ func (l *Localizer) loadMessages() {
 		{ID: "debug.connections_header", En: "\nConnections:", Ja: "\n接続:"},
 		{ID: "debug.symbol_info", En: "  [%d] Type: %-15s Position: (%.0f, %.0f) Size: %.1f Pattern: %s\n", Ja: "  [%d] タイプ: %-15s 位置: (%.0f, %.0f) サイズ: %.1f パターン: %s\n"},
 		{ID: "debug.connection_info", En: "  [%d] %s -> %s (%s)\n", Ja: "  [%d] %s -> %s (%s)\n"},
+		
+		// Validate messages
+		{ID: "validate.no_outer_circle", En: "No outer magic circle found", Ja: "外周の魔法陣が見つかりません"},
+		{ID: "validate.no_main_function", En: "No main function (double circle) found", Ja: "メイン関数（二重円）が見つかりません"},
+		{ID: "validate.orphaned_symbol", En: "Orphaned symbol: %s at (%.0f, %.0f)", Ja: "孤立したシンボル: %s 位置: (%.0f, %.0f)"},
+		{ID: "validate.success", En: "✓ Magic circle is valid!\n", Ja: "✓ 魔法陣は有効です！\n"},
+		{ID: "validate.symbols_found", En: "  - Symbols found: %d\n", Ja: "  - シンボル数: %d\n"},
+		{ID: "validate.connections_found", En: "  - Connections found: %d\n", Ja: "  - 接続数: %d\n"},
+		{ID: "validate.issues_found", En: "✗ Validation issues found:\n", Ja: "✗ 検証で問題が見つかりました:\n"},
+		{ID: "validate.failed", En: "Magic circle validation failed", Ja: "魔法陣の検証に失敗しました"},
+		
+		// Format messages
+		{ID: "format.analyzing", En: "Analyzing magic circle structure...\n", Ja: "魔法陣の構造を分析中...\n"},
+		{ID: "format.align_symbols", En: "Consider aligning %s and %s symbols", Ja: "%sと%sのシンボルを整列させることを検討してください"},
+		{ID: "format.straighten_connection", En: "Straighten connection between %s and %s", Ja: "%sと%s間の接続を真っ直ぐにしてください"},
+		{ID: "format.well_formatted", En: "✓ Magic circle is well-formatted!\n", Ja: "✓ 魔法陣は適切にフォーマットされています！\n"},
+		{ID: "format.suggestions", En: "Formatting suggestions:\n", Ja: "フォーマットの提案:\n"},
+		{ID: "format.output_note", En: "\nNote: Automatic formatting to %s is not yet implemented.\n", Ja: "\n注意: %sへの自動フォーマットはまだ実装されていません。\n"},
+		
+		// Optimize messages
+		{ID: "optimize.analyzing", En: "Analyzing program for optimization opportunities...\n", Ja: "最適化の機会を探してプログラムを分析中...\n"},
+		{ID: "optimize.unused_variable", En: "Unused variable: %s", Ja: "未使用の変数: %s"},
+		{ID: "optimize.duplicate_operation", En: "Duplicate operation detected", Ja: "重複した操作が検出されました"},
+		{ID: "optimize.well_optimized", En: "✓ Program is well-optimized!\n", Ja: "✓ プログラムは十分に最適化されています！\n"},
+		{ID: "optimize.suggestions", En: "Optimization suggestions:\n", Ja: "最適化の提案:\n"},
+		{ID: "optimize.optimized_code", En: "Optimized code:", Ja: "最適化されたコード:"},
+		{ID: "optimize.saved_to", En: "Optimized code saved to: %s\n", Ja: "最適化されたコードを保存しました: %s\n"},
 
 		// Error formatting
 		{ID: "error.at_location", En: "  at %s:%d:%d", Ja: "  場所: %s:%d:%d"},
