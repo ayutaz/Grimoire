@@ -1,0 +1,200 @@
+Found 28 contours:
+[0] Type: outer_circle, Area: 195310.00, Circularity: 0.99, Center: (300,299), Points: 360
+[1] Type: star, Area: 5803.00, Circularity: 0.07, Center: (509,372), Points: 626
+[2] Type: star, Area: 2759.50, Circularity: 0.10, Center: (298,541), Points: 355
+[3] Type: star, Area: 1331.00, Circularity: 0.06, Center: (79,404), Points: 348
+[4] Type: square, Area: 1223.00, Circularity: 0.80, Center: (220,179), Points: 138
+[5] Type: star, Area: 423.00, Circularity: 0.05, Center: (301,366), Points: 178
+[6] Type: star, Area: 410.50, Circularity: 0.05, Center: (180,517), Points: 177
+[7] Type: star, Area: 356.00, Circularity: 0.93, Center: (158,158), Points: 56
+[8] Type: star, Area: 356.00, Circularity: 0.93, Center: (158,441), Points: 56
+[9] Type: star, Area: 293.50, Circularity: 0.30, Center: (377,195), Points: 75
+[10] Type: star, Area: 242.50, Circularity: 0.09, Center: (312,49), Points: 131
+[11] Type: star, Area: 234.00, Circularity: 0.02, Center: (212,68), Points: 248
+[12] Type: circle, Area: 226.00, Circularity: 0.92, Center: (220,140), Points: 44
+[13] Type: equal, Area: 151.50, Circularity: 0.09, Center: (141,105), Points: 125
+[14] Type: star, Area: 151.00, Circularity: 0.15, Center: (50,273), Points: 92
+Potential convergence at (316,252): vertices=2, area=141.5, circ=0.02
+[15] Type: convergence, Area: 141.50, Circularity: 0.02, Center: (316,252), Points: 165
+[16] Type: star, Area: 127.00, Circularity: 0.16, Center: (130,115), Points: 90
+[17] Type: star, Area: 108.50, Circularity: 0.23, Center: (285,268), Points: 54
+[18] Type: star, Area: 103.50, Circularity: 0.10, Center: (305,435), Points: 77
+[19] Type: star, Area: 103.00, Circularity: 0.01, Center: (85,176), Points: 190
+[20] Type: star, Area: 101.00, Circularity: 0.02, Center: (57,239), Points: 164
+[21] Type: star, Area: 101.00, Circularity: 0.13, Center: (115,469), Points: 77
+[22] Type: star, Area: 92.50, Circularity: 0.09, Center: (257,211), Points: 61
+[23] Type: star, Area: 85.00, Circularity: 0.16, Center: (277,412), Points: 67
+[24] Type: star, Area: 69.00, Circularity: 0.07, Center: (286,430), Points: 78
+[25] Type: star, Area: 67.00, Circularity: 0.19, Center: (288,410), Points: 54
+[26] Type: star, Area: 58.50, Circularity: 0.58, Center: (48,286), Points: 31
+[27] Type: star, Area: 51.00, Circularity: 0.04, Center: (315,409), Points: 111
+Pattern detection: bbox=(414,169,550,519), black=4556, total=6235, ratio=0.73
+Pattern detection: bbox=(215,521,416,551), black=1700, total=2869, ratio=0.59
+analyzeMediumFill: analyzing pattern at (298,541)
+  Found potential dot 1 at (398,522) with size 1700
+  Medium fill detected 1 potential dots
+  Horizontal lines: 1, Vertical lines: 0
+Pattern detection: bbox=(45,295,112,472), black=901, total=1635, ratio=0.55
+analyzeMediumFill: analyzing pattern at (79,404)
+  Found potential dot 1 at (56,324) with size 900
+  Medium fill detected 1 potential dots
+  Horizontal lines: 0, Vertical lines: 0
+Pattern detection: bbox=(202,162,239,197), black=621, total=1224, ratio=0.51
+analyzeMediumFill: analyzing pattern at (220,179)
+  Found potential dot 1 at (207,167) with size 621
+  Medium fill detected 1 potential dots
+  Horizontal lines: 3, Vertical lines: 3
+Pattern detection: bbox=(298,287,303,423), black=0, total=459, ratio=0.00
+Pattern detection: bbox=(119,467,215,541), black=141, total=446, ratio=0.32
+analyzeMediumFill: analyzing pattern at (180,517)
+  Found potential dot 1 at (127,474) with size 134
+  Medium fill detected 1 potential dots
+  Horizontal lines: 0, Vertical lines: 0
+Pattern detection: bbox=(147,147,170,170), black=137, total=356, ratio=0.38
+analyzeMediumFill: analyzing pattern at (158,158)
+  Found potential dot 1 at (156,152) with size 137
+  Medium fill detected 1 potential dots
+  Horizontal lines: 1, Vertical lines: 1
+Pattern detection: bbox=(147,430,170,453), black=137, total=356, ratio=0.38
+analyzeMediumFill: analyzing pattern at (158,441)
+  Found potential dot 1 at (156,435) with size 137
+  Medium fill detected 1 potential dots
+  Horizontal lines: 1, Vertical lines: 1
+Pattern detection: bbox=(359,187,399,199), black=90, total=294, ratio=0.31
+analyzeMediumFill: analyzing pattern at (377,195)
+  Found potential dot 1 at (390,188) with size 90
+  Medium fill detected 1 potential dots
+  Horizontal lines: 1, Vertical lines: 1
+Pattern detection: bbox=(285,45,326,56), black=0, total=86, ratio=0.00
+Pattern detection: bbox=(163,46,285,86), black=0, total=453, ratio=0.00
+Pattern detection: bbox=(211,131,230,150), black=0, total=226, ratio=0.00
+Pattern detection: bbox=(129,98,160,112), black=0, total=90, ratio=0.00
+Pattern detection: bbox=(46,269,57,283), black=0, total=44, ratio=0.00
+Potential convergence at (316,252): vertices=2, area=141.5, circ=0.02
+Pattern detection: bbox=(298,193,359,287), black=98, total=325, ratio=0.30
+analyzeMediumFill: analyzing pattern at (316,252)
+  Found potential dot 1 at (338,222) with size 96
+  Medium fill detected 1 potential dots
+  Horizontal lines: 0, Vertical lines: 0
+Pattern detection: bbox=(121,112,142,119), black=0, total=56, ratio=0.00
+Pattern detection: bbox=(278,261,294,278), black=29, total=96, ratio=0.30
+analyzeMediumFill: analyzing pattern at (285,268)
+  Found potential dot 1 at (288,264) with size 29
+  Medium fill detected 1 potential dots
+  Horizontal lines: 2, Vertical lines: 1
+Pattern detection: bbox=(292,428,315,444), black=24, total=95, ratio=0.25
+analyzeSparseFill: analyzing pattern at (305,435)
+  Found dot 1 at (308,429) with size 24
+  Total dots found: 1
+Pattern detection: bbox=(60,119,134,215), black=0, total=408, ratio=0.00
+Pattern detection: bbox=(47,215,70,269), black=0, total=133, ratio=0.00
+Pattern detection: bbox=(112,459,119,480), black=0, total=43, ratio=0.00
+Pattern detection: bbox=(239,191,265,224), black=0, total=78, ratio=0.00
+Pattern detection: bbox=(270,409,282,420), black=0, total=30, ratio=0.00
+Pattern detection: bbox=(282,414,292,440), black=0, total=69, ratio=0.00
+Pattern detection: bbox=(282,407,296,414), black=0, total=29, ratio=0.00
+Pattern detection: bbox=(45,283,56,295), black=0, total=54, ratio=0.00
+Pattern detection: bbox=(303,397,330,413), black=2, total=70, ratio=0.03
+Detected 97 lines
+Line (201,162)->(239,162): from=true, to=true
+Line (206,166)->(234,167): from=true, to=true
+Line (366,166)->(394,166): from=true, to=true
+Line (201,198)->(237,198): from=true, to=true
+Connection added: square -> star (solid)
+Line (365,193)->(394,194): from=true, to=true
+Line (399,198)->(360,197): from=true, to=true
+Line (295,398)->(269,413): from=true, to=true
+Line (304,396)->(330,413): from=true, to=false
+Line (202,161)->(202,199): from=true, to=true
+Line (206,166)->(207,194): from=true, to=true
+Line (238,161)->(239,192): from=true, to=true
+Line (297,337)->(277,265): from=true, to=true
+Connection added: star -> star (solid)
+Line (297,399)->(285,342): from=true, to=true
+Connection added: star -> star (solid)
+Line (303,337)->(316,265): from=true, to=true
+Connection added: convergence -> star (solid)
+Line (303,400)->(316,341): from=true, to=true
+Connection added: star -> star (solid)
+Line (361,192)->(362,161): from=true, to=true
+Line (394,194)->(377,165): from=true, to=true
+Line (398,199)->(387,151): from=true, to=true
+Line (245,51)->(116,124): from=false, to=true
+Line (244,61)->(121,133): from=false, to=true
+Line (200,66)->(155,91): from=false, to=true
+Line (210,72)->(162,98): from=false, to=true
+Line (215,131)->(229,145): from=true, to=true
+Line (212,142)->(225,149): from=true, to=true
+Line (387,144)->(390,157): from=false, to=true
+Line (152,147)->(166,168): from=true, to=false
+Line (371,152)->(398,199): from=true, to=true
+Line (371,157)->(385,160): from=true, to=true
+Line (372,160)->(298,275): from=true, to=true
+Connection added: star -> star (dashed)
+Line (202,161)->(302,275): from=true, to=true
+Connection added: square -> star (dashed)
+Line (206,166)->(293,271): from=true, to=true
+Connection added: square -> star (dashed)
+Line (366,166)->(393,194): from=true, to=true
+Line (366,167)->(366,184): from=true, to=true
+Line (232,184)->(216,176): from=true, to=true
+Line (216,178)->(235,192): from=true, to=true
+Line (383,181)->(307,271): from=true, to=true
+Connection added: convergence -> star (solid)
+Line (362,190)->(306,265): from=true, to=true
+Connection added: convergence -> star (solid)
+Line (363,198)->(396,199): from=true, to=true
+Line (277,266)->(297,337): from=true, to=true
+Connection added: star -> star (solid)
+Line (321,267)->(303,337): from=true, to=true
+Connection added: convergence -> star (solid)
+Line (304,335)->(318,342): from=true, to=true
+Line (305,342)->(303,400): from=true, to=true
+Connection added: star -> star (solid)
+Line (285,343)->(297,399): from=true, to=true
+Connection added: star -> star (solid)
+Line (322,417)->(293,404): from=true, to=true
+Line (303,422)->(271,408): from=true, to=true
+Line (270,409)->(290,409): from=true, to=true
+Line (270,410)->(319,445): from=true, to=false
+Line (284,415)->(290,430): from=true, to=true
+Line (315,415)->(304,432): from=true, to=true
+Line (315,428)->(319,443): from=true, to=false
+Line (296,429)->(310,435): from=true, to=true
+Symbol graph:
+[3] equal: 0 children
+[4] convergence: 4 children
+  -> [5] star
+  -> [6] star
+  -> [6] star
+  -> [5] star
+[6] star: 1 children
+  -> [7] star
+[8] star: 0 children
+[9] star: 0 children
+[0] outer_circle: 0 children
+[1] square: 3 children
+  -> [8] star
+  -> [7] star
+  -> [7] star
+[2] circle: 0 children
+[5] star: 4 children
+  -> [9] star
+  -> [9] star
+  -> [9] star
+  -> [9] star
+[7] star: 2 children
+  -> [5] star
+  -> [5] star
+#!/usr/bin/env python3
+# Generated by Grimoire
+
+def anonymous_func():
+    pass
+
+if __name__ == "__main__":
+    print((0 + 0))
+    print((0 + 0))
+    print("Text")
+    print("Text")
+    print("Hello, World!")
