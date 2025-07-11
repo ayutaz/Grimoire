@@ -63,8 +63,6 @@ Grimoireは、文字を一切使わず、純粋に記号と図形のみでプロ
 
 ### ソースからのインストール
 
-#### Go版（開発中）
-
 ```bash
 # Go 1.21以上が必要
 go install github.com/ayutaz/grimoire/cmd/grimoire@latest
@@ -72,18 +70,10 @@ go install github.com/ayutaz/grimoire/cmd/grimoire@latest
 # または、リポジトリをクローンしてビルド
 git clone https://github.com/ayutaz/Grimoire.git
 cd Grimoire
+make build
+
+# または直接ビルド
 go build -o grimoire cmd/grimoire/main.go
-```
-
-#### Python版（安定版）
-
-```bash
-# uvを使用（推奨）
-pip install uv
-uv sync
-
-# または従来のpip
-pip install -e .
 ```
 
 ## 🎨 使い方
@@ -168,40 +158,50 @@ grimoire debug magic_circle.png
 
 ```bash
 # 全テストを実行
-uv run pytest
+go test ./...
 
 # カバレッジ付き
-uv run pytest --cov=grimoire
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
 
-# 特定のテストのみ
-uv run pytest tests/unit/
+# ベンチマークの実行
+go test -bench=. ./...
 ```
 
 ### コードフォーマット
 
 ```bash
-uv run ruff format .
-uv run ruff check .
+# Go標準のフォーマット
+go fmt ./...
+
+# 静的解析
+go vet ./...
 ```
 
 ### ビルド
 
 ```bash
-# スタンドアロン実行ファイルの作成
-uv run pyinstaller grimoire.spec
+# Makefileを使用（推奨）
+make build        # 現在のプラットフォーム向けビルド
+make build-all    # 全プラットフォーム向けビルド
+make test         # テスト実行
+make clean        # ビルド成果物のクリーン
+
+# または直接ビルド
+go build -o grimoire cmd/grimoire/main.go
 ```
 
 ## 🔧 技術詳細
 
-### Go言語への移行
+### Go言語による実装
 
-パフォーマンス向上のため、コア実装をPythonからGo言語に移行中です：
+GrimoireはGo言語で実装されており、以下の特徴があります：
 
-**移行による改善:**
-- **起動時間**: 14.9秒 → 0.06秒（約250倍高速化）
-- **実行時間**: 3秒 → 0.2秒（約15倍高速化）  
-- **バイナリサイズ**: 80MB → 10MB（約8分の1）
-- **依存関係**: OpenCV不要（Pure Go実装）
+**パフォーマンス特性:**
+- **起動時間**: 約0.06秒（高速な起動）
+- **実行時間**: 約0.2秒（効率的な画像処理）  
+- **バイナリサイズ**: 約10MB（コンパクトな実行ファイル）
+- **依存関係**: 外部ライブラリ不要（Pure Go実装）
 
 ### 画像認識アプローチ
 
@@ -220,16 +220,10 @@ Go版では外部ライブラリに依存しない、Pure Goでの画像処理�
 
 ## 📋 既知の問題
 
-### Go版の制限事項
+### 現在の制限事項
 - 四角形の検出精度が不安定（円として誤検出される場合がある）
 - 斜めの接続線の検出が未実装
 - 複雑な演算子記号の認識が不完全
-
-### Windows環境での制限
-- 日本語や特殊文字を含むファイル名は使用できません（Python版）
-- Go版では日本語ファイル名も処理可能
-
-### その他
 - 複雑なプログラムの解析には制限があります
 - ループ内に実行内容がない場合、エラーになります
 

@@ -32,17 +32,9 @@ Thumbs.db
 *.temp
 /tmp/
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-.venv/
-venv/
-.pytest_cache/
-.coverage
-.mypy_cache/
-.ruff_cache/
+# Go binaries
+/grimoire
+grimoire
 
 # Generated files
 fibonacci_output.py
@@ -68,5 +60,8 @@ dist/
 # Go coverage
 coverage.out
 coverage.html
-*.profgrimoire
-debug_binary.png
+*.prof
+
+# Debug files
+debug_*.png
+debug_*.txt
