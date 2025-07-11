@@ -25,7 +25,7 @@ func TestParse_NoOuterCircle(t *testing.T) {
 	}
 
 	ast, err := Parse(symbols, []detector.Connection{})
-	
+
 	assert.Error(t, err)
 	assert.Nil(t, ast)
 	assert.Contains(t, err.Error(), "outer circle")
@@ -47,20 +47,20 @@ func TestParse_MinimalProgram(t *testing.T) {
 	}
 
 	ast, err := Parse(symbols, []detector.Connection{})
-	
+
 	require.NoError(t, err)
 	require.NotNil(t, ast)
-	
+
 	assert.True(t, ast.HasOuterCircle)
 	assert.NotNil(t, ast.MainEntry)
 	assert.True(t, ast.MainEntry.IsMain)
 	assert.Empty(t, ast.Functions)
-	
+
 	// Should have default Hello World output
 	require.Len(t, ast.MainEntry.Body, 1)
 	output, ok := ast.MainEntry.Body[0].(*OutputStatement)
 	require.True(t, ok)
-	
+
 	literal, ok := output.Value.(*Literal)
 	require.True(t, ok)
 	assert.Equal(t, "Hello, World!", literal.Value)
@@ -82,10 +82,10 @@ func TestParse_WithMainEntry(t *testing.T) {
 	}
 
 	ast, err := Parse(symbols, []detector.Connection{})
-	
+
 	require.NoError(t, err)
 	require.NotNil(t, ast)
-	
+
 	assert.True(t, ast.HasOuterCircle)
 	assert.NotNil(t, ast.MainEntry)
 	assert.True(t, ast.MainEntry.IsMain)
@@ -94,7 +94,7 @@ func TestParse_WithMainEntry(t *testing.T) {
 // TestParseLiteral tests literal parsing from patterns
 func TestParseLiteral(t *testing.T) {
 	parser := NewParser()
-	
+
 	tests := []struct {
 		pattern  string
 		expected interface{}
@@ -109,14 +109,14 @@ func TestParseLiteral(t *testing.T) {
 		{"cross", true, Boolean},
 		{"half_circle", false, Boolean},
 	}
-	
+
 	for _, tc := range tests {
 		t.Run(tc.pattern, func(t *testing.T) {
 			symbol := &detector.Symbol{
 				Type:    detector.Square,
 				Pattern: tc.pattern,
 			}
-			
+
 			node := &symbolNode{symbol: symbol}
 			literal := parser.parseLiteral(node)
 			assert.Equal(t, tc.expected, literal.Value)
@@ -128,7 +128,7 @@ func TestParseLiteral(t *testing.T) {
 // TestParseOperators tests operator parsing
 func TestParseOperators(t *testing.T) {
 	parser := NewParser()
-	
+
 	tests := []struct {
 		symbolType detector.SymbolType
 		expected   OperatorType
@@ -138,13 +138,13 @@ func TestParseOperators(t *testing.T) {
 		{detector.Amplification, Multiply},
 		{detector.Distribution, Divide},
 	}
-	
+
 	for _, tc := range tests {
 		t.Run(string(tc.symbolType), func(t *testing.T) {
 			symbol := &detector.Symbol{
 				Type: tc.symbolType,
 			}
-			
+
 			node := &symbolNode{symbol: symbol}
 			binOp := parser.parseBinaryOp(node)
 			assert.Equal(t, tc.expected, binOp.Operator)
@@ -180,7 +180,7 @@ func TestParse_ErrorHandling(t *testing.T) {
 			wantErr: "outer circle",
 		},
 	}
-	
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			ast, err := Parse(tc.symbols, []detector.Connection{})
@@ -215,7 +215,7 @@ func TestParse_WithConnections(t *testing.T) {
 		Type:     detector.Star,
 		Position: detector.Position{X: 100, Y: 150},
 	}
-	
+
 	symbols := []*detector.Symbol{
 		{Type: detector.OuterCircle, Position: detector.Position{X: 100, Y: 100}, Size: 200},
 		square1,
@@ -223,24 +223,24 @@ func TestParse_WithConnections(t *testing.T) {
 		convergence,
 		star,
 	}
-	
+
 	connections := []detector.Connection{
 		{From: square1, To: convergence, ConnectionType: "solid"},
 		{From: square2, To: convergence, ConnectionType: "solid"},
 		{From: convergence, To: star, ConnectionType: "solid"},
 	}
-	
+
 	ast, err := Parse(symbols, connections)
-	
+
 	require.NoError(t, err)
 	require.NotNil(t, ast)
 	assert.True(t, ast.HasOuterCircle)
-	
+
 	// Should have implicit main with output statement
 	require.NotNil(t, ast.MainEntry)
 	assert.True(t, ast.MainEntry.IsMain)
 	require.Len(t, ast.MainEntry.Body, 1)
-	
+
 	outputStmt, ok := ast.MainEntry.Body[0].(*OutputStatement)
 	require.True(t, ok)
 	assert.NotNil(t, outputStmt.Value)
@@ -260,9 +260,9 @@ func TestParse_ComplexProgram(t *testing.T) {
 		{Type: detector.Square, Position: detector.Position{X: 250, Y: 350}, Pattern: "half_circle"},
 		{Type: detector.Star, Position: detector.Position{X: 250, Y: 380}},
 	}
-	
+
 	ast, err := Parse(symbols, []detector.Connection{})
-	
+
 	require.NoError(t, err)
 	require.NotNil(t, ast)
 	assert.True(t, ast.HasOuterCircle)
@@ -280,12 +280,12 @@ func TestParse_ParallelBlock(t *testing.T) {
 		{Type: detector.Star, Position: detector.Position{X: 150, Y: 250}},
 		{Type: detector.Star, Position: detector.Position{X: 250, Y: 250}},
 	}
-	
+
 	ast, err := Parse(symbols, []detector.Connection{})
-	
+
 	require.NoError(t, err)
 	require.NotNil(t, ast)
-	
+
 	// Should create implicit main with parallel block
 	require.NotNil(t, ast.MainEntry)
 	require.NotEmpty(t, ast.MainEntry.Body)
@@ -337,7 +337,7 @@ func TestParse_EdgeCases(t *testing.T) {
 			},
 		},
 	}
-	
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			ast, err := Parse(tc.symbols, []detector.Connection{})

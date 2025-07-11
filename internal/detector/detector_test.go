@@ -29,7 +29,7 @@ func TestDetectSymbols_NoOuterCircle(t *testing.T) {
 	defer os.Remove(path)
 
 	symbols, connections, err := DetectSymbols(path)
-	
+
 	// Empty image may not detect any symbols
 	if err != nil {
 		assert.Contains(t, err.Error(), "No symbols")
@@ -37,7 +37,7 @@ func TestDetectSymbols_NoOuterCircle(t *testing.T) {
 	}
 	assert.NotNil(t, symbols)
 	assert.NotNil(t, connections)
-	
+
 	// Check that no outer circle is detected
 	hasOuterCircle := false
 	for _, symbol := range symbols {
@@ -57,11 +57,11 @@ func TestDetectSymbols_MinimalProgram(t *testing.T) {
 	defer os.Remove(path)
 
 	symbols, connections, err := DetectSymbols(path)
-	
+
 	require.NoError(t, err)
 	require.NotEmpty(t, symbols)
 	_ = connections // connections may be empty for simple cases
-	
+
 	// Should detect at least the outer circle
 	hasOuterCircle := false
 	for _, symbol := range symbols {
@@ -79,17 +79,17 @@ func TestDetectSymbols_MinimalProgram(t *testing.T) {
 // TestToGrayscale tests grayscale conversion
 func TestToGrayscale(t *testing.T) {
 	detector := NewDetector()
-	
+
 	// Create a color image
 	img := image.NewRGBA(image.Rect(0, 0, 10, 10))
 	// Set a red pixel
 	img.Set(5, 5, color.RGBA{255, 0, 0, 255})
-	
+
 	gray := detector.toGrayscale(img)
-	
+
 	assert.NotNil(t, gray)
 	assert.Equal(t, img.Bounds(), gray.Bounds())
-	
+
 	// Check that the red pixel was converted to gray
 	grayPixel := gray.GrayAt(5, 5)
 	assert.Greater(t, grayPixel.Y, uint8(0))
@@ -98,7 +98,7 @@ func TestToGrayscale(t *testing.T) {
 // TestPreprocessImage tests image preprocessing
 func TestPreprocessImage(t *testing.T) {
 	detector := NewDetector()
-	
+
 	// Create a grayscale image with gradient
 	gray := image.NewGray(image.Rect(0, 0, 10, 10))
 	for x := 0; x < 10; x++ {
@@ -106,9 +106,9 @@ func TestPreprocessImage(t *testing.T) {
 			gray.Set(x, y, color.Gray{uint8(x * 25)})
 		}
 	}
-	
+
 	binary := detector.preprocessImage(gray)
-	
+
 	assert.NotNil(t, binary)
 	assert.Equal(t, gray.Bounds(), binary.Bounds())
 }
@@ -124,7 +124,7 @@ func createTestImage(width, height int) *image.RGBA {
 
 func createTestImageWithCircle(width, height, radius int) *image.RGBA {
 	img := createTestImage(width, height)
-	
+
 	// Draw a black circle
 	centerX, centerY := width/2, height/2
 	for x := 0; x < width; x++ {
@@ -133,33 +133,33 @@ func createTestImageWithCircle(width, height, radius int) *image.RGBA {
 			dy := float64(y - centerY)
 			distance := dx*dx + dy*dy
 			radiusSq := float64(radius * radius)
-			
+
 			// Draw circle outline (thickness ~5 pixels)
 			if distance >= radiusSq-float64(radius*10) && distance <= radiusSq+float64(radius*10) {
 				img.Set(x, y, color.Black)
 			}
 		}
 	}
-	
+
 	return img
 }
 
 func saveTestImage(t *testing.T, img image.Image, filename string) string {
 	t.Helper()
-	
+
 	// Create temp directory
 	dir := t.TempDir()
 	path := filepath.Join(dir, filename)
-	
+
 	file, err := os.Create(path)
 	require.NoError(t, err)
 	defer file.Close()
-	
+
 	// For now, save as PNG using a simple format
 	// In real implementation, we'd use image/png
 	err = savePNG(file, img)
 	require.NoError(t, err)
-	
+
 	return path
 }
 
@@ -171,7 +171,7 @@ func savePNG(file *os.File, img image.Image) error {
 // TestDetectPatterns tests pattern detection in symbols
 func TestDetectPatterns(t *testing.T) {
 	detector := NewDetector()
-	
+
 	tests := []struct {
 		name         string
 		createImage  func() *image.Gray
@@ -219,12 +219,12 @@ func TestDetectPatterns(t *testing.T) {
 			expectedType: "dot",
 		},
 	}
-	
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			gray := tc.createImage()
 			_ = detector.preprocessImage(gray)
-			
+
 			// Since detectPattern is private, we can't test it directly
 			// Just verify that the test case is properly defined
 			assert.Equal(t, tc.expectedType, tc.expectedType)
@@ -236,24 +236,24 @@ func TestDetectPatterns(t *testing.T) {
 func TestDetectConnections(t *testing.T) {
 	// Create test image with symbols and connections
 	img := createTestImage(300, 300)
-	
+
 	// Draw outer circle first
 	drawCircle(img, 150, 150, 140, color.Black)
-	
+
 	// Draw symbols inside
 	drawSquare(img, 100, 100, 30, color.Black)
 	drawSquare(img, 200, 100, 30, color.Black)
 	drawCircle(img, 150, 150, 20, color.Black)
-	
+
 	// Draw connections (simplified - just straight lines)
 	drawLine(img, 115, 115, 150, 150, color.Black)
 	drawLine(img, 185, 115, 150, 150, color.Black)
-	
+
 	path := saveTestImage(t, img, "connections_test.png")
 	defer os.Remove(path)
-	
+
 	symbols, connections, err := DetectSymbols(path)
-	
+
 	require.NoError(t, err)
 	// May not detect all symbols in test image
 	if len(symbols) == 0 {
@@ -266,14 +266,14 @@ func TestDetectConnections(t *testing.T) {
 func TestDetectSymbols_CompleteProgram(t *testing.T) {
 	// Create a complex test image
 	img := createTestImage(400, 400)
-	
+
 	// Draw outer circle
 	drawCircle(img, 200, 200, 180, color.Black)
-	
+
 	// Draw main entry (double circle)
 	drawCircle(img, 200, 100, 25, color.Black)
 	drawCircle(img, 200, 100, 20, color.Black)
-	
+
 	// Draw a square with pattern
 	drawSquare(img, 150, 150, 40, color.Black)
 	// Add dot pattern
@@ -282,25 +282,25 @@ func TestDetectSymbols_CompleteProgram(t *testing.T) {
 			img.Set(x, y, color.Black)
 		}
 	}
-	
+
 	// Draw star
 	drawStar(img, 200, 250, 20, color.Black)
-	
+
 	path := saveTestImage(t, img, "complete_program.png")
 	defer os.Remove(path)
-	
+
 	symbols, connections, err := DetectSymbols(path)
-	
+
 	require.NoError(t, err)
 	require.NotEmpty(t, symbols)
 	_ = connections // connections may be empty for simple cases
-	
+
 	// Check we have all expected symbols
 	symbolTypes := make(map[SymbolType]int)
 	for _, sym := range symbols {
 		symbolTypes[sym.Type]++
 	}
-	
+
 	// Check we have at least some symbols
 	assert.NotEmpty(t, symbols)
 	// The exact detection depends on implementation
@@ -327,7 +327,7 @@ func TestDetectSymbols_ErrorCases(t *testing.T) {
 			wantErr: "file not found",
 		},
 	}
-	
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			_, _, err := DetectSymbols(tc.path)
@@ -352,7 +352,7 @@ func drawLine(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
 		sy = -1
 	}
 	err := dx - dy
-	
+
 	for {
 		img.Set(x0, y0, c)
 		if x0 == x1 && y0 == y1 {
@@ -410,7 +410,7 @@ func drawStar(img *image.RGBA, cx, cy, size int, c color.Color) {
 		{-0.951, -0.309},
 		{-0.224, -0.309},
 	}
-	
+
 	for i := 0; i < len(points); i++ {
 		x0 := cx + int(points[i].x*float64(size))
 		y0 := cy + int(points[i].y*float64(size))

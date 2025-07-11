@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/ayutaz/grimoire/internal/compiler"
 	"github.com/ayutaz/grimoire/internal/detector"
-	"github.com/ayutaz/grimoire/internal/parser"
 	grimoireErrors "github.com/ayutaz/grimoire/internal/errors"
+	"github.com/ayutaz/grimoire/internal/parser"
+	"github.com/spf13/cobra"
 )
 
 // Execute runs the CLI
@@ -107,13 +107,13 @@ func debugCommand(cmd *cobra.Command, args []string) error {
 	// Display debug information
 	fmt.Printf("\n=== Debug Information for %s ===\n", filepath.Base(imagePath))
 	fmt.Printf("Detected %d symbols and %d connections\n\n", len(symbols), len(connections))
-	
+
 	fmt.Println("Symbols:")
 	for i, symbol := range symbols {
-		fmt.Printf("  [%d] Type: %-15s Position: (%.0f, %.0f) Size: %.1f Pattern: %s\n", 
+		fmt.Printf("  [%d] Type: %-15s Position: (%.0f, %.0f) Size: %.1f Pattern: %s\n",
 			i, symbol.Type, symbol.Position.X, symbol.Position.Y, symbol.Size, symbol.Pattern)
 	}
-	
+
 	if len(connections) > 0 {
 		fmt.Println("\nConnections:")
 		for i, conn := range connections {
@@ -175,12 +175,12 @@ func formatError(err error, imagePath string) error {
 		// Already formatted
 		return err
 	}
-	
+
 	// Wrap generic errors
 	if strings.Contains(err.Error(), "no such file") {
 		return grimoireErrors.FileNotFoundError(imagePath)
 	}
-	
+
 	return grimoireErrors.NewError(grimoireErrors.ExecutionError, "An error occurred").
 		WithInnerError(err).
 		WithLocation(imagePath, 0, 0)

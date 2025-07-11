@@ -53,7 +53,7 @@ func TestE2E_HelloWorld(t *testing.T) {
 		t.Logf("Output: %s", output)
 		t.Logf("Error: %v", err)
 	}
-	
+
 	// Once fully implemented, check for "Hello, World!"
 	// assert.Contains(t, string(output), "Hello, World!")
 }

@@ -10,14 +10,14 @@ import (
 // detectInternalPattern analyzes the pattern inside a symbol
 func (d *Detector) detectInternalPattern(contour Contour, binary *image.Gray) string {
 	bbox := contour.getBoundingBox()
-	
+
 	// Create a mask for the contour region
 	mask := d.createContourMask(contour, binary.Bounds())
-	
+
 	// Count black pixels inside the contour (inverted from binary image)
 	blackPixels := 0
 	totalPixels := 0
-	
+
 	for y := bbox.Min.Y; y < bbox.Max.Y; y++ {
 		for x := bbox.Min.X; x < bbox.Max.X; x++ {
 			if mask.GrayAt(x, y).Y > 0 {
@@ -29,18 +29,18 @@ func (d *Detector) detectInternalPattern(contour Contour, binary *image.Gray) st
 			}
 		}
 	}
-	
+
 	if totalPixels == 0 {
 		return "empty"
 	}
-	
+
 	fillRatio := float64(blackPixels) / float64(totalPixels)
-	
+
 	if os.Getenv("GRIMOIRE_DEBUG") != "" {
 		fmt.Printf("Pattern detection: bbox=(%d,%d,%d,%d), black=%d, total=%d, ratio=%.2f\n",
 			bbox.Min.X, bbox.Min.Y, bbox.Max.X, bbox.Max.Y, blackPixels, totalPixels, fillRatio)
 	}
-	
+
 	// Analyze pattern based on fill ratio and distribution
 	if fillRatio < 0.1 {
 		return "empty"
@@ -56,10 +56,10 @@ func (d *Detector) detectInternalPattern(contour Contour, binary *image.Gray) st
 // createContourMask creates a mask for pixels inside the contour
 func (d *Detector) createContourMask(contour Contour, bounds image.Rectangle) *image.Gray {
 	mask := image.NewGray(bounds)
-	
+
 	// Simple point-in-polygon test for each pixel
 	bbox := contour.getBoundingBox()
-	
+
 	for y := bbox.Min.Y; y < bbox.Max.Y; y++ {
 		for x := bbox.Min.X; x < bbox.Max.X; x++ {
 			if d.isPointInContour(image.Point{X: x, Y: y}, contour) {
@@ -67,7 +67,7 @@ func (d *Detector) createContourMask(contour Contour, bounds image.Rectangle) *i
 			}
 		}
 	}
-	
+
 	return mask
 }
 
@@ -76,14 +76,14 @@ func (d *Detector) isPointInContour(point image.Point, contour Contour) bool {
 	if len(contour.Points) < 3 {
 		return false
 	}
-	
+
 	// Ray casting algorithm
 	inside := false
 	p1 := contour.Points[0]
-	
+
 	for i := 1; i <= len(contour.Points); i++ {
 		p2 := contour.Points[i%len(contour.Points)]
-		
+
 		if point.Y > min(p1.Y, p2.Y) && point.Y <= max(p1.Y, p2.Y) {
 			if point.X <= max(p1.X, p2.X) {
 				xinters := float64(p1.X)
@@ -97,7 +97,7 @@ func (d *Detector) isPointInContour(point image.Point, contour Contour) bool {
 		}
 		p1 = p2
 	}
-	
+
 	return inside
 }
 
@@ -107,11 +107,11 @@ func (d *Detector) analyzeSparseFill(contour Contour, binary *image.Gray, mask *
 	bbox := contour.getBoundingBox()
 	visited := make(map[image.Point]bool)
 	dotCount := 0
-	
+
 	if os.Getenv("GRIMOIRE_DEBUG") != "" {
 		fmt.Printf("analyzeSparseFill: analyzing pattern at (%d,%d)\n", contour.Center.X, contour.Center.Y)
 	}
-	
+
 	for y := bbox.Min.Y; y < bbox.Max.Y; y++ {
 		for x := bbox.Min.X; x < bbox.Max.X; x++ {
 			pt := image.Point{X: x, Y: y}
@@ -128,11 +128,11 @@ func (d *Detector) analyzeSparseFill(contour Contour, binary *image.Gray, mask *
 			}
 		}
 	}
-	
+
 	if os.Getenv("GRIMOIRE_DEBUG") != "" {
 		fmt.Printf("  Total dots found: %d\n", dotCount)
 	}
-	
+
 	switch dotCount {
 	case 1:
 		return "dot"
@@ -152,7 +152,7 @@ func (d *Detector) analyzeSparseFill(contour Contour, binary *image.Gray, mask *
 func (d *Detector) analyzeMediumFill(contour Contour, binary *image.Gray, mask *image.Gray) string {
 	// Check for line patterns by analyzing horizontal and vertical projections
 	bbox := contour.getBoundingBox()
-	
+
 	if os.Getenv("GRIMOIRE_DEBUG") != "" {
 		fmt.Printf("analyzeMediumFill: analyzing pattern at (%d,%d)\n", contour.Center.X, contour.Center.Y)
 		// Try analyzing as sparse fill to check for dots
@@ -172,7 +172,7 @@ func (d *Detector) analyzeMediumFill(contour Contour, binary *image.Gray, mask *
 		}
 		fmt.Printf("  Medium fill detected %d potential dots\n", dotCount)
 	}
-	
+
 	// Check if it might be dots instead of lines
 	// If we have a small number of distinct components, it's likely dots
 	visited := make(map[image.Point]bool)
@@ -192,7 +192,7 @@ func (d *Detector) analyzeMediumFill(contour Contour, binary *image.Gray, mask *
 			}
 		}
 	}
-	
+
 	// If we have 1-3 components, check if they are dots
 	if componentCount >= 1 && componentCount <= 3 {
 		// If the largest component is less than 70% of total black pixels, it's likely dots
@@ -204,7 +204,7 @@ func (d *Detector) analyzeMediumFill(contour Contour, binary *image.Gray, mask *
 				}
 			}
 		}
-		
+
 		if float64(largestComponent) < float64(totalBlack)*0.7 || componentCount <= 3 {
 			switch componentCount {
 			case 1:
@@ -216,15 +216,15 @@ func (d *Detector) analyzeMediumFill(contour Contour, binary *image.Gray, mask *
 			}
 		}
 	}
-	
+
 	// Count horizontal and vertical lines
 	horizontalLines := d.countLines(binary, mask, bbox, true)
 	verticalLines := d.countLines(binary, mask, bbox, false)
-	
+
 	if os.Getenv("GRIMOIRE_DEBUG") != "" {
 		fmt.Printf("  Horizontal lines: %d, Vertical lines: %d\n", horizontalLines, verticalLines)
 	}
-	
+
 	if horizontalLines > verticalLines*2 {
 		return "horizontal_lines"
 	} else if verticalLines > horizontalLines*2 {
@@ -232,12 +232,12 @@ func (d *Detector) analyzeMediumFill(contour Contour, binary *image.Gray, mask *
 	} else if horizontalLines > 0 || verticalLines > 0 {
 		return "lines"
 	}
-	
+
 	// Check for circular pattern
 	if d.hasCircularPattern(binary, mask, contour) {
 		return "half_circle"
 	}
-	
+
 	return "pattern"
 }
 
@@ -247,7 +247,7 @@ func (d *Detector) analyzeDenseFill(contour Contour, binary *image.Gray, mask *i
 	if d.hasCrossPattern(binary, mask, contour) {
 		return "cross"
 	}
-	
+
 	return "filled"
 }
 
@@ -256,18 +256,18 @@ func (d *Detector) markConnectedComponent(binary, mask *image.Gray, start image.
 	bounds := binary.Bounds()
 	queue := []image.Point{start}
 	componentSize := 0
-	
+
 	for len(queue) > 0 {
 		pt := queue[0]
 		queue = queue[1:]
-		
+
 		if visited[pt] {
 			continue
 		}
-		
+
 		visited[pt] = true
 		componentSize++
-		
+
 		// Check 4-connected neighbors
 		neighbors := []image.Point{
 			{X: pt.X + 1, Y: pt.Y},
@@ -275,7 +275,7 @@ func (d *Detector) markConnectedComponent(binary, mask *image.Gray, start image.
 			{X: pt.X, Y: pt.Y + 1},
 			{X: pt.X, Y: pt.Y - 1},
 		}
-		
+
 		for _, n := range neighbors {
 			if n.X >= bounds.Min.X && n.X < bounds.Max.X &&
 				n.Y >= bounds.Min.Y && n.Y < bounds.Max.Y &&
@@ -286,7 +286,7 @@ func (d *Detector) markConnectedComponent(binary, mask *image.Gray, start image.
 			}
 		}
 	}
-	
+
 	return componentSize
 }
 
@@ -294,7 +294,7 @@ func (d *Detector) markConnectedComponent(binary, mask *image.Gray, start image.
 func (d *Detector) countLines(binary, mask *image.Gray, bbox image.Rectangle, horizontal bool) int {
 	lineCount := 0
 	inLine := false
-	
+
 	if horizontal {
 		for y := bbox.Min.Y; y < bbox.Max.Y; y++ {
 			whiteCount := 0
@@ -330,7 +330,7 @@ func (d *Detector) countLines(binary, mask *image.Gray, bbox image.Rectangle, ho
 			}
 		}
 	}
-	
+
 	return lineCount
 }
 
@@ -339,15 +339,15 @@ func (d *Detector) hasCircularPattern(binary, mask *image.Gray, contour Contour)
 	// Simplified check - look for arc-like patterns
 	center := contour.Center
 	radius := float64(contour.getBoundingBox().Dx()) / 4
-	
+
 	// Sample points along a circle
 	whiteCount := 0
 	totalCount := 0
-	
+
 	for angle := 0.0; angle < 3.14159; angle += 0.1 {
 		x := int(float64(center.X) + radius*cos(angle))
 		y := int(float64(center.Y) + radius*sin(angle))
-		
+
 		if x >= 0 && y >= 0 && x < binary.Bounds().Max.X && y < binary.Bounds().Max.Y {
 			totalCount++
 			if mask.GrayAt(x, y).Y > 0 && binary.GrayAt(x, y).Y > 128 {
@@ -355,7 +355,7 @@ func (d *Detector) hasCircularPattern(binary, mask *image.Gray, contour Contour)
 			}
 		}
 	}
-	
+
 	return totalCount > 0 && float64(whiteCount)/float64(totalCount) > 0.5
 }
 
@@ -363,7 +363,7 @@ func (d *Detector) hasCircularPattern(binary, mask *image.Gray, contour Contour)
 func (d *Detector) hasCrossPattern(binary, mask *image.Gray, contour Contour) bool {
 	center := contour.Center
 	bbox := contour.getBoundingBox()
-	
+
 	// Check horizontal line through center
 	horizontalWhite := 0
 	for x := bbox.Min.X; x < bbox.Max.X; x++ {
@@ -371,7 +371,7 @@ func (d *Detector) hasCrossPattern(binary, mask *image.Gray, contour Contour) bo
 			horizontalWhite++
 		}
 	}
-	
+
 	// Check vertical line through center
 	verticalWhite := 0
 	for y := bbox.Min.Y; y < bbox.Max.Y; y++ {
@@ -379,7 +379,7 @@ func (d *Detector) hasCrossPattern(binary, mask *image.Gray, contour Contour) bo
 			verticalWhite++
 		}
 	}
-	
+
 	// Cross pattern should have significant pixels in both directions
 	return horizontalWhite > bbox.Dx()/3 && verticalWhite > bbox.Dy()/3
 }

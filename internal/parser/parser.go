@@ -43,16 +43,16 @@ func Parse(symbols []*detector.Symbol, connections []detector.Connection) (*Prog
 func (p *Parser) Parse(symbols []*detector.Symbol, connections []detector.Connection) (*Program, error) {
 	p.symbols = symbols
 	p.connections = connections
-	
+
 	// Validate input
 	if len(symbols) == 0 {
 		return nil, grimoireErrors.NewError(grimoireErrors.SyntaxError, "No symbols to parse").
 			WithDetails("The input contains no detected symbols")
 	}
-	
+
 	// Build symbol graph
 	p.buildSymbolGraph()
-	
+
 	// Debug: print symbol graph
 	if os.Getenv("GRIMOIRE_DEBUG") != "" {
 		fmt.Printf("Symbol graph:\n")
@@ -72,7 +72,7 @@ func (p *Parser) Parse(symbols []*detector.Symbol, connections []detector.Connec
 			}
 		}
 	}
-	
+
 	// Find outer circle
 	var outerCircle *detector.Symbol
 	for _, symbol := range symbols {
@@ -98,10 +98,10 @@ func (p *Parser) Parse(symbols []*detector.Symbol, connections []detector.Connec
 
 	// Parse functions (circles)
 	functions := p.parseFunctions()
-	
+
 	// Parse global statements
 	globals := p.parseGlobalStatements(mainEntry)
-	
+
 	// If we have global statements but no main entry, create implicit main
 	if mainEntry == nil && len(globals) > 0 {
 		mainEntry = &FunctionDef{
@@ -110,7 +110,7 @@ func (p *Parser) Parse(symbols []*detector.Symbol, connections []detector.Connec
 		}
 		globals = []Statement{}
 	}
-	
+
 	// Special case: check if we have a star symbol
 	if mainEntry == nil || (mainEntry != nil && len(mainEntry.Body) == 0) {
 		for i, symbol := range symbols {
@@ -132,7 +132,7 @@ func (p *Parser) Parse(symbols []*detector.Symbol, connections []detector.Connec
 			}
 		}
 	}
-	
+
 	// Check if we have any errors
 	if len(p.errors) > 0 {
 		// Combine all errors into a single error message
@@ -160,7 +160,7 @@ func (p *Parser) buildSymbolGraph() {
 			children: []*symbolNode{},
 		}
 	}
-	
+
 	// Use explicit connections if available
 	if len(p.connections) > 0 {
 		p.applyConnections()
@@ -179,7 +179,7 @@ func (p *Parser) inferConnections() {
 			symbolsToConnect = append(symbolsToConnect, p.symbolGraph[i])
 		}
 	}
-	
+
 	// Connect main entry to symbols below it
 	for _, node := range symbolsToConnect {
 		if node.symbol.Type == detector.DoubleCircle {
@@ -197,7 +197,7 @@ func (p *Parser) inferConnections() {
 			}
 		}
 	}
-	
+
 	// Connect operators to nearby operands
 	for _, node := range symbolsToConnect {
 		if isOperator(node.symbol.Type) {
@@ -217,14 +217,14 @@ func (p *Parser) inferConnections() {
 			}
 		}
 	}
-	
+
 	// Connect stars to nearest expressions above
 	for _, node := range symbolsToConnect {
 		if node.symbol.Type == detector.Star {
 			starPos := node.symbol.Position
 			var nearest *symbolNode
 			minDist := 999999.0
-			
+
 			for _, other := range symbolsToConnect {
 				if other != node && other.symbol.Position.Y < starPos.Y {
 					dist := distance(starPos, other.symbol.Position)
@@ -234,7 +234,7 @@ func (p *Parser) inferConnections() {
 					}
 				}
 			}
-			
+
 			if nearest != nil && minDist < 150 {
 				nearest.children = append(nearest.children, node)
 				node.parent = nearest
@@ -251,12 +251,12 @@ func (p *Parser) parseFunctionDef(node *symbolNode, isMain bool) *FunctionDef {
 		}
 		return nil
 	}
-	
+
 	node.visited = true
-	
+
 	// Parse function body
 	body := p.parseStatementSequence(node.children)
-	
+
 	fn := &FunctionDef{
 		Name:       "",
 		Parameters: []*Parameter{},
@@ -264,7 +264,7 @@ func (p *Parser) parseFunctionDef(node *symbolNode, isMain bool) *FunctionDef {
 		ReturnType: Void,
 		IsMain:     isMain,
 	}
-	
+
 	node.astNode = fn
 	return fn
 }
@@ -272,7 +272,7 @@ func (p *Parser) parseFunctionDef(node *symbolNode, isMain bool) *FunctionDef {
 // parseFunctions parses all function definitions
 func (p *Parser) parseFunctions() []*FunctionDef {
 	functions := []*FunctionDef{}
-	
+
 	for i, symbol := range p.symbols {
 		if symbol.Type == detector.Circle {
 			node := p.symbolGraph[i]
@@ -284,19 +284,19 @@ func (p *Parser) parseFunctions() []*FunctionDef {
 			}
 		}
 	}
-	
+
 	return functions
 }
 
 // parseGlobalStatements parses statements not in functions
 func (p *Parser) parseGlobalStatements(mainEntry *FunctionDef) []Statement {
 	globals := []Statement{}
-	
+
 	// If main entry exists and is populated, don't parse globals
 	if mainEntry != nil && len(mainEntry.Body) > 0 {
 		return globals
 	}
-	
+
 	// If main entry exists and is empty, parse star statements into it
 	if mainEntry != nil && len(mainEntry.Body) == 0 {
 		for i, symbol := range p.symbols {
@@ -310,7 +310,7 @@ func (p *Parser) parseGlobalStatements(mainEntry *FunctionDef) []Statement {
 		}
 		return globals
 	}
-	
+
 	// Otherwise parse only star statements as globals
 	for i, symbol := range p.symbols {
 		node := p.symbolGraph[i]
@@ -321,14 +321,14 @@ func (p *Parser) parseGlobalStatements(mainEntry *FunctionDef) []Statement {
 			}
 		}
 	}
-	
+
 	return globals
 }
 
 // parseStatementSequence parses a sequence of statements
 func (p *Parser) parseStatementSequence(nodes []*symbolNode) []Statement {
 	stmts := []Statement{}
-	
+
 	for _, node := range nodes {
 		if !node.visited {
 			stmt := p.parseStatement(node)
@@ -337,7 +337,7 @@ func (p *Parser) parseStatementSequence(nodes []*symbolNode) []Statement {
 			}
 		}
 	}
-	
+
 	return stmts
 }
 
@@ -346,10 +346,10 @@ func (p *Parser) parseStatement(node *symbolNode) Statement {
 	if node.visited && node.symbol.Type != detector.Star {
 		return nil
 	}
-	
+
 	node.visited = true
 	symbol := node.symbol
-	
+
 	// Track parsing errors
 	defer func() {
 		if r := recover(); r != nil {
@@ -358,7 +358,7 @@ func (p *Parser) parseStatement(node *symbolNode) Statement {
 			p.errors = append(p.errors, err)
 		}
 	}()
-	
+
 	switch symbol.Type {
 	case detector.Star:
 		return p.parseOutputStatement(node)
@@ -403,7 +403,7 @@ func (p *Parser) parseOutputStatement(node *symbolNode) *OutputStatement {
 func (p *Parser) parseIfStatement(node *symbolNode) *IfStatement {
 	// Find condition
 	condition := p.parseCondition(node)
-	
+
 	// Split children by position
 	var leftChildren, rightChildren []*symbolNode
 	for _, child := range node.children {
@@ -413,13 +413,13 @@ func (p *Parser) parseIfStatement(node *symbolNode) *IfStatement {
 			rightChildren = append(rightChildren, child)
 		}
 	}
-	
+
 	thenBranch := p.parseStatementSequence(leftChildren)
 	var elseBranch []Statement
 	if len(rightChildren) > 0 {
 		elseBranch = p.parseStatementSequence(rightChildren)
 	}
-	
+
 	return &IfStatement{
 		Condition:  condition,
 		ThenBranch: thenBranch,
@@ -437,16 +437,16 @@ func (p *Parser) parseLoop(node *symbolNode) Statement {
 			break
 		}
 	}
-	
+
 	body := p.parseStatementSequence(node.children)
-	
+
 	if counterNode != nil {
 		// For loop
 		counter := &Identifier{Name: "i"}
 		start := &Literal{Value: 0, LiteralType: Integer}
 		end := p.parseLiteral(counterNode)
 		step := &Literal{Value: 1, LiteralType: Integer}
-		
+
 		return &ForLoop{
 			Counter: counter,
 			Start:   start,
@@ -468,7 +468,7 @@ func (p *Parser) parseLoop(node *symbolNode) Statement {
 func (p *Parser) parseParallelBlock(node *symbolNode) *ParallelBlock {
 	// Group children by angle
 	groups := p.groupChildrenByAngle(node)
-	
+
 	branches := [][]Statement{}
 	for _, group := range groups {
 		branch := p.parseStatementSequence(group)
@@ -476,7 +476,7 @@ func (p *Parser) parseParallelBlock(node *symbolNode) *ParallelBlock {
 			branches = append(branches, branch)
 		}
 	}
-	
+
 	return &ParallelBlock{
 		Branches: branches,
 	}
@@ -486,7 +486,7 @@ func (p *Parser) parseParallelBlock(node *symbolNode) *ParallelBlock {
 func (p *Parser) parseAssignment(node *symbolNode) *Assignment {
 	varName := fmt.Sprintf("var_%p", node.symbol)
 	target := &Identifier{Name: varName}
-	
+
 	// Look for value in children
 	var value Expression
 	for _, child := range node.children {
@@ -495,12 +495,12 @@ func (p *Parser) parseAssignment(node *symbolNode) *Assignment {
 			break
 		}
 	}
-	
+
 	if value == nil {
 		// Use literal from properties
 		value = p.parseLiteral(node)
 	}
-	
+
 	return &Assignment{
 		Target: target,
 		Value:  value,
@@ -514,10 +514,10 @@ func (p *Parser) parseExpression(node *symbolNode) Expression {
 			return expr
 		}
 	}
-	
+
 	node.visited = true
 	symbol := node.symbol
-	
+
 	switch symbol.Type {
 	case detector.Square:
 		return p.parseLiteral(node)
@@ -536,7 +536,7 @@ func (p *Parser) parseExpression(node *symbolNode) Expression {
 func (p *Parser) parseLiteral(node *symbolNode) *Literal {
 	symbol := node.symbol
 	pattern := symbol.Pattern
-	
+
 	switch pattern {
 	case "dot":
 		return &Literal{Value: 1, LiteralType: Integer}
@@ -566,9 +566,9 @@ func (p *Parser) parseFunctionCall(node *symbolNode) *FunctionCall {
 			DataType:  Void,
 		}
 	}
-	
+
 	node.visited = true
-	
+
 	// Get arguments from parents
 	arguments := []Expression{}
 	for _, parent := range p.getParents(node) {
@@ -579,7 +579,7 @@ func (p *Parser) parseFunctionCall(node *symbolNode) *FunctionCall {
 			}
 		}
 	}
-	
+
 	return &FunctionCall{
 		Function:  &Identifier{Name: "print"},
 		Arguments: arguments,
@@ -619,27 +619,27 @@ func (p *Parser) parseBinaryOp(node *symbolNode) *BinaryOp {
 			}
 		}
 	}
-	
+
 	// Validate operands
 	if len(operands) < 2 {
-		err := grimoireErrors.NewError(grimoireErrors.UnbalancedExpression, 
+		err := grimoireErrors.NewError(grimoireErrors.UnbalancedExpression,
 			fmt.Sprintf("Binary operator %s requires two operands, found %d", symbol.Type, len(operands))).
 			WithDetails(fmt.Sprintf("At position (%.0f, %.0f)", symbol.Position.X, symbol.Position.Y)).
 			WithSuggestion("Ensure the operator is connected to two operand symbols")
 		p.errors = append(p.errors, err)
 	}
-	
+
 	// Ensure we have two operands
 	var left Expression = &Literal{Value: 0, LiteralType: Integer}
 	var right Expression = &Literal{Value: 0, LiteralType: Integer}
-	
+
 	if len(operands) > 0 {
 		left = operands[0]
 	}
 	if len(operands) > 1 {
 		right = operands[1]
 	}
-	
+
 	return &BinaryOp{
 		Left:     left,
 		Operator: op,
@@ -672,7 +672,7 @@ func (p *Parser) parseExpressionFromParent(node *symbolNode) Expression {
 			return expr
 		}
 	}
-	
+
 	// Otherwise look at all parents
 	for _, parent := range p.getParents(node) {
 		expr := p.parseExpression(parent)
@@ -680,7 +680,7 @@ func (p *Parser) parseExpressionFromParent(node *symbolNode) Expression {
 			return expr
 		}
 	}
-	
+
 	// For standalone stars, return "Hello, World!"
 	if node.symbol.Type == detector.Star {
 		return &Literal{
@@ -688,7 +688,7 @@ func (p *Parser) parseExpressionFromParent(node *symbolNode) Expression {
 			LiteralType: String,
 		}
 	}
-	
+
 	return &Literal{Value: 0, LiteralType: Integer}
 }
 
@@ -700,14 +700,14 @@ func (p *Parser) parseCondition(node *symbolNode) Expression {
 			return p.parseBinaryOp(child)
 		}
 	}
-	
+
 	// Look in parents too
 	for _, parent := range p.getParents(node) {
 		if isComparisonOperator(parent.symbol.Type) {
 			return p.parseBinaryOp(parent)
 		}
 	}
-	
+
 	// Default to false
 	return &Literal{Value: false, LiteralType: Boolean}
 }
@@ -716,10 +716,10 @@ func (p *Parser) parseCondition(node *symbolNode) Expression {
 func (p *Parser) parseAssignmentOp(node *symbolNode) Expression {
 	parents := p.getParents(node)
 	children := node.children
-	
+
 	var target *Identifier
 	var value Expression
-	
+
 	// Left side is usually a parent
 	if len(parents) > 0 {
 		parent := parents[0]
@@ -728,19 +728,19 @@ func (p *Parser) parseAssignmentOp(node *symbolNode) Expression {
 			target = &Identifier{Name: varName}
 		}
 	}
-	
+
 	// Right side is usually a child
 	if len(children) > 0 {
 		value = p.parseExpression(children[0])
 	} else if len(parents) > 1 {
 		value = p.parseExpression(parents[1])
 	}
-	
+
 	if target != nil && value != nil {
 		// Return assignment as expression statement
 		return nil // Assignments are statements, not expressions
 	}
-	
+
 	return nil
 }
 
@@ -749,16 +749,16 @@ func (p *Parser) groupChildrenByAngle(node *symbolNode) [][]*symbolNode {
 	if len(node.children) == 0 {
 		return nil
 	}
-	
+
 	// Simple grouping by quadrants
 	groups := make([][]*symbolNode, 4)
 	centerX := node.symbol.Position.X
 	centerY := node.symbol.Position.Y
-	
+
 	for _, child := range node.children {
 		dx := child.symbol.Position.X - centerX
 		dy := child.symbol.Position.Y - centerY
-		
+
 		var group int
 		if dx >= 0 && dy >= 0 {
 			group = 0 // Top-right
@@ -769,10 +769,10 @@ func (p *Parser) groupChildrenByAngle(node *symbolNode) [][]*symbolNode {
 		} else {
 			group = 3 // Bottom-right
 		}
-		
+
 		groups[group] = append(groups[group], child)
 	}
-	
+
 	// Remove empty groups
 	result := [][]*symbolNode{}
 	for _, g := range groups {
@@ -780,7 +780,7 @@ func (p *Parser) groupChildrenByAngle(node *symbolNode) [][]*symbolNode {
 			result = append(result, g)
 		}
 	}
-	
+
 	return result
 }
 
@@ -826,7 +826,7 @@ func (p *Parser) applyConnections() {
 		// Find the indices of the connected symbols
 		fromIdx := -1
 		toIdx := -1
-		
+
 		for i, sym := range p.symbols {
 			if sym == conn.From {
 				fromIdx = i
@@ -835,7 +835,7 @@ func (p *Parser) applyConnections() {
 				toIdx = i
 			}
 		}
-		
+
 		if fromIdx >= 0 && toIdx >= 0 {
 			fromNode := p.symbolGraph[fromIdx]
 			toNode := p.symbolGraph[toIdx]

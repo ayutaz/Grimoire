@@ -22,7 +22,7 @@ const (
 	Subtract OperatorType = "subtract"
 	Multiply OperatorType = "multiply"
 	Divide   OperatorType = "divide"
-	
+
 	// Comparison
 	Equal        OperatorType = "equal"
 	NotEqual     OperatorType = "not_equal"
@@ -30,13 +30,13 @@ const (
 	GreaterThan  OperatorType = "greater_than"
 	LessEqual    OperatorType = "less_equal"
 	GreaterEqual OperatorType = "greater_equal"
-	
+
 	// Logical
 	And OperatorType = "and"
 	Or  OperatorType = "or"
 	Not OperatorType = "not"
 	Xor OperatorType = "xor"
-	
+
 	// Assignment
 	Assign OperatorType = "assign"
 )
@@ -167,8 +167,8 @@ type BinaryOp struct {
 	DataType DataType
 }
 
-func (*BinaryOp) node()       {}
-func (*BinaryOp) expression() {}
+func (*BinaryOp) node()            {}
+func (*BinaryOp) expression()      {}
 func (b *BinaryOp) Type() DataType { return b.DataType }
 
 // UnaryOp represents unary operations
@@ -178,8 +178,8 @@ type UnaryOp struct {
 	DataType DataType
 }
 
-func (*UnaryOp) node()       {}
-func (*UnaryOp) expression() {}
+func (*UnaryOp) node()            {}
+func (*UnaryOp) expression()      {}
 func (u *UnaryOp) Type() DataType { return u.DataType }
 
 // Literal represents literal values
@@ -188,8 +188,8 @@ type Literal struct {
 	LiteralType DataType
 }
 
-func (*Literal) node()       {}
-func (*Literal) expression() {}
+func (*Literal) node()            {}
+func (*Literal) expression()      {}
 func (l *Literal) Type() DataType { return l.LiteralType }
 
 // Identifier represents variables
@@ -198,8 +198,8 @@ type Identifier struct {
 	DataType DataType
 }
 
-func (*Identifier) node()       {}
-func (*Identifier) expression() {}
+func (*Identifier) node()            {}
+func (*Identifier) expression()      {}
 func (i *Identifier) Type() DataType { return i.DataType }
 
 // FunctionCall represents function calls
@@ -209,8 +209,8 @@ type FunctionCall struct {
 	DataType  DataType
 }
 
-func (*FunctionCall) node()       {}
-func (*FunctionCall) expression() {}
+func (*FunctionCall) node()            {}
+func (*FunctionCall) expression()      {}
 func (f *FunctionCall) Type() DataType { return f.DataType }
 
 // ArrayLiteral represents array literals
@@ -218,8 +218,8 @@ type ArrayLiteral struct {
 	Elements []Expression
 }
 
-func (*ArrayLiteral) node()       {}
-func (*ArrayLiteral) expression() {}
+func (*ArrayLiteral) node()          {}
+func (*ArrayLiteral) expression()    {}
 func (*ArrayLiteral) Type() DataType { return Array }
 
 // MapLiteral represents map literals
@@ -227,6 +227,6 @@ type MapLiteral struct {
 	Pairs [][2]Expression // [key, value] pairs
 }
 
-func (*MapLiteral) node()       {}
-func (*MapLiteral) expression() {}
+func (*MapLiteral) node()          {}
+func (*MapLiteral) expression()    {}
 func (*MapLiteral) Type() DataType { return Map }

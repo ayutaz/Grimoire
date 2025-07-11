@@ -22,11 +22,11 @@ const (
 	ImageProcessingError ErrorType = "IMAGE_PROCESSING_ERROR"
 
 	// Parser errors
-	SyntaxError           ErrorType = "SYNTAX_ERROR"
-	UnexpectedSymbol      ErrorType = "UNEXPECTED_SYMBOL"
-	MissingMainEntry      ErrorType = "MISSING_MAIN_ENTRY"
-	InvalidConnection     ErrorType = "INVALID_CONNECTION"
-	UnbalancedExpression  ErrorType = "UNBALANCED_EXPRESSION"
+	SyntaxError          ErrorType = "SYNTAX_ERROR"
+	UnexpectedSymbol     ErrorType = "UNEXPECTED_SYMBOL"
+	MissingMainEntry     ErrorType = "MISSING_MAIN_ENTRY"
+	InvalidConnection    ErrorType = "INVALID_CONNECTION"
+	UnbalancedExpression ErrorType = "UNBALANCED_EXPRESSION"
 
 	// Compiler errors
 	CompilationError     ErrorType = "COMPILATION_ERROR"
@@ -38,14 +38,14 @@ const (
 
 // GrimoireError represents a custom error with context
 type GrimoireError struct {
-	Type        ErrorType
-	Message     string
-	Details     string
-	Suggestion  string
-	Line        int
-	Column      int
-	FileName    string
-	InnerError  error
+	Type       ErrorType
+	Message    string
+	Details    string
+	Suggestion string
+	Line       int
+	Column     int
+	FileName   string
+	InnerError error
 }
 
 // Error implements the error interface

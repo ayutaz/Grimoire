@@ -26,7 +26,7 @@ func TestCompile_EmptyProgram(t *testing.T) {
 	}
 
 	code, err := Compile(ast)
-	
+
 	// Empty program should now return an error
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "No main entry point found")
@@ -51,7 +51,7 @@ func TestCompile_HelloWorld(t *testing.T) {
 	}
 
 	code, err := Compile(ast)
-	
+
 	require.NoError(t, err)
 	assert.Contains(t, code, `if __name__ == "__main__":`)
 	assert.Contains(t, code, `print("Hello, World!")`)
@@ -77,7 +77,7 @@ func TestCompile_Arithmetic(t *testing.T) {
 	}
 
 	code, err := Compile(ast)
-	
+
 	require.NoError(t, err)
 	assert.Contains(t, code, "print((1 + 2))")
 }
@@ -85,7 +85,7 @@ func TestCompile_Arithmetic(t *testing.T) {
 // TestCompileLiteral tests literal compilation
 func TestCompileLiteral(t *testing.T) {
 	compiler := NewCompiler()
-	
+
 	tests := []struct {
 		literal  *parser.Literal
 		expected string
@@ -96,7 +96,7 @@ func TestCompileLiteral(t *testing.T) {
 		{&parser.Literal{Value: true, LiteralType: parser.Boolean}, "True"},
 		{&parser.Literal{Value: false, LiteralType: parser.Boolean}, "False"},
 	}
-	
+
 	for _, tc := range tests {
 		result := compiler.compileLiteral(tc.literal)
 		assert.Equal(t, tc.expected, result)
@@ -106,7 +106,7 @@ func TestCompileLiteral(t *testing.T) {
 // TestCompileBinaryOp tests binary operation compilation
 func TestCompileBinaryOp(t *testing.T) {
 	compiler := NewCompiler()
-	
+
 	tests := []struct {
 		op       parser.OperatorType
 		expected string
@@ -122,7 +122,7 @@ func TestCompileBinaryOp(t *testing.T) {
 		{parser.And, "(1 and 2)"},
 		{parser.Or, "(1 or 2)"},
 	}
-	
+
 	for _, tc := range tests {
 		binOp := &parser.BinaryOp{
 			Left:     &parser.Literal{Value: 1, LiteralType: parser.Integer},
@@ -159,7 +159,7 @@ func TestCompileIfStatement(t *testing.T) {
 	}
 
 	code, err := Compile(ast)
-	
+
 	require.NoError(t, err)
 	assert.Contains(t, code, "if True:")
 	assert.Contains(t, code, `print("True")`)
@@ -170,16 +170,16 @@ func TestCompileIfStatement(t *testing.T) {
 // TestIndentation tests proper indentation
 func TestIndentation(t *testing.T) {
 	compiler := NewCompiler()
-	
+
 	// Test basic indentation
 	compiler.writeLine("def test():")
 	compiler.indent++
 	compiler.writeLine("pass")
 	compiler.indent--
-	
+
 	output := compiler.output.String()
 	lines := strings.Split(strings.TrimSpace(output), "\n")
-	
+
 	assert.Equal(t, "def test():", lines[0])
 	assert.Equal(t, "    pass", lines[1])
 }
@@ -208,7 +208,7 @@ func TestCompile_ErrorHandling(t *testing.T) {
 			wantErr: "No main entry point",
 		},
 	}
-	
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			code, err := Compile(tc.ast)
@@ -246,9 +246,9 @@ func TestCompile_ComplexProgram(t *testing.T) {
 			},
 		},
 	}
-	
+
 	code, err := Compile(ast)
-	
+
 	require.NoError(t, err)
 	assert.Contains(t, code, "x = 5")
 	assert.Contains(t, code, "for i in range(0, x, 1):")
@@ -279,9 +279,9 @@ func TestCompile_ParallelBlock(t *testing.T) {
 			},
 		},
 	}
-	
+
 	code, err := Compile(ast)
-	
+
 	require.NoError(t, err)
 	assert.Contains(t, code, "import threading")
 	assert.Contains(t, code, "threads = []")
@@ -329,9 +329,9 @@ func TestCompile_Functions(t *testing.T) {
 			},
 		},
 	}
-	
+
 	code, err := Compile(ast)
-	
+
 	require.NoError(t, err)
 	assert.Contains(t, code, "def add(a, b):")
 	assert.Contains(t, code, "print((a + b))")
@@ -372,9 +372,9 @@ func TestCompile_WhileLoop(t *testing.T) {
 			},
 		},
 	}
-	
+
 	code, err := Compile(ast)
-	
+
 	require.NoError(t, err)
 	assert.Contains(t, code, "count = 0")
 	assert.Contains(t, code, "while (count < 5):")

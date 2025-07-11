@@ -12,7 +12,7 @@ import (
 func (d *Detector) DebugSaveContours(binary *image.Gray, contours []Contour, outputPath string) error {
 	bounds := binary.Bounds()
 	output := image.NewRGBA(bounds)
-	
+
 	// Copy binary image to output
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
@@ -24,20 +24,20 @@ func (d *Detector) DebugSaveContours(binary *image.Gray, contours []Contour, out
 			}
 		}
 	}
-	
+
 	// Draw contours in different colors
 	colors := []color.RGBA{
-		{255, 0, 0, 255},    // Red
-		{0, 255, 0, 255},    // Green
-		{0, 0, 255, 255},    // Blue
-		{255, 255, 0, 255},  // Yellow
-		{255, 0, 255, 255},  // Magenta
-		{0, 255, 255, 255},  // Cyan
+		{255, 0, 0, 255},   // Red
+		{0, 255, 0, 255},   // Green
+		{0, 0, 255, 255},   // Blue
+		{255, 255, 0, 255}, // Yellow
+		{255, 0, 255, 255}, // Magenta
+		{0, 255, 255, 255}, // Cyan
 	}
-	
+
 	for i, contour := range contours {
 		c := colors[i%len(colors)]
-		
+
 		// Draw contour points
 		for _, pt := range contour.Points {
 			if pt.X >= bounds.Min.X && pt.X < bounds.Max.X &&
@@ -45,18 +45,18 @@ func (d *Detector) DebugSaveContours(binary *image.Gray, contours []Contour, out
 				output.Set(pt.X, pt.Y, c)
 			}
 		}
-		
+
 		// Draw center
 		drawCross(output, contour.Center, c)
 	}
-	
+
 	// Save image
 	file, err := os.Create(outputPath)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	
+
 	return png.Encode(file, output)
 }
 
@@ -66,7 +66,7 @@ func (d *Detector) DebugPrintContours(contours []Contour) {
 	for i, contour := range contours {
 		symbolType := d.classifyShape(contour)
 		fmt.Printf("[%d] Type: %s, Area: %.2f, Circularity: %.2f, Center: (%d,%d), Points: %d\n",
-			i, symbolType, contour.Area, contour.Circularity, 
+			i, symbolType, contour.Area, contour.Circularity,
 			contour.Center.X, contour.Center.Y, len(contour.Points))
 	}
 }
@@ -75,7 +75,7 @@ func (d *Detector) DebugPrintContours(contours []Contour) {
 func drawCross(img *image.RGBA, center image.Point, c color.RGBA) {
 	size := 5
 	bounds := img.Bounds()
-	
+
 	// Horizontal line
 	for dx := -size; dx <= size; dx++ {
 		x := center.X + dx
@@ -83,7 +83,7 @@ func drawCross(img *image.RGBA, center image.Point, c color.RGBA) {
 			img.Set(x, center.Y, c)
 		}
 	}
-	
+
 	// Vertical line
 	for dy := -size; dy <= size; dy++ {
 		y := center.Y + dy
@@ -100,6 +100,6 @@ func (d *Detector) DebugSaveImage(img *image.Gray, outputPath string) error {
 		return err
 	}
 	defer file.Close()
-	
+
 	return png.Encode(file, img)
 }

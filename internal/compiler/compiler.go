@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ayutaz/grimoire/internal/parser"
 	grimoireErrors "github.com/ayutaz/grimoire/internal/errors"
+	"github.com/ayutaz/grimoire/internal/parser"
 )
 
 // Compiler generates code from AST
 type Compiler struct {
-	indent      int
-	indentStr   string
-	output      strings.Builder
+	indent    int
+	indentStr string
+	output    strings.Builder
 }
 
 // NewCompiler creates a new compiler
@@ -32,12 +32,12 @@ func Compile(ast *parser.Program) (string, error) {
 // Compile performs the compilation
 func (c *Compiler) Compile(ast *parser.Program) (string, error) {
 	c.output.Reset()
-	
+
 	// Validate AST
 	if ast == nil {
 		return "", grimoireErrors.NewError(grimoireErrors.CompilationError, "Cannot compile nil AST")
 	}
-	
+
 	// Check for required outer circle
 	if !ast.HasOuterCircle {
 		return "", grimoireErrors.NoOuterCircleError()
@@ -91,7 +91,7 @@ func (c *Compiler) writeLine(line string) {
 		c.output.WriteString("\n")
 		return
 	}
-	
+
 	for i := 0; i < c.indent; i++ {
 		c.output.WriteString(c.indentStr)
 	}
@@ -106,15 +106,15 @@ func (c *Compiler) compileFunction(fn *parser.FunctionDef) {
 	if name == "" {
 		name = "anonymous_func"
 	}
-	
+
 	params := []string{}
 	for _, p := range fn.Parameters {
 		params = append(params, p.Name)
 	}
-	
+
 	c.writeLine(fmt.Sprintf("def %s(%s):", name, strings.Join(params, ", ")))
 	c.indent++
-	
+
 	// Function body
 	if len(fn.Body) == 0 {
 		c.writeLine("pass")
@@ -126,7 +126,7 @@ func (c *Compiler) compileFunction(fn *parser.FunctionDef) {
 			}
 		}
 	}
-	
+
 	c.indent--
 }
 
@@ -135,7 +135,7 @@ func (c *Compiler) compileStatement(stmt parser.Statement) error {
 	if stmt == nil {
 		return grimoireErrors.NewError(grimoireErrors.CompilationError, "Cannot compile nil statement")
 	}
-	
+
 	switch s := stmt.(type) {
 	case *parser.OutputStatement:
 		c.compileOutputStatement(s)
@@ -155,7 +155,7 @@ func (c *Compiler) compileStatement(stmt parser.Statement) error {
 		expr := c.compileExpression(s.Expression)
 		c.writeLine(expr)
 	default:
-		return grimoireErrors.NewError(grimoireErrors.UnsupportedOperation, 
+		return grimoireErrors.NewError(grimoireErrors.UnsupportedOperation,
 			fmt.Sprintf("Unsupported statement type: %T", stmt))
 	}
 	return nil
@@ -179,21 +179,25 @@ func (c *Compiler) compileIfStatement(stmt *parser.IfStatement) {
 	condition := c.compileExpression(stmt.Condition)
 	c.writeLine(fmt.Sprintf("if %s:", condition))
 	c.indent++
-	
+
 	if len(stmt.ThenBranch) == 0 {
 		c.writeLine("pass")
 	} else {
 		for _, s := range stmt.ThenBranch {
-			c.compileStatement(s)
+			if err := c.compileStatement(s); err != nil {
+				return
+			}
 		}
 	}
 	c.indent--
-	
+
 	if len(stmt.ElseBranch) > 0 {
 		c.writeLine("else:")
 		c.indent++
 		for _, s := range stmt.ElseBranch {
-			c.compileStatement(s)
+			if err := c.compileStatement(s); err != nil {
+				return
+			}
 		}
 		c.indent--
 	}
@@ -204,7 +208,7 @@ func (c *Compiler) compileForLoop(stmt *parser.ForLoop) {
 	counter := stmt.Counter.Name
 	start := c.compileExpression(stmt.Start)
 	end := c.compileExpression(stmt.End)
-	
+
 	var step string
 	if stmt.Step != nil {
 		step = c.compileExpression(stmt.Step)
@@ -212,13 +216,15 @@ func (c *Compiler) compileForLoop(stmt *parser.ForLoop) {
 	} else {
 		c.writeLine(fmt.Sprintf("for %s in range(%s, %s):", counter, start, end))
 	}
-	
+
 	c.indent++
 	if len(stmt.Body) == 0 {
 		c.writeLine("pass")
 	} else {
 		for _, s := range stmt.Body {
-			c.compileStatement(s)
+			if err := c.compileStatement(s); err != nil {
+				return
+			}
 		}
 	}
 	c.indent--
@@ -229,12 +235,14 @@ func (c *Compiler) compileWhileLoop(stmt *parser.WhileLoop) {
 	condition := c.compileExpression(stmt.Condition)
 	c.writeLine(fmt.Sprintf("while %s:", condition))
 	c.indent++
-	
+
 	if len(stmt.Body) == 0 {
 		c.writeLine("pass")
 	} else {
 		for _, s := range stmt.Body {
-			c.compileStatement(s)
+			if err := c.compileStatement(s); err != nil {
+				return
+			}
 		}
 	}
 	c.indent--
@@ -244,17 +252,20 @@ func (c *Compiler) compileWhileLoop(stmt *parser.WhileLoop) {
 func (c *Compiler) compileParallelBlock(stmt *parser.ParallelBlock) {
 	c.writeLine("import threading")
 	c.writeLine("threads = []")
-	
+
 	for i, branch := range stmt.Branches {
 		c.writeLine(fmt.Sprintf("def branch_%d():", i))
 		c.indent++
 		for _, s := range branch {
-			c.compileStatement(s)
+			if err := c.compileStatement(s); err != nil {
+				// Log error but continue with other branches
+				c.writeLine(fmt.Sprintf("# Error in branch %d: %v", i, err))
+			}
 		}
 		c.indent--
 		c.writeLine(fmt.Sprintf("threads.append(threading.Thread(target=branch_%d))", i))
 	}
-	
+
 	c.writeLine("for t in threads:")
 	c.indent++
 	c.writeLine("t.start()")
@@ -305,7 +316,7 @@ func (c *Compiler) compileExpression(expr parser.Expression) string {
 func (c *Compiler) compileBinaryOp(op *parser.BinaryOp) string {
 	left := c.compileExpression(op.Left)
 	right := c.compileExpression(op.Right)
-	
+
 	var operator string
 	switch op.Operator {
 	case parser.Add:
@@ -335,14 +346,14 @@ func (c *Compiler) compileBinaryOp(op *parser.BinaryOp) string {
 	default:
 		operator = "+"
 	}
-	
+
 	return fmt.Sprintf("(%s %s %s)", left, operator, right)
 }
 
 // compileUnaryOp compiles a unary operation
 func (c *Compiler) compileUnaryOp(op *parser.UnaryOp) string {
 	operand := c.compileExpression(op.Operand)
-	
+
 	switch op.Operator {
 	case parser.Not:
 		return fmt.Sprintf("not %s", operand)
