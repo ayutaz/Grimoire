@@ -82,7 +82,6 @@ linters:
     - lll
     - unconvert
     - gocognit
-    - nestif
     - prealloc
     - copyloopvar    # Replaces exportloopref (deprecated in Go 1.22+)
     - bodyclose
