@@ -4,9 +4,10 @@
 
 Grimoireは、文字を一切使わず、純粋に記号と図形のみでプログラムを表現する実験的なビジュアルプログラミング言語です。手描きの魔法陣を画像認識によってコンパイルし、実行可能なプログラムを作成します。
 
-![Build Status](https://github.com/ayutaz/Grimoire/actions/workflows/build-binaries.yml/badge.svg)
-![Test Status](https://github.com/ayutaz/Grimoire/actions/workflows/test.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-82.88%25-brightgreen)
+![Build Status](https://github.com/ayutaz/Grimoire/actions/workflows/go.yml/badge.svg)
+![Test Coverage](https://img.shields.io/badge/coverage-70%25-brightgreen)
+![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-00ADD8)
+![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
 ## 🌟 特徴
 
@@ -64,12 +65,16 @@ Grimoireは、文字を一切使わず、純粋に記号と図形のみでプロ
 ### ソースからのインストール
 
 ```bash
-# uvを使用（推奨）
-pip install uv
-uv sync
+# Go 1.21以上が必要
+go install github.com/ayutaz/grimoire/cmd/grimoire@latest
 
-# または従来のpip
-pip install -e .
+# または、リポジトリをクローンしてビルド
+git clone https://github.com/ayutaz/Grimoire.git
+cd Grimoire
+make build
+
+# または直接ビルド
+go build -o grimoire cmd/grimoire/main.go
 ```
 
 ## 🎨 使い方
@@ -154,38 +159,59 @@ grimoire debug magic_circle.png
 
 ```bash
 # 全テストを実行
-uv run pytest
+go test ./...
 
 # カバレッジ付き
-uv run pytest --cov=grimoire
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
 
-# 特定のテストのみ
-uv run pytest tests/unit/
+# ベンチマークの実行
+go test -bench=. ./...
 ```
 
 ### コードフォーマット
 
 ```bash
-uv run ruff format .
-uv run ruff check .
+# Go標準のフォーマット
+go fmt ./...
+
+# 静的解析
+go vet ./...
 ```
 
 ### ビルド
 
 ```bash
-# スタンドアロン実行ファイルの作成
-uv run pyinstaller grimoire.spec
+# Makefileを使用（推奨）
+make build        # 現在のプラットフォーム向けビルド
+make build-all    # 全プラットフォーム向けビルド
+make test         # テスト実行
+make clean        # ビルド成果物のクリーン
+
+# または直接ビルド
+go build -o grimoire cmd/grimoire/main.go
 ```
 
 ## 🔧 技術詳細
 
-### 画像認識アプローチ
-Grimoireは**OpenCVの古典的コンピュータビジョン技術**のみを使用しています：
+### Go言語による実装
 
-- **輪郭検出**: 図形の境界を検出
-- **ハフ変換**: 円や直線の数学的検出
-- **形状解析**: 頂点数による多角形の分類
-- **モルフォロジー演算**: ノイズ除去と形状の清浄化
+GrimoireはGo言語で実装されており、以下の特徴があります：
+
+**パフォーマンス特性:**
+- **起動時間**: 約0.06秒（高速な起動）
+- **実行時間**: 約0.2秒（効率的な画像処理）  
+- **バイナリサイズ**: 約10MB（コンパクトな実行ファイル）
+- **依存関係**: 外部ライブラリ不要（Pure Go実装）
+
+### 画像認識アプローチ
+
+Go版では外部ライブラリに依存しない、Pure Goでの画像処理を実装：
+
+- **輪郭検出**: Moore近傍探索による輪郭追跡
+- **図形認識**: Douglas-Peuckerアルゴリズムによる多角形近似
+- **前処理**: Gaussianブラー、適応的二値化、モルフォロジー演算
+- **パターン認識**: 図形内部のドット、ライン、クロスパターンの検出
 
 機械学習を使用しないことで、以下の利点があります：
 - 決定的な結果（同じ入力→同じ出力）
@@ -195,11 +221,10 @@ Grimoireは**OpenCVの古典的コンピュータビジョン技術**のみを�
 
 ## 📋 既知の問題
 
-### Windows環境での制限
-- 日本語や特殊文字を含むファイル名は使用できません
-- OpenCVの制限によるもので、将来的に改善予定です
-
-### その他
+### 現在の制限事項
+- 四角形の検出精度が不安定（円として誤検出される場合がある）
+- 斜めの接続線の検出が未実装
+- 複雑な演算子記号の認識が不完全
 - 複雑なプログラムの解析には制限があります
 - ループ内に実行内容がない場合、エラーになります
 
@@ -214,7 +239,7 @@ Grimoireは**OpenCVの古典的コンピュータビジョン技術**のみを�
 
 ## 📄 ライセンス
 
-このプロジェクトはMITライセンスのもとで公開されています。
+このプロジェクトはApache License 2.0のもとで公開されています。詳細は[LICENSE](LICENSE)ファイルをご覧ください。
 
 ## 🏰 哲学
 

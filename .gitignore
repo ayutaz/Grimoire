@@ -32,17 +32,9 @@ Thumbs.db
 *.temp
 /tmp/
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-.venv/
-venv/
-.pytest_cache/
-.coverage
-.mypy_cache/
-.ruff_cache/
+# Go binaries
+/grimoire
+grimoire
 
 # Generated files
 fibonacci_output.py
@@ -54,3 +46,22 @@ artifacts/
 # Claude AI files
 .claude/
 .claude_files/
+
+# Go specific
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+dist/
+
+# Go coverage
+coverage.out
+coverage.html
+*.prof
+
+# Debug files
+debug_*.png
+debug_*.txt
