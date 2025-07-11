@@ -112,7 +112,7 @@ func (p *Parser) Parse(symbols []*detector.Symbol, connections []detector.Connec
 	}
 
 	// Special case: check if we have a star symbol
-	if mainEntry == nil || (mainEntry != nil && len(mainEntry.Body) == 0) {
+	if mainEntry == nil || len(mainEntry.Body) == 0 {
 		for i, symbol := range symbols {
 			if symbol.Type == detector.Star {
 				node := p.symbolGraph[i]
@@ -384,7 +384,9 @@ func (p *Parser) parseStatement(node *symbolNode) Statement {
 			return nil
 		}
 		// Report unexpected symbol
-		err := grimoireErrors.UnexpectedSymbolError(string(symbol.Type), "statement symbol", symbol.Position.X, symbol.Position.Y)
+		err := grimoireErrors.UnexpectedSymbolError(
+			string(symbol.Type), "statement symbol",
+			symbol.Position.X, symbol.Position.Y)
 		p.errors = append(p.errors, err)
 		return nil
 	}

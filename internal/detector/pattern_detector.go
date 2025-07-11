@@ -252,7 +252,8 @@ func (d *Detector) analyzeDenseFill(contour Contour, binary *image.Gray, mask *i
 }
 
 // markConnectedComponent marks all pixels in a connected component as visited
-func (d *Detector) markConnectedComponent(binary, mask *image.Gray, start image.Point, visited map[image.Point]bool) int {
+func (d *Detector) markConnectedComponent(
+	binary, mask *image.Gray, start image.Point, visited map[image.Point]bool) int {
 	bounds := binary.Bounds()
 	queue := []image.Point{start}
 	componentSize := 0

@@ -42,7 +42,7 @@ func TestE2E_LoopProgram(t *testing.T) {
 
 	// Check if loop.png exists
 	loopPath := "../examples/images/loop.png"
-	if _, err := os.Stat(loopPath); os.IsNotExist(err) {
+	if _, statErr := os.Stat(loopPath); os.IsNotExist(statErr) {
 		t.Skip("Skipping test: loop.png not found")
 	}
 
@@ -93,7 +93,7 @@ func TestE2E_ConditionalProgram(t *testing.T) {
 
 	// Check if conditional.png exists
 	conditionalPath := "../examples/images/conditional.png"
-	if _, err := os.Stat(conditionalPath); os.IsNotExist(err) {
+	if _, statErr := os.Stat(conditionalPath); os.IsNotExist(statErr) {
 		t.Skip("Skipping test: conditional.png not found")
 	}
 
@@ -142,7 +142,7 @@ func TestE2E_ParallelProgram(t *testing.T) {
 
 	// Check if parallel.png exists
 	parallelPath := "../examples/images/parallel.png"
-	if _, err := os.Stat(parallelPath); os.IsNotExist(err) {
+	if _, statErr := os.Stat(parallelPath); os.IsNotExist(statErr) {
 		t.Skip("Skipping test: parallel.png not found")
 	}
 
@@ -195,7 +195,7 @@ func TestE2E_ComplexProgram(t *testing.T) {
 
 	// Create a temporary complex image or use existing one
 	complexPath := "../examples/images/complex.png"
-	if _, err := os.Stat(complexPath); os.IsNotExist(err) {
+	if _, statErr := os.Stat(complexPath); os.IsNotExist(statErr) {
 		// Try other complex examples
 		alternativePaths := []string{
 			"../examples/images/fibonacci.png",

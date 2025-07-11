@@ -143,7 +143,9 @@ func (d *Detector) isValidContourPoint(binary *image.Gray, pt image.Point, bound
 }
 
 // fillContourRegion fills any remaining pixels in the contour region
-func (d *Detector) fillContourRegion(binary *image.Gray, contourPoints []image.Point, visited map[image.Point]bool, bounds image.Rectangle) {
+func (d *Detector) fillContourRegion(
+	binary *image.Gray, contourPoints []image.Point,
+	visited map[image.Point]bool, bounds image.Rectangle) {
 	// Create a bounding box for the contour
 	if len(contourPoints) == 0 {
 		return

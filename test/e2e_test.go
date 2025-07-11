@@ -46,12 +46,12 @@ func TestE2E_HelloWorld(t *testing.T) {
 	}
 
 	cmd := exec.Command(binaryName, "run", "../examples/images/hello_world.png")
-	output, err := cmd.CombinedOutput()
+	output, runErr := cmd.CombinedOutput()
 
 	// For now, we expect it to work even with placeholder implementation
-	if err != nil {
+	if runErr != nil {
 		t.Logf("Output: %s", output)
-		t.Logf("Error: %v", err)
+		t.Logf("Error: %v", runErr)
 	}
 
 	// Once fully implemented, check for "Hello, World!"
