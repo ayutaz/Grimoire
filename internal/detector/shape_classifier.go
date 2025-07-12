@@ -425,7 +425,8 @@ func (d *Detector) classifyOperator(contour Contour) SymbolType {
 
 	// Less than (<) and Greater than (>)
 	// Require specific triangular shape with clear directionality
-	if vertices == 3 && contour.Area > 200 {
+	// Check aspect ratio to distinguish from regular triangles
+	if vertices == 3 && contour.Area > 200 && aspectRatio > 1.5 {
 		if d.isPointingLeft(approx) {
 			return LessThan
 		} else if d.isPointingRight(approx) {

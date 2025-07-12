@@ -563,11 +563,13 @@ func TestCompileCommandWriteError(t *testing.T) {
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "test.png")
 
-	// Create image with outer circle and star
+	// Create image with outer circle and double circle (main entry)
 	img := image.NewRGBA(image.Rect(0, 0, 400, 400))
 	draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
 	drawCircle(img, 200, 200, 180, 175, color.Black)
-	drawStar(img, 200, 200, 20, color.Black)
+	// Draw double circle for main entry
+	drawCircle(img, 200, 200, 30, 25, color.Black)
+	drawCircle(img, 200, 200, 25, 20, color.Black)
 
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
@@ -605,11 +607,13 @@ func TestRunCommandExecutionError(t *testing.T) {
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "test.png")
 
-	// Create image with outer circle and star
+	// Create image with outer circle and double circle (main entry)
 	img := image.NewRGBA(image.Rect(0, 0, 400, 400))
 	draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
 	drawCircle(img, 200, 200, 180, 175, color.Black)
-	drawStar(img, 200, 200, 20, color.Black)
+	// Draw double circle for main entry
+	drawCircle(img, 200, 200, 30, 25, color.Black)
+	drawCircle(img, 200, 200, 25, 20, color.Black)
 
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
