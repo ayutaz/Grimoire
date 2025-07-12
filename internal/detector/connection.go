@@ -384,6 +384,13 @@ func (d *Detector) isValidConnection(line Line, from, to *Symbol) bool {
 	return lineLength >= 20
 }
 
+// Connection type constants
+const (
+	ConnectionTypeSolid  = "solid"
+	ConnectionTypeDashed = "dashed"
+	ConnectionTypeDotted = "dotted"
+)
+
 // determineConnectionType determines the type of connection
 func (d *Detector) determineConnectionType(line Line, binary *image.Gray) string {
 	// Sample points along the line
@@ -392,15 +399,18 @@ func (d *Detector) determineConnectionType(line Line, binary *image.Gray) string
 	length := math.Sqrt(float64(dx*dx + dy*dy))
 
 	if length == 0 {
-		return "solid"
+		return ConnectionTypeSolid
 	}
 
 	// Sample more points along the line for better detection
-	sampleCount := int(length / 5.0) // Sample every 5 pixels
-	if sampleCount < 20 {
-		sampleCount = 20
+	sampleCount := int(length / 2.0) // Sample every 2 pixels for better accuracy
+	if sampleCount < 40 {
+		sampleCount = 40
 	}
-	
+	if sampleCount > 200 {
+		sampleCount = 200 // Cap to avoid excessive computation
+	}
+
 	transitions := 0
 	lastPixel := false
 	onPixels := 0
@@ -425,13 +435,16 @@ func (d *Detector) determineConnectionType(line Line, binary *image.Gray) string
 
 	// Classify based on transitions and on-pixel ratio
 	if transitions <= 2 {
-		return "solid"
-	} else if onRatio < 0.3 && transitions > 6 {
-		// Very sparse pixels with many transitions = dotted
-		return "dotted"
+		return ConnectionTypeSolid
+	} else if onRatio < 0.25 {
+		// Very sparse pixels = dotted
+		return ConnectionTypeDotted
+	} else if transitions > 4 && onRatio < 0.7 {
+		// Regular pattern with moderate gaps = dashed
+		return ConnectionTypeDashed
 	} else {
-		// Regular pattern = dashed
-		return "dashed"
+		// Default to solid for edge cases
+		return ConnectionTypeSolid
 	}
 }
 

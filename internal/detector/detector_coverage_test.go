@@ -205,7 +205,7 @@ func TestDetectConnections_Comprehensive(t *testing.T) {
 			if len(connections) > 0 && len(tc.expectedTypes) > 0 {
 				for i, conn := range connections {
 					if i < len(tc.expectedTypes) {
-						assert.Contains(t, []string{"solid", "dashed", "dotted"}, conn.ConnectionType)
+						assert.Contains(t, []string{ConnectionTypeSolid, ConnectionTypeDashed, ConnectionTypeDotted}, conn.ConnectionType)
 					}
 				}
 			}

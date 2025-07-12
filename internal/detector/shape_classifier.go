@@ -19,10 +19,7 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 			contour.Center.X, contour.Center.Y, vertices, contour.Area, contour.Circularity, contour.getAspectRatio())
 	}
 
-	// Check for operators first (they might be detected as stars)
-	if symbolType := d.classifyOperator(contour); symbolType != Unknown {
-		return symbolType
-	}
+	// Check for operators later, after basic shape checks
 
 	// Check for outer circle first (before star detection)
 	if contour.isCircle(d.circleThreshold) {
@@ -137,9 +134,11 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 	switch vertices {
 	case 3:
 		// Check if it's an operator first (less than or greater than)
-		if contour.Area > 200 && contour.getAspectRatio() > 1.5 {
-			// Let the operator classification handle it
-			return Unknown
+		if contour.Area > 200 && contour.getAspectRatio() >= 1.4 {
+			// Check if it's a less than or greater than operator
+			if symbolType := d.classifyOperator(contour); symbolType != Unknown {
+				return symbolType
+			}
 		}
 		// Otherwise, it's likely a triangle
 		if contour.Area > 100 {
@@ -147,28 +146,57 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 		}
 		return Unknown
 	case 5:
+		// Check if it's an operator before classifying as pentagon
+		if contour.Area > 500 && contour.Circularity < 0.7 {
+			if symbolType := d.classifyOperator(contour); symbolType != Unknown {
+				return symbolType
+			}
+		}
 		return Pentagon
 	case 6:
-		return Hexagon
-	case 8:
-		if d.isStar(approx, 4) {
-			return Star
+		// Check if it's an operator before classifying as hexagon
+		if contour.Area > 500 && contour.Circularity < 0.7 {
+			if symbolType := d.classifyOperator(contour); symbolType != Unknown {
+				return symbolType
+			}
 		}
-		return Unknown
-	case 10:
-		if d.isStar(approx, 5) {
-			return Star
+		return Hexagon
+	case 7:
+		// Check for operators (e.g., arrow shape)
+		if symbolType := d.classifyOperator(contour); symbolType != Unknown {
+			return symbolType
 		}
 		return Unknown
 	case 11, 12, 13:
 		// Six-pointed star can have 11-13 vertices after approximation
-		if d.isStar(approx, 6) || d.isStarShape(contour) {
+		if d.isStar(approx, 6) || (d.isStarShape(contour) && contour.Circularity < 0.5) {
 			return SixPointedStar
+		}
+		return Unknown
+	case 8:
+		// Check for operators first
+		if symbolType := d.classifyOperator(contour); symbolType != Unknown {
+			return symbolType
+		}
+		// Then check for 4-pointed star
+		if d.isStar(approx, 4) {
+			return Amplification // 4-pointed star
+		}
+		return Unknown
+	case 9, 10:
+		// 5-pointed star has 10 vertices
+		if vertices == 10 && d.isStar(approx, 5) {
+			return Star
+		}
+		// Check for 8-pointed star that got approximated to 9-10 vertices
+		if contour.Circularity < 0.5 && d.isStarShape(contour) && contour.Area > 1200 {
+			return EightPointedStar
 		}
 		return Unknown
 	case 14, 15, 16, 17, 18:
 		// Eight-pointed star can have 14-18 vertices after approximation
-		if d.isStar(approx, 8) || d.isStarShape(contour) {
+		// But regular polygons with many sides get approximated to fewer vertices
+		if d.isStarShape(contour) && contour.Circularity < 0.5 {
 			return EightPointedStar
 		}
 		return Unknown
@@ -177,6 +205,10 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 		// But be careful not to misclassify operators
 		if vertices >= 7 && d.isStarShape(contour) && contour.Circularity < 0.3 {
 			return Star
+		}
+		// Check for operators with many vertices
+		if symbolType := d.classifyOperator(contour); symbolType != Unknown {
+			return symbolType
 		}
 	}
 
@@ -198,7 +230,14 @@ func (d *Detector) approximatePolygon(contour Contour) []image.Point {
 		epsilon = 1.5
 	}
 
-	return d.douglasPeucker(contour.Points, epsilon)
+	approx := d.douglasPeucker(contour.Points, epsilon)
+
+	// Remove duplicate last point if it's the same as the first
+	if len(approx) > 1 && approx[0] == approx[len(approx)-1] {
+		approx = approx[:len(approx)-1]
+	}
+
+	return approx
 }
 
 // douglasPeucker implements the Douglas-Peucker algorithm
@@ -296,7 +335,8 @@ func (d *Detector) isSquare(vertices []image.Point) bool {
 		// Check if angle is close to 90 degrees (pi/2)
 		// The angle might be negative, so we need to handle that
 		absAngle := math.Abs(angle)
-		if math.Abs(absAngle-math.Pi/2) > math.Pi/6 { // 30 degree tolerance
+		// Use 15 degree tolerance for stricter square detection
+		if math.Abs(absAngle-math.Pi/2) > math.Pi/12 { // 15 degree tolerance
 			return false
 		}
 	}
@@ -418,7 +458,7 @@ func (d *Detector) classifyOperator(contour Contour) SymbolType {
 
 	// Distribution (⟠) - 8-segmented circle
 	// Check this before other shapes as it has high circularity
-	if vertices >= 6 && vertices <= 10 && contour.Circularity > 0.6 {
+	if vertices >= 6 && vertices <= 10 && contour.Circularity >= 0.6 {
 		// Check for radial pattern
 		if d.hasRadialPattern(contour) {
 			return Distribution
@@ -428,10 +468,15 @@ func (d *Detector) classifyOperator(contour Contour) SymbolType {
 			return Distribution
 		}
 	}
+	// Also check for distribution with different vertex counts
+	if contour.Circularity >= 0.6 && contour.Circularity <= 0.7 && d.hasRadialPattern(contour) {
+		return Distribution
+	}
 
 	// Transfer (→) - arrow shape
-	if aspectRatio > 1.5 && vertices >= 5 && vertices <= 7 {
-		if d.isArrowShape(approx) {
+	// Also check area to ensure it's a significant shape
+	if vertices >= 5 && vertices <= 7 && contour.Area > 500 {
+		if d.isArrowShape(approx) || (aspectRatio > 1.5 && contour.Circularity < 0.4) {
 			return Transfer
 		}
 	}
@@ -444,7 +489,7 @@ func (d *Detector) classifyOperator(contour Contour) SymbolType {
 	// Less than (<) and Greater than (>)
 	// Require specific triangular shape with clear directionality
 	// Check aspect ratio to distinguish from regular triangles
-	if vertices == 3 && contour.Area > 200 && aspectRatio > 1.5 {
+	if vertices == 3 && contour.Area > 200 && aspectRatio >= 1.4 {
 		if d.isPointingLeft(approx) {
 			return LessThan
 		} else if d.isPointingRight(approx) {
