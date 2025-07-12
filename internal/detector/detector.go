@@ -406,6 +406,13 @@ func (d *Detector) loadAndValidateImage(imagePath string) (image.Image, error) {
 				WithSuggestion("Use a smaller image (max 50MB file size, 10000x10000 pixels)")
 		}
 
+		// Check for permission errors
+		if strings.Contains(errStr, "permission denied") || strings.Contains(errStr, "access is denied") {
+			return nil, grimoireErrors.NewError(grimoireErrors.FileReadError, "Failed to read image file").
+				WithInnerError(err).
+				WithLocation(imagePath, 0, 0)
+		}
+
 		// Generic image processing error
 		return nil, grimoireErrors.NewError(grimoireErrors.ImageProcessingError, "Failed to validate and decode image").
 			WithInnerError(err).
