@@ -44,26 +44,48 @@ jobs:
     - name: Cache Go modules (Unix)
       if: runner.os != 'Windows'
       uses: actions/cache@v4
+      id: cache-go-mod
       continue-on-error: true
       with:
-        path: |
-          ${{ steps.go-paths.outputs.mod-cache }}
-          ${{ steps.go-paths.outputs.build-cache }}
-        key: ${{ runner.os }}-${{ runner.arch }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+        path: ${{ steps.go-paths.outputs.mod-cache }}
+        key: ${{ runner.os }}-${{ runner.arch }}-go-mod-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-${{ runner.arch }}-go-${{ matrix.go }}-
+          ${{ runner.os }}-${{ runner.arch }}-go-mod-${{ matrix.go }}-
+        enableCrossOsArchive: true
+    
+    - name: Cache Go build (Unix)
+      if: runner.os != 'Windows'
+      uses: actions/cache@v4
+      id: cache-go-build
+      continue-on-error: true
+      with:
+        path: ${{ steps.go-paths.outputs.build-cache }}
+        key: ${{ runner.os }}-${{ runner.arch }}-go-build-${{ matrix.go }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-${{ runner.arch }}-go-build-${{ matrix.go }}-
+        enableCrossOsArchive: true
     
     - name: Cache Go modules (Windows)
       if: runner.os == 'Windows'
       uses: actions/cache@v4
+      id: cache-go-mod-windows
       continue-on-error: true
       with:
-        path: |
-          ${{ steps.go-paths-windows.outputs.mod-cache }}
-          ${{ steps.go-paths-windows.outputs.build-cache }}
-        key: ${{ runner.os }}-${{ runner.arch }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+        path: ${{ steps.go-paths-windows.outputs.mod-cache }}
+        key: ${{ runner.os }}-${{ runner.arch }}-go-mod-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-${{ runner.arch }}-go-${{ matrix.go }}-
+          ${{ runner.os }}-${{ runner.arch }}-go-mod-${{ matrix.go }}-
+    
+    - name: Cache Go build (Windows)
+      if: runner.os == 'Windows'
+      uses: actions/cache@v4
+      id: cache-go-build-windows
+      continue-on-error: true
+      with:
+        path: ${{ steps.go-paths-windows.outputs.build-cache }}
+        key: ${{ runner.os }}-${{ runner.arch }}-go-build-${{ matrix.go }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-${{ runner.arch }}-go-build-${{ matrix.go }}-
     
     - name: Download dependencies
       run: go mod download
