@@ -51,35 +51,10 @@ func DetectSymbols(imagePath string) ([]*Symbol, []Connection, error) {
 
 // Detect performs symbol detection on the image
 func (d *Detector) Detect(imagePath string) ([]*Symbol, []Connection, error) {
-	// Check if file exists
-	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
-		return nil, nil, grimoireErrors.FileNotFoundError(imagePath)
-	}
-
-	// Check file extension
-	ext := filepath.Ext(imagePath)
-	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
-		return nil, nil, grimoireErrors.UnsupportedFormatError(ext).
-			WithDetails(fmt.Sprintf("File: %s", filepath.Base(imagePath)))
-	}
-
-	// Open image file
-	file, err := os.Open(imagePath)
+	// Load and validate image
+	img, err := d.loadAndValidateImage(imagePath)
 	if err != nil {
-		return nil, nil, grimoireErrors.NewError(grimoireErrors.FileReadError, "Failed to open image file").
-			WithInnerError(err).
-			WithLocation(imagePath, 0, 0)
-	}
-	defer file.Close()
-
-	// Decode image
-	img, format, err := image.Decode(file)
-	if err != nil {
-		return nil, nil, grimoireErrors.NewError(grimoireErrors.ImageProcessingError, "Failed to decode image").
-			WithInnerError(err).
-			WithDetails(fmt.Sprintf("Format: %s", format)).
-			WithLocation(imagePath, 0, 0).
-			WithSuggestion("Ensure the image is a valid PNG or JPEG file and not corrupted")
+		return nil, nil, err
 	}
 
 	// Convert to grayscale
@@ -141,23 +116,8 @@ func (d *Detector) Detect(imagePath string) ([]*Symbol, []Connection, error) {
 	connections := d.improvedDetectConnections(binary, symbols)
 
 	// Validate detection results
-	if len(symbols) == 0 {
-		return nil, nil, grimoireErrors.NoSymbolsError().
-			WithLocation(imagePath, 0, 0)
-	}
-
-	// Check for outer circle
-	hasOuterCircle := false
-	for _, sym := range symbols {
-		if sym.Type == OuterCircle {
-			hasOuterCircle = true
-			break
-		}
-	}
-
-	if !hasOuterCircle {
-		return nil, nil, grimoireErrors.NoOuterCircleError().
-			WithLocation(imagePath, 0, 0)
+	if err := d.validateResults(symbols, imagePath); err != nil {
+		return nil, nil, err
 	}
 
 	return symbols, connections, nil
@@ -401,4 +361,64 @@ func (d *Detector) deduplicateNearbyStars(symbols []*Symbol) []*Symbol {
 	}
 
 	return filtered
+}
+
+// loadAndValidateImage loads and validates the image file
+func (d *Detector) loadAndValidateImage(imagePath string) (image.Image, error) {
+	// Check if file exists
+	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
+		return nil, grimoireErrors.FileNotFoundError(imagePath)
+	}
+
+	// Check file extension
+	ext := filepath.Ext(imagePath)
+	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
+		return nil, grimoireErrors.UnsupportedFormatError(ext).
+			WithDetails(fmt.Sprintf("File: %s", filepath.Base(imagePath)))
+	}
+
+	// Open image file
+	file, err := os.Open(imagePath)
+	if err != nil {
+		return nil, grimoireErrors.NewError(grimoireErrors.FileReadError, "Failed to open image file").
+			WithInnerError(err).
+			WithLocation(imagePath, 0, 0)
+	}
+	defer file.Close()
+
+	// Decode image
+	img, format, err := image.Decode(file)
+	if err != nil {
+		return nil, grimoireErrors.NewError(grimoireErrors.ImageProcessingError, "Failed to decode image").
+			WithInnerError(err).
+			WithDetails(fmt.Sprintf("Format: %s", format)).
+			WithLocation(imagePath, 0, 0).
+			WithSuggestion("Ensure the image is a valid PNG or JPEG file and not corrupted")
+	}
+
+	return img, nil
+}
+
+// validateResults validates the detection results
+func (d *Detector) validateResults(symbols []*Symbol, imagePath string) error {
+	if len(symbols) == 0 {
+		return grimoireErrors.NoSymbolsError().
+			WithLocation(imagePath, 0, 0)
+	}
+
+	// Check for outer circle
+	hasOuterCircle := false
+	for _, sym := range symbols {
+		if sym.Type == OuterCircle {
+			hasOuterCircle = true
+			break
+		}
+	}
+
+	if !hasOuterCircle {
+		return grimoireErrors.NoOuterCircleError().
+			WithLocation(imagePath, 0, 0)
+	}
+
+	return nil
 }
