@@ -240,6 +240,13 @@ func drawRGBALine(img *image.RGBA, x1, y1, x2, y2 int, c color.RGBA) {
 	}
 }
 
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
 // Benchmark end-to-end performance
 func BenchmarkEndToEndPerformance(b *testing.B) {
 	complexities := []string{"simple", "medium", "complex"}

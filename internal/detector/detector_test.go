@@ -15,7 +15,7 @@ import (
 
 // TestDetectorCreation tests that we can create a new detector
 func TestDetectorCreation(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 	assert.NotNil(t, detector)
 	assert.Equal(t, 50, detector.minContourArea)
 	assert.Equal(t, 0.85, detector.circleThreshold)
@@ -32,7 +32,7 @@ func TestDetectSymbols_NoOuterCircle(t *testing.T) {
 
 	// Empty image may not detect any symbols
 	if err != nil {
-		assert.Contains(t, err.Error(), "No symbols")
+		assert.Contains(t, err.Error(), "シンボルが検出されません")
 		return
 	}
 	assert.NotNil(t, symbols)
@@ -78,7 +78,7 @@ func TestDetectSymbols_MinimalProgram(t *testing.T) {
 
 // TestToGrayscale tests grayscale conversion
 func TestToGrayscale(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	// Create a color image
 	img := image.NewRGBA(image.Rect(0, 0, 10, 10))
@@ -97,7 +97,7 @@ func TestToGrayscale(t *testing.T) {
 
 // TestPreprocessImage tests image preprocessing
 func TestPreprocessImage(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	// Create a grayscale image with gradient
 	gray := image.NewGray(image.Rect(0, 0, 10, 10))
@@ -170,7 +170,7 @@ func savePNG(file *os.File, img image.Image) error {
 
 // TestDetectPatterns tests pattern detection in symbols
 func TestDetectPatterns(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	tests := []struct {
 		name         string
@@ -319,12 +319,12 @@ func TestDetectSymbols_ErrorCases(t *testing.T) {
 		{
 			name:    "Non-existent file",
 			path:    "/non/existent/file.png",
-			wantErr: "file not found",
+			wantErr: "ファイルが見つかりません",
 		},
 		{
 			name:    "Invalid extension",
 			path:    "test.txt",
-			wantErr: "file not found",
+			wantErr: "ファイルが見つかりません",
 		},
 	}
 

@@ -11,7 +11,7 @@ import (
 
 // TestClassifyShape_EdgeCases tests edge cases for classifyShape function
 func TestClassifyShape_EdgeCases(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	tests := []struct {
 		name     string
@@ -168,7 +168,7 @@ func TestClassifyShape_EdgeCases(t *testing.T) {
 
 // TestClassifyOperator_Coverage tests classifyOperator function branches
 func TestClassifyOperator_Coverage(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	tests := []struct {
 		name     string
@@ -220,7 +220,7 @@ func TestClassifyOperator_Coverage(t *testing.T) {
 
 // TestApproximatePolygon_EdgeCases tests edge cases for approximatePolygon
 func TestApproximatePolygon_EdgeCases(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	tests := []struct {
 		name           string

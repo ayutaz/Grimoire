@@ -69,7 +69,7 @@ func BenchmarkProcessImage(b *testing.B) {
 		img := createBenchmarkImage(size)
 
 		b.Run(fmt.Sprintf("size_%dx%d", size, size), func(b *testing.B) {
-			detector := NewDetector()
+			detector := NewDetector(Config{})
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
@@ -83,7 +83,7 @@ func BenchmarkProcessImage(b *testing.B) {
 
 func BenchmarkPreprocessing(b *testing.B) {
 	img := createBenchmarkImage(800)
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -93,7 +93,7 @@ func BenchmarkPreprocessing(b *testing.B) {
 
 func BenchmarkFindContours(b *testing.B) {
 	img := createBenchmarkImage(800)
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 	binary := detector.preprocessImage(img)
 
 	b.ResetTimer()
@@ -113,7 +113,7 @@ func BenchmarkClassifyShape(b *testing.B) {
 		createComplexContour(),
 	}
 
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	for idx, contour := range contours {
 		b.Run(fmt.Sprintf("contour_%d", idx), func(b *testing.B) {

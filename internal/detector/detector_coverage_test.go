@@ -15,7 +15,7 @@ import (
 
 // TestDetectConnections_Comprehensive tests the detectConnections function comprehensively
 func TestDetectConnections_Comprehensive(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	tests := []struct {
 		name            string
@@ -215,7 +215,7 @@ func TestDetectConnections_Comprehensive(t *testing.T) {
 
 // TestIsValidConnection tests the isValidConnection function
 func TestIsValidConnection(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	tests := []struct {
 		name     string
@@ -285,7 +285,7 @@ func TestIsValidConnection(t *testing.T) {
 
 // TestDetermineConnectionType tests the determineConnectionType function
 func TestDetermineConnectionType(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	tests := []struct {
 		name         string
@@ -370,7 +370,7 @@ func TestDetermineConnectionType(t *testing.T) {
 
 // TestClassifyShape_Comprehensive tests the classifyShape function comprehensively
 func TestClassifyShape_Comprehensive(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	tests := []struct {
 		name     string
@@ -517,7 +517,7 @@ func TestClassifyShape_Comprehensive(t *testing.T) {
 
 // TestIsSquare tests the isSquare function
 func TestIsSquare(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	tests := []struct {
 		name     string
@@ -585,7 +585,7 @@ func TestIsSquare(t *testing.T) {
 
 // TestIsDoubleCircle tests the isDoubleCircle function
 func TestIsDoubleCircle(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	tests := []struct {
 		name     string
@@ -637,7 +637,7 @@ func TestIsDoubleCircle(t *testing.T) {
 
 // TestDebugFunctions tests the debug functions
 func TestDebugFunctions(t *testing.T) {
-	detector := NewDetector()
+	detector := NewDetector(Config{})
 
 	t.Run("DebugSaveContours", func(t *testing.T) {
 		binary := image.NewGray(image.Rect(0, 0, 200, 200))

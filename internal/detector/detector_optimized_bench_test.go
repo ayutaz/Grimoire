@@ -23,7 +23,7 @@ func createComplexBenchmarkImage(size int, numSymbols int) *image.Gray {
 	// Draw outer circle
 	centerX, centerY := size/2, size/2
 	radius := size/2 - 20
-	drawCircle(img, centerX, centerY, radius, 5)
+	drawCircleOpt(img, centerX, centerY, radius, 5)
 
 	// Draw random symbols inside
 	rand.Seed(42) // Fixed seed for reproducible benchmarks
@@ -38,13 +38,13 @@ func createComplexBenchmarkImage(size int, numSymbols int) *image.Gray {
 		// Random symbol type
 		switch rand.Intn(6) {
 		case 0: // Square
-			drawSquare(img, x, y, 30)
+			drawSquareOpt(img, x, y, 30)
 		case 1: // Circle
-			drawCircle(img, x, y, 15, 2)
+			drawCircleOpt(img, x, y, 15, 2)
 		case 2: // Triangle
 			drawTriangle(img, x, y, 25)
 		case 3: // Star
-			drawStar(img, x, y, 20)
+			drawStarOpt(img, x, y, 20)
 		case 4: // Pentagon
 			drawPentagon(img, x, y, 20)
 		case 5: // Hexagon
@@ -55,7 +55,7 @@ func createComplexBenchmarkImage(size int, numSymbols int) *image.Gray {
 	return img
 }
 
-func drawCircle(img *image.Gray, cx, cy, r, thickness int) {
+func drawCircleOpt(img *image.Gray, cx, cy, r, thickness int) {
 	for y := cy - r - thickness; y <= cy + r + thickness; y++ {
 		for x := cx - r - thickness; x <= cx + r + thickness; x++ {
 			dx := x - cx
@@ -70,7 +70,7 @@ func drawCircle(img *image.Gray, cx, cy, r, thickness int) {
 	}
 }
 
-func drawSquare(img *image.Gray, cx, cy, size int) {
+func drawSquareOpt(img *image.Gray, cx, cy, size int) {
 	for i := 0; i <= size; i++ {
 		// Top and bottom edges
 		img.Set(cx-size/2+i, cy-size/2, color.Gray{0})
@@ -101,7 +101,7 @@ func drawTriangle(img *image.Gray, cx, cy, size int) {
 	}
 }
 
-func drawStar(img *image.Gray, cx, cy, size int) {
+func drawStarOpt(img *image.Gray, cx, cy, size int) {
 	// Draw 5-pointed star
 	for i := 0; i < 5; i++ {
 		angle1 := float64(i) * 2 * math.Pi / 5 - math.Pi/2
@@ -112,7 +112,7 @@ func drawStar(img *image.Gray, cx, cy, size int) {
 		x2 := cx + int(float64(size)*math.Cos(angle2))
 		y2 := cy + int(float64(size)*math.Sin(angle2))
 		
-		drawLine(img, x1, y1, x2, y2)
+		drawLineOpt(img, x1, y1, x2, y2)
 	}
 }
 
@@ -126,7 +126,7 @@ func drawPentagon(img *image.Gray, cx, cy, size int) {
 		x2 := cx + int(float64(size)*math.Cos(angle2))
 		y2 := cy + int(float64(size)*math.Sin(angle2))
 		
-		drawLine(img, x1, y1, x2, y2)
+		drawLineOpt(img, x1, y1, x2, y2)
 	}
 }
 
@@ -140,13 +140,13 @@ func drawHexagon(img *image.Gray, cx, cy, size int) {
 		x2 := cx + int(float64(size)*math.Cos(angle2))
 		y2 := cy + int(float64(size)*math.Sin(angle2))
 		
-		drawLine(img, x1, y1, x2, y2)
+		drawLineOpt(img, x1, y1, x2, y2)
 	}
 }
 
-func drawLine(img *image.Gray, x1, y1, x2, y2 int) {
-	dx := abs(x2 - x1)
-	dy := abs(y2 - y1)
+func drawLineOpt(img *image.Gray, x1, y1, x2, y2 int) {
+	dx := absOpt(x2 - x1)
+	dy := absOpt(y2 - y1)
 	sx := 1
 	sy := 1
 	if x1 > x2 {
@@ -178,7 +178,7 @@ func drawLine(img *image.Gray, x1, y1, x2, y2 int) {
 	}
 }
 
-func abs(x int) int {
+func absOpt(x int) int {
 	if x < 0 {
 		return -x
 	}

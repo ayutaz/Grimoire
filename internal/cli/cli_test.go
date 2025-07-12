@@ -31,7 +31,7 @@ func TestExecute(t *testing.T) {
 			name:    "no arguments shows help",
 			args:    []string{"grimoire"},
 			wantErr: false,
-			wantOut: "visual programming language",
+			wantOut: "Grimoireはプログラムを魔法陣として表現するビジュアルプログラミング言語です",
 		},
 		{
 			name:    "version flag",
@@ -43,7 +43,7 @@ func TestExecute(t *testing.T) {
 			name:    "help flag",
 			args:    []string{"grimoire", "--help"},
 			wantErr: false,
-			wantOut: "Draw your spells",
+			wantOut: "呪文を描いて、それが実現するのを見てください",
 		},
 		{
 			name:    "unknown command",
@@ -306,7 +306,7 @@ func TestFileValidation(t *testing.T) {
 
 			if !tt.wantValid {
 				assert.Error(t, err)
-				assert.Contains(t, errOutput, "UNSUPPORTED_FORMAT")
+				assert.Contains(t, errOutput, "サポートされていない形式")
 			}
 		})
 	}
@@ -477,7 +477,7 @@ func TestFormatErrorCoverage(t *testing.T) {
 		{
 			name:      "non-existent file",
 			imagePath: "/tmp/does_not_exist_12345.png",
-			wantErr:   "FILE_NOT_FOUND",
+			wantErr:   "ファイルが見つかりません",
 		},
 		{
 			name:      "directory instead of file",
@@ -532,7 +532,7 @@ func TestProcessImageCoverage(t *testing.T) {
 				return png.Encode(f, img)
 			},
 			expectError: true,
-			errorType:   "NO_OUTER_CIRCLE",
+			errorType:   "外周円が検出されません",
 		},
 		{
 			name: "corrupt file",
@@ -540,7 +540,7 @@ func TestProcessImageCoverage(t *testing.T) {
 				return os.WriteFile(path, []byte("not a png"), 0644)
 			},
 			expectError: true,
-			errorType:   "IMAGE_PROCESSING_ERROR",
+			errorType:   "画像処理エラー",
 		},
 	}
 
@@ -687,7 +687,7 @@ func TestFormatErrorAllPaths(t *testing.T) {
 				os.Chmod(testFile, 0o000) // No permissions
 				return testFile, func() { os.Chmod(testFile, 0o644) }
 			},
-			wantErr: "FILE_READ_ERROR",
+			wantErr: "ファイル読み込みエラー",
 		},
 	}
 

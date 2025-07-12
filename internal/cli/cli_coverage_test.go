@@ -74,16 +74,16 @@ func TestDebugCommandSuccess(t *testing.T) {
 	
 	// Verify success
 	assert.NoError(t, err, "Debug command should succeed")
-	assert.Contains(t, output, "=== Debug Information")
-	assert.Contains(t, output, "Detected")
-	assert.Contains(t, output, "symbols")
+	assert.Contains(t, output, "=== ")
+	assert.Contains(t, output, "のデバッグ情報 ===")
+	assert.Contains(t, output, "個のシンボルと")
 	
 	// Should show symbols section
-	assert.Contains(t, output, "Symbols:")
+	assert.Contains(t, output, "シンボル:")
 	
 	// May or may not have connections, but should handle both cases
-	if strings.Contains(output, "connections") && !strings.Contains(output, "0 connections") {
-		assert.Contains(t, output, "Connections:")
+	if strings.Contains(output, "接続") && !strings.Contains(output, "0個の接続") {
+		assert.Contains(t, output, "接続:")
 	}
 }
 
@@ -125,7 +125,7 @@ func TestDebugCommandWithConnections(t *testing.T) {
 	assert.NoError(t, err, "Debug command should succeed")
 	
 	// Should contain debug output
-	assert.Contains(t, output, "Debug Information")
+	assert.Contains(t, output, "のデバッグ情報")
 	assert.Contains(t, output, filepath.Base(testImage))
 }
 
@@ -142,7 +142,7 @@ func TestFormatErrorWithGrimoireError(t *testing.T) {
 	
 	// Should return the same error unchanged
 	assert.Equal(t, grimoireErr, result)
-	assert.Contains(t, result.Error(), "NO_OUTER_CIRCLE")
+	assert.Contains(t, result.Error(), "外周円が検出されません")
 }
 
 // TestFormatErrorWithGenericError tests formatError with generic errors
@@ -195,7 +195,7 @@ func TestFormatErrorWithGenericError(t *testing.T) {
 			assert.Equal(t, tt.imagePath, grimoireErr.FileName)
 			
 			// Check error message contains expected text
-			assert.Contains(t, result.Error(), string(tt.expectedType))
+			assert.Contains(t, result.Error(), "実行エラー")
 		})
 	}
 }
@@ -425,9 +425,9 @@ func TestDebugCommandDirectly(t *testing.T) {
 				return testImage
 			},
 			expectedInOutput: []string{
-				"Debug Information",
-				"Detected",
-				"Symbols:",
+				"のデバッグ情報",
+				"個のシンボルと",
+				"シンボル:",
 			},
 			shouldHaveSymbols: true,
 			shouldHaveConnections: true,
@@ -446,8 +446,8 @@ func TestDebugCommandDirectly(t *testing.T) {
 				return testImage
 			},
 			expectedInOutput: []string{
-				"Debug Information",
-				"Detected",
+				"のデバッグ情報",
+				"個のシンボルと",
 			},
 			shouldHaveSymbols: false,
 			shouldHaveConnections: false,
@@ -548,10 +548,10 @@ func TestDebugCommandWithMockData(t *testing.T) {
 	output := buf.String()
 	
 	// Verify the output format
-	assert.Contains(t, output, fmt.Sprintf("=== Debug Information for %s ===", filepath.Base(testImage)))
-	assert.Contains(t, output, "Detected")
-	assert.Contains(t, output, "symbols")
-	assert.Contains(t, output, "connections")
+	assert.Contains(t, output, fmt.Sprintf("=== %s のデバッグ情報 ===", filepath.Base(testImage)))
+	assert.Contains(t, output, "個のシンボルと")
+	assert.Contains(t, output, "個のシンボルと")
+	assert.Contains(t, output, "個の接続")
 	
 	// The actual detection may vary, but the format should be consistent
 	t.Logf("Debug output:\n%s", output)
