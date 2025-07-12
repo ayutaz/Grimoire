@@ -149,7 +149,7 @@ func createLargeTestImage(b *testing.B, symbolCount int) (image.Image, []*detect
 	})
 
 	// Distribute symbols in a grid pattern with some randomness
-	rand.Seed(time.Now().UnixNano())
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	symbolTypes := []detector.SymbolType{
 		detector.Square, detector.Circle, detector.Triangle,
 		detector.Pentagon, detector.Hexagon, detector.Star,
@@ -160,8 +160,8 @@ func createLargeTestImage(b *testing.B, symbolCount int) (image.Image, []*detect
 		gridX := (i % gridSize) + 1
 		gridY := (i / gridSize) + 1
 
-		x := gridX*cellSize + rand.Intn(cellSize/2) - cellSize/4
-		y := gridY*cellSize + rand.Intn(cellSize/2) - cellSize/4
+		x := gridX*cellSize + rng.Intn(cellSize/2) - cellSize/4
+		y := gridY*cellSize + rng.Intn(cellSize/2) - cellSize/4
 
 		// Ensure within outer circle
 		dx := float64(x - center.X)
@@ -171,7 +171,7 @@ func createLargeTestImage(b *testing.B, symbolCount int) (image.Image, []*detect
 		}
 
 		// Draw symbol
-		symbolType := symbolTypes[rand.Intn(len(symbolTypes))]
+		symbolType := symbolTypes[rng.Intn(len(symbolTypes))]
 		drawSymbol(img, image.Point{X: x, Y: y}, symbolType, 20)
 
 		// Add to symbols list
@@ -182,7 +182,7 @@ func createLargeTestImage(b *testing.B, symbolCount int) (image.Image, []*detect
 		})
 
 		// Add some connections
-		if len(symbols) > 1 && i > 1 && i < len(symbols) && rand.Float32() < 0.3 {
+		if len(symbols) > 1 && i > 1 && i < len(symbols) && rng.Float32() < 0.3 {
 			connections = append(connections, detector.Connection{
 				From:           symbols[len(symbols)-2],
 				To:             symbols[len(symbols)-1],

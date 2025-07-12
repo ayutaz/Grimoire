@@ -189,12 +189,12 @@ func createOptimizedBenchmarkImage(b *testing.B, numSymbols int, density float64
 	drawCircleThick(img, center.X, center.Y, radius, 3)
 
 	// Random seed for reproducibility
-	rand.Seed(42)
+	rng := rand.New(rand.NewSource(42))
 
 	// Draw symbols
 	for i := 0; i < numSymbols; i++ {
-		x := rand.Intn(imageSize-100) + 50
-		y := rand.Intn(imageSize-100) + 50
+		x := rng.Intn(imageSize-100) + 50
+		y := rng.Intn(imageSize-100) + 50
 
 		// Check if within outer circle
 		dx := x - center.X
@@ -204,7 +204,7 @@ func createOptimizedBenchmarkImage(b *testing.B, numSymbols int, density float64
 		}
 
 		// Draw random symbol
-		symbolType := rand.Intn(6)
+		symbolType := rng.Intn(6)
 		switch symbolType {
 		case 0:
 			drawSquareThick(img, x, y, 20, 2)
@@ -221,17 +221,17 @@ func createOptimizedBenchmarkImage(b *testing.B, numSymbols int, density float64
 		}
 
 		// Add pattern inside some symbols
-		if rand.Float64() < 0.3 {
+		if rng.Float64() < 0.3 {
 			drawCircleThick(img, x, y, 5, 1)
 		}
 	}
 
 	// Draw connections based on density
 	for i := 0; i < int(float64(numSymbols)*density); i++ {
-		x1 := rand.Intn(imageSize-100) + 50
-		y1 := rand.Intn(imageSize-100) + 50
-		x2 := x1 + rand.Intn(200) - 100
-		y2 := y1 + rand.Intn(200) - 100
+		x1 := rng.Intn(imageSize-100) + 50
+		y1 := rng.Intn(imageSize-100) + 50
+		x2 := x1 + rng.Intn(200) - 100
+		y2 := y1 + rng.Intn(200) - 100
 
 		drawLineThick(img, x1, y1, x2, y2, 1)
 	}
@@ -264,10 +264,11 @@ func createBinaryImage(width, height int, fillRatio float64) *image.Gray {
 	}
 
 	// Add random black pixels
+	rng := rand.New(rand.NewSource(99))
 	numPixels := int(float64(width*height) * fillRatio)
 	for i := 0; i < numPixels; i++ {
-		x := rand.Intn(width)
-		y := rand.Intn(height)
+		x := rng.Intn(width)
+		y := rng.Intn(height)
 		img.Set(x, y, color.Gray{0})
 	}
 
@@ -285,6 +286,7 @@ func createBinaryImageWithConnections(width, height int, symbols []*Symbol) *ima
 	}
 
 	// Draw connections between nearby symbols
+	rng := rand.New(rand.NewSource(100))
 	for i, sym1 := range symbols {
 		for j := i + 1; j < len(symbols); j++ {
 			sym2 := symbols[j]
@@ -292,7 +294,7 @@ func createBinaryImageWithConnections(width, height int, symbols []*Symbol) *ima
 			dy := sym2.Position.Y - sym1.Position.Y
 			dist := math.Sqrt(dx*dx + dy*dy)
 
-			if dist < 200 && rand.Float64() < 0.3 {
+			if dist < 200 && rng.Float64() < 0.3 {
 				// Draw line
 				drawBinaryLine(img,
 					int(sym1.Position.X), int(sym1.Position.Y),
@@ -306,11 +308,12 @@ func createBinaryImageWithConnections(width, height int, symbols []*Symbol) *ima
 
 func generateTestContours(count int) []Contour {
 	contours := make([]Contour, count)
+	rng := rand.New(rand.NewSource(101))
 
 	for i := 0; i < count; i++ {
-		centerX := rand.Intn(1800) + 100
-		centerY := rand.Intn(1800) + 100
-		radius := rand.Intn(50) + 10
+		centerX := rng.Intn(1800) + 100
+		centerY := rng.Intn(1800) + 100
+		radius := rng.Intn(50) + 10
 
 		points := make([]image.Point, 0, 100)
 		for angle := 0.0; angle < 2*math.Pi; angle += 0.1 {
@@ -324,7 +327,7 @@ func generateTestContours(count int) []Contour {
 			Center:      image.Point{X: centerX, Y: centerY},
 			Area:        math.Pi * float64(radius) * float64(radius),
 			Perimeter:   2 * math.Pi * float64(radius),
-			Circularity: 0.8 + rand.Float64()*0.2,
+			Circularity: 0.8 + rng.Float64()*0.2,
 		}
 	}
 
@@ -336,16 +339,17 @@ func generateTestSymbols(count int) []*Symbol {
 	symbolTypes := []SymbolType{
 		Square, Circle, Triangle, Pentagon, Hexagon, Star,
 	}
+	rng := rand.New(rand.NewSource(102))
 
 	for i := 0; i < count; i++ {
 		symbols[i] = &Symbol{
-			Type: symbolTypes[rand.Intn(len(symbolTypes))],
+			Type: symbolTypes[rng.Intn(len(symbolTypes))],
 			Position: Position{
-				X: float64(rand.Intn(1800) + 100),
-				Y: float64(rand.Intn(1800) + 100),
+				X: float64(rng.Intn(1800) + 100),
+				Y: float64(rng.Intn(1800) + 100),
 			},
-			Size:       float64(rand.Intn(30) + 10),
-			Confidence: 0.8 + rand.Float64()*0.2,
+			Size:       float64(rng.Intn(30) + 10),
+			Confidence: 0.8 + rng.Float64()*0.2,
 		}
 	}
 
