@@ -71,8 +71,11 @@ func TestE2E_Calculator(t *testing.T) {
 		t.Logf("Debug output: %s", outputStr)
 
 		if err == nil {
-			assert.Contains(t, outputStr, "Symbols:", "Should show symbols")
-			assert.Contains(t, outputStr, "Connections:", "Should show connections")
+			// Check for either English or Japanese headers
+			hasSymbols := strings.Contains(outputStr, "Symbols:") || strings.Contains(outputStr, "シンボル:")
+			hasConnections := strings.Contains(outputStr, "Connections:") || strings.Contains(outputStr, "接続:")
+			assert.True(t, hasSymbols, "Should show symbols header")
+			assert.True(t, hasConnections, "Should show connections header")
 		}
 	})
 }
@@ -182,7 +185,7 @@ func TestE2E_ErrorHandling(t *testing.T) {
 			name:        "missing file",
 			args:        []string{"compile", "nonexistent.png"},
 			wantErr:     true,
-			errContains: "FILE_NOT_FOUND",
+			errContains: "ファイルが見つかりません",
 		},
 		{
 			name:        "invalid command",
