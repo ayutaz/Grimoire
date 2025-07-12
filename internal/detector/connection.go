@@ -395,29 +395,43 @@ func (d *Detector) determineConnectionType(line Line, binary *image.Gray) string
 		return "solid"
 	}
 
-	// Sample 10 points along the line
+	// Sample more points along the line for better detection
+	sampleCount := int(length / 5.0) // Sample every 5 pixels
+	if sampleCount < 20 {
+		sampleCount = 20
+	}
+	
 	transitions := 0
 	lastPixel := false
+	onPixels := 0
 
-	for i := 0; i <= 10; i++ {
-		t := float64(i) / 10.0
+	for i := 0; i <= sampleCount; i++ {
+		t := float64(i) / float64(sampleCount)
 		x := int(float64(line.Start.X) + t*float64(dx))
 		y := int(float64(line.Start.Y) + t*float64(dy))
 
 		pixel := binary.GrayAt(x, y).Y > 128
+		if pixel {
+			onPixels++
+		}
 		if i > 0 && pixel != lastPixel {
 			transitions++
 		}
 		lastPixel = pixel
 	}
 
-	// Classify based on transitions
+	// Calculate the ratio of on pixels
+	onRatio := float64(onPixels) / float64(sampleCount+1)
+
+	// Classify based on transitions and on-pixel ratio
 	if transitions <= 2 {
 		return "solid"
-	} else if transitions <= 10 {
-		return "dashed"
-	} else {
+	} else if onRatio < 0.3 && transitions > 6 {
+		// Very sparse pixels with many transitions = dotted
 		return "dotted"
+	} else {
+		// Regular pattern = dashed
+		return "dashed"
 	}
 }
 

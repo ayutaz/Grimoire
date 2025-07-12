@@ -241,7 +241,7 @@ func TestApproximatePolygon_EdgeCases(t *testing.T) {
 				Points:    generateTrianglePoints(10, 10, 5),
 				Perimeter: 15.0,
 			},
-			expectedCount: 2, // Will be simplified due to small epsilon
+			expectedCount: 3, // Triangle has 3 vertices
 		},
 	}
 

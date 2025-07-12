@@ -56,13 +56,28 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 
 	// Note: Star shape detection moved after operator check and to switch statement
 
+	// Early detection for high-circularity squares
+	// Squares typically have circularity around 0.78-0.8
+	if contour.Circularity >= 0.75 && contour.Circularity <= 0.82 {
+		aspectRatio := contour.getAspectRatio()
+		if aspectRatio >= 0.85 && aspectRatio <= 1.15 {
+			// Check bounding box fill ratio
+			bbox := contour.getBoundingBox()
+			bboxArea := float64(bbox.Dx() * bbox.Dy())
+			fillRatio := contour.Area / bboxArea
+			if fillRatio >= 0.85 && fillRatio <= 0.95 {
+				return Square
+			}
+		}
+	}
+
 	// Check for 4 vertices first (square detection)
 	if vertices == 4 {
 		if d.isSquare(approx) {
 			return Square
 		}
 		// Check if it's actually a rounded square misclassified as circle
-		if vertices >= 4 && d.isRoundedSquare(contour, approx) {
+		if d.isRoundedSquare(contour, approx) {
 			return Square
 		}
 	}
@@ -121,13 +136,14 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 	// Check other polygon shapes
 	switch vertices {
 	case 3:
-		// Only classify as triangle if it's a reasonable size and not an operator
-		if contour.Area > 100 && contour.Area < 200 {
-			return Triangle
-		} else if contour.Area >= 200 {
-			// Could be less than or greater than operator
+		// Check if it's an operator first (less than or greater than)
+		if contour.Area > 200 && contour.getAspectRatio() > 1.5 {
 			// Let the operator classification handle it
 			return Unknown
+		}
+		// Otherwise, it's likely a triangle
+		if contour.Area > 100 {
+			return Triangle
 		}
 		return Unknown
 	case 5:
@@ -271,13 +287,16 @@ func (d *Detector) isSquare(vertices []image.Point) bool {
 
 	// Check angles are approximately 90 degrees
 	for i := 0; i < 4; i++ {
-		p1 := vertices[i]
-		p2 := vertices[(i+1)%4]
-		p3 := vertices[(i+2)%4]
+		// Get three consecutive vertices to form an angle
+		prev := vertices[(i+3)%4]
+		curr := vertices[i]
+		next := vertices[(i+1)%4]
 
-		angle := d.calculateAngle(p1, p2, p3)
+		angle := d.calculateAngle(prev, curr, next)
 		// Check if angle is close to 90 degrees (pi/2)
-		if math.Abs(angle-math.Pi/2) > math.Pi/6 { // 30 degree tolerance
+		// The angle might be negative, so we need to handle that
+		absAngle := math.Abs(angle)
+		if math.Abs(absAngle-math.Pi/2) > math.Pi/6 { // 30 degree tolerance
 			return false
 		}
 	}
@@ -411,7 +430,7 @@ func (d *Detector) classifyOperator(contour Contour) SymbolType {
 	}
 
 	// Transfer (→) - arrow shape
-	if aspectRatio > 2.0 && vertices >= 5 && vertices <= 7 {
+	if aspectRatio > 1.5 && vertices >= 5 && vertices <= 7 {
 		if d.isArrowShape(approx) {
 			return Transfer
 		}
