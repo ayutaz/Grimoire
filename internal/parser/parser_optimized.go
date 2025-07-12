@@ -59,6 +59,11 @@ func (p *OptimizedParser) buildSpatialIndex() {
 		return
 	}
 
+	// Initialize symbolGraph if not already done
+	if p.symbolGraph == nil {
+		p.symbolGraph = make(map[int]*symbolNode)
+	}
+
 	// Calculate optimal grid size
 	minX, minY := math.MaxFloat64, math.MaxFloat64
 	maxX, maxY := -math.MaxFloat64, -math.MaxFloat64
@@ -173,27 +178,9 @@ func (p *OptimizedParser) inferConnectionsOptimized() {
 		}
 	}
 
-	// Process connections in parallel batches
-	var wg sync.WaitGroup
-	batchSize := len(symbolsToConnect) / 4
-	if batchSize < 10 {
-		batchSize = 10
-	}
-
-	for start := 0; start < len(symbolsToConnect); start += batchSize {
-		end := start + batchSize
-		if end > len(symbolsToConnect) {
-			end = len(symbolsToConnect)
-		}
-
-		wg.Add(1)
-		go func(nodes []*symbolNode) {
-			defer wg.Done()
-			p.processNodeBatch(nodes)
-		}(symbolsToConnect[start:end])
-	}
-
-	wg.Wait()
+	// Process connections sequentially to avoid race conditions
+	// Parallel processing was causing issues with concurrent map/slice access
+	p.processNodeBatch(symbolsToConnect)
 }
 
 // processNodeBatch processes a batch of nodes for connections
