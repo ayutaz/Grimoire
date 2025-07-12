@@ -443,7 +443,9 @@ func TestDebugCommandDirectly(t *testing.T) {
 				testImage := filepath.Join(tmpDir, "full_test.png")
 				img := createComplexImageWithConnections()
 				f, _ := os.Create(testImage)
-				png.Encode(f, img)
+				if err := png.Encode(f, img); err != nil {
+					t.Fatalf("Failed to encode PNG: %v", err)
+				}
 				f.Close()
 				return testImage
 			},
@@ -464,7 +466,9 @@ func TestDebugCommandDirectly(t *testing.T) {
 				draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
 				drawCircle(img, 200, 200, 180, 175, color.Black)
 				f, _ := os.Create(testImage)
-				png.Encode(f, img)
+				if err := png.Encode(f, img); err != nil {
+					t.Fatalf("Failed to encode PNG: %v", err)
+				}
 				f.Close()
 				return testImage
 			},
@@ -606,7 +610,8 @@ func TestCompileCommandWriteError(t *testing.T) {
 
 	cmd := &cobra.Command{}
 	cmd.Flags().StringP("output", "o", "", "Output file path")
-	cmd.ParseFlags([]string{"-o", outputFile})
+	err = cmd.ParseFlags([]string{"-o", outputFile})
+	require.NoError(t, err)
 
 	err = compileCommand(cmd, []string{testImage})
 
