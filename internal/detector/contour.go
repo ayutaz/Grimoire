@@ -292,6 +292,14 @@ func (c *Contour) getAspectRatio() float64 {
 	return width / height
 }
 
+// getEquivalentRadius returns the radius of a circle with the same area as this contour
+func (c *Contour) getEquivalentRadius() float64 {
+	if c.Area <= 0 {
+		return 0
+	}
+	return math.Sqrt(c.Area / math.Pi)
+}
+
 // mergeCircularContours attempts to merge contours that form a large circle
 func (d *Detector) mergeCircularContours(contours []Contour, bounds image.Rectangle) []Contour {
 	if len(contours) == 0 {
