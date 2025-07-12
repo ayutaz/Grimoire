@@ -11,6 +11,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -243,6 +244,11 @@ func TestExecutePythonErrors(t *testing.T) {
 
 // TestExecutePythonFileCreationError tests executePython when temp file creation fails
 func TestExecutePythonFileCreationError(t *testing.T) {
+	// Skip this test on Windows as it uses different temp directory logic
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test on Windows due to different temp directory handling")
+	}
+
 	// Save original TempDir
 	originalTempDir := os.Getenv("TMPDIR")
 
