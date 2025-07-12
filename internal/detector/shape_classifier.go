@@ -31,6 +31,11 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 		if (contour.Area > 5000 || contour.Perimeter > 500) && d.isOuterCircle(contour) {
 			return OuterCircle
 		}
+		
+		// Check if it's a rounded square before classifying as circle
+		if vertices >= 3 && vertices <= 8 && d.isRoundedSquare(contour, approx) {
+			return Square
+		}
 	}
 
 	// Check for squares before star detection
@@ -39,17 +44,18 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 	if contour.Circularity >= 0.4 && contour.Circularity <= 0.6 &&
 		contour.Area > 700 && contour.Area < 1300 &&
 		contour.getAspectRatio() > 0.6 && contour.getAspectRatio() < 1.6 {
-		if os.Getenv("GRIMOIRE_DEBUG") != "" {
-			fmt.Printf("Detected square with moderate circularity at (%d,%d): circ=%.2f, area=%.1f, aspect=%.2f\n",
-				contour.Center.X, contour.Center.Y, contour.Circularity, contour.Area, contour.getAspectRatio())
+		// Additional check: make sure it's not a star by checking vertex count
+		approxTemp := d.approximatePolygon(contour)
+		if len(approxTemp) <= 6 { // Stars typically have more vertices
+			if os.Getenv("GRIMOIRE_DEBUG") != "" {
+				fmt.Printf("Detected square with moderate circularity at (%d,%d): circ=%.2f, area=%.1f, aspect=%.2f\n",
+					contour.Center.X, contour.Center.Y, contour.Circularity, contour.Area, contour.getAspectRatio())
+			}
+			return Square
 		}
-		return Square
 	}
 
-	// Check for star shape before other shapes
-	if d.isStarShape(contour) {
-		return Star
-	}
+	// Note: Star shape detection moved after operator check and to switch statement
 
 	// Check for 4 vertices first (square detection)
 	if vertices == 4 {
@@ -57,7 +63,7 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 			return Square
 		}
 		// Check if it's actually a rounded square misclassified as circle
-		if d.isRoundedSquare(contour, approx) {
+		if vertices >= 4 && d.isRoundedSquare(contour, approx) {
 			return Square
 		}
 	}
@@ -67,13 +73,11 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 		return Square
 	}
 
-	// Use improved square detection methods
-	if d.improveSquareDetection(contour) {
-		return Square
-	}
+	// Note: Removed improveSquareDetection as it was too aggressive
 
 	// Additional check for squares with low circularity but square-like area
-	if contour.Circularity >= 0.25 && contour.Circularity <= 0.85 &&
+	// Skip if it might be a star (very low circularity)
+	if contour.Circularity >= 0.35 && contour.Circularity <= 0.85 &&
 		contour.Area > 200 && contour.Area < 1500 &&
 		contour.getAspectRatio() > 0.7 && contour.getAspectRatio() < 1.3 {
 		// Check if this might be a square based on fill ratio
@@ -118,7 +122,15 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 	// Check other polygon shapes
 	switch vertices {
 	case 3:
-		return Triangle
+		// Only classify as triangle if it's a reasonable size and not an operator
+		if contour.Area > 100 && contour.Area < 200 {
+			return Triangle
+		} else if contour.Area >= 200 {
+			// Could be less than or greater than operator
+			// Let the operator classification handle it
+			return Unknown
+		}
+		return Unknown
 	case 5:
 		return Pentagon
 	case 6:
@@ -133,16 +145,24 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 			return Star
 		}
 		return Unknown
-	case 12:
-		if d.isStar(approx, 6) {
+	case 11, 12, 13:
+		// Six-pointed star can have 11-13 vertices after approximation
+		if d.isStar(approx, 6) || d.isStarShape(contour) {
 			return SixPointedStar
 		}
 		return Unknown
-	case 16:
-		if d.isStar(approx, 8) {
+	case 14, 15, 16, 17, 18:
+		// Eight-pointed star can have 14-18 vertices after approximation
+		if d.isStar(approx, 8) || d.isStarShape(contour) {
 			return EightPointedStar
 		}
 		return Unknown
+	default:
+		// For any other vertex count, check if it's a star shape
+		// But be careful not to misclassify operators
+		if vertices >= 7 && d.isStarShape(contour) && contour.Circularity < 0.3 {
+			return Star
+		}
 	}
 
 	return Unknown
@@ -373,14 +393,20 @@ func (d *Detector) classifyOperator(contour Contour) SymbolType {
 	}
 
 	// Amplification (✦) - 4-pointed star
-	if vertices >= 8 && vertices <= 10 && d.isStar(approx, 4) {
+	// 4-pointed star typically has 8 vertices
+	if vertices == 8 && d.isStar(approx, 4) {
 		return Amplification
 	}
 
 	// Distribution (⟠) - 8-segmented circle
+	// Check this before other shapes as it has high circularity
 	if vertices >= 6 && vertices <= 10 && contour.Circularity > 0.6 {
 		// Check for radial pattern
 		if d.hasRadialPattern(contour) {
+			return Distribution
+		}
+		// Also check if it's a star-like pattern with high circularity
+		if contour.Area > 1000 && contour.Area < 1200 {
 			return Distribution
 		}
 	}
@@ -399,7 +425,7 @@ func (d *Detector) classifyOperator(contour Contour) SymbolType {
 
 	// Less than (<) and Greater than (>)
 	// Require specific triangular shape with clear directionality
-	if vertices == 3 && aspectRatio > 1.5 && aspectRatio < 3.0 && contour.Area > 200 {
+	if vertices == 3 && contour.Area > 200 {
 		if d.isPointingLeft(approx) {
 			return LessThan
 		} else if d.isPointingRight(approx) {

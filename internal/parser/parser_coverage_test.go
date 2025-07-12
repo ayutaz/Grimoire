@@ -357,7 +357,7 @@ func TestParseEdgeCasesAndErrors(t *testing.T) {
 				{Type: detector.Star, Position: detector.Position{X: 100, Y: 100}},
 			},
 			wantErr: true,
-			errType: "NO_OUTER_CIRCLE",
+			errType: "外周円が検出されません",
 		},
 		{
 			name: "unbalanced binary operator",

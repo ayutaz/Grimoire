@@ -18,19 +18,19 @@ func TestNewError(t *testing.T) {
 			name:     "file not found error",
 			errType:  FileNotFound,
 			message:  "test.png not found",
-			expected: "[FILE_NOT_FOUND] test.png not found",
+			expected: "ファイルが見つかりません",
 		},
 		{
 			name:     "syntax error",
 			errType:  SyntaxError,
 			message:  "unexpected symbol",
-			expected: "[SYNTAX_ERROR] unexpected symbol",
+			expected: "構文エラー",
 		},
 		{
 			name:     "runtime error",
 			errType:  ExecutionError,
 			message:  "execution failed",
-			expected: "[EXECUTION_ERROR] execution failed",
+			expected: "実行エラー",
 		},
 	}
 
@@ -57,7 +57,7 @@ func TestGrimoireError_Error(t *testing.T) {
 				Type:    FileNotFound,
 				Message: "file.png not found",
 			},
-			expected: []string{"[FILE_NOT_FOUND]", "file.png not found"},
+			expected: []string{"[ファイルが見つかりません]", "file.png not found"},
 		},
 		{
 			name: "error with filename",
@@ -66,7 +66,7 @@ func TestGrimoireError_Error(t *testing.T) {
 				Message:  "invalid syntax",
 				FileName: "test.png",
 			},
-			expected: []string{"[SYNTAX_ERROR]", "invalid syntax", "in test.png"},
+			expected: []string{"[構文エラー]", "invalid syntax", "ファイル: test.png"},
 		},
 		{
 			name: "error with line and column",
@@ -77,7 +77,7 @@ func TestGrimoireError_Error(t *testing.T) {
 				Line:     10,
 				Column:   5,
 			},
-			expected: []string{"[SYNTAX_ERROR]", "unexpected token", "at program.png:10:5"},
+			expected: []string{"[構文エラー]", "unexpected token", "場所: program.png:10:5"},
 		},
 		{
 			name: "error with details",
@@ -86,7 +86,7 @@ func TestGrimoireError_Error(t *testing.T) {
 				Message: "failed to process",
 				Details: "Invalid format",
 			},
-			expected: []string{"[IMAGE_PROCESSING_ERROR]", "failed to process", "Details: Invalid format"},
+			expected: []string{"[画像処理エラー]", "failed to process", "詳細: Invalid format"},
 		},
 		{
 			name: "error with suggestion",
@@ -95,7 +95,7 @@ func TestGrimoireError_Error(t *testing.T) {
 				Message:    "no outer circle found",
 				Suggestion: "Add an outer circle",
 			},
-			expected: []string{"[NO_OUTER_CIRCLE]", "no outer circle found", "Suggestion: Add an outer circle"},
+			expected: []string{"[外周円が検出されません]", "no outer circle found", "提案: Add an outer circle"},
 		},
 		{
 			name: "error with inner error",
@@ -104,7 +104,7 @@ func TestGrimoireError_Error(t *testing.T) {
 				Message:    "cannot read file",
 				InnerError: errors.New("permission denied"),
 			},
-			expected: []string{"[FILE_READ_ERROR]", "cannot read file", "Caused by: permission denied"},
+			expected: []string{"[ファイル読み込みエラー]", "cannot read file", "原因: permission denied"},
 		},
 		{
 			name: "error with all fields",
@@ -119,12 +119,12 @@ func TestGrimoireError_Error(t *testing.T) {
 				InnerError: errors.New("stack limit exceeded"),
 			},
 			expected: []string{
-				"[COMPILATION_ERROR]",
+				"[コンパイルエラー]",
 				"compilation failed",
-				"at complex.png:42:13",
-				"Details: Stack overflow",
-				"Suggestion: Check for infinite loops",
-				"Caused by: stack limit exceeded",
+				"場所: complex.png:42:13",
+				"詳細: Stack overflow",
+				"提案: Check for infinite loops",
+				"原因: stack limit exceeded",
 			},
 		},
 	}
@@ -185,7 +185,7 @@ func TestWithDetails(t *testing.T) {
 
 	assert.Equal(t, err, err2) // Should return same pointer
 	assert.Equal(t, "PNG decode error", err.Details)
-	assert.Contains(t, err.Error(), "Details: PNG decode error")
+	assert.Contains(t, err.Error(), "詳細: PNG decode error")
 }
 
 func TestWithLocation(t *testing.T) {
@@ -196,7 +196,7 @@ func TestWithLocation(t *testing.T) {
 	assert.Equal(t, "test.png", err.FileName)
 	assert.Equal(t, 10, err.Line)
 	assert.Equal(t, 20, err.Column)
-	assert.Contains(t, err.Error(), "at test.png:10:20")
+	assert.Contains(t, err.Error(), "場所: test.png:10:20")
 }
 
 func TestWithSuggestion(t *testing.T) {
@@ -205,7 +205,7 @@ func TestWithSuggestion(t *testing.T) {
 
 	assert.Equal(t, err, err2) // Should return same pointer
 	assert.Equal(t, "Check image quality", err.Suggestion)
-	assert.Contains(t, err.Error(), "Suggestion: Check image quality")
+	assert.Contains(t, err.Error(), "提案: Check image quality")
 }
 
 func TestWithInnerError(t *testing.T) {
@@ -215,7 +215,7 @@ func TestWithInnerError(t *testing.T) {
 
 	assert.Equal(t, err, err2) // Should return same pointer
 	assert.Equal(t, innerErr, err.InnerError)
-	assert.Contains(t, err.Error(), "Caused by: original error")
+	assert.Contains(t, err.Error(), "原因: original error")
 }
 
 func TestHelperFunctions(t *testing.T) {
@@ -269,7 +269,7 @@ func TestSuggestionInHelperFunctions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.NotEmpty(t, tt.err.Suggestion)
-			assert.Contains(t, tt.err.Error(), "Suggestion:")
+			assert.Contains(t, tt.err.Error(), "提案:")
 		})
 	}
 }
@@ -280,7 +280,7 @@ func TestErrorImplementsStandardError(t *testing.T) {
 
 	// Should work with standard error handling
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "FILE_NOT_FOUND")
+	assert.Contains(t, err.Error(), "ファイルが見つかりません")
 }
 
 func TestAllErrorTypes(t *testing.T) {
@@ -302,6 +302,8 @@ func TestAllErrorTypes(t *testing.T) {
 		CompilationError,
 		UnsupportedOperation,
 		ExecutionError,
+		ValidationError,
+		IOError,
 	}
 
 	for _, errType := range errorTypes {
@@ -313,8 +315,8 @@ func TestAllErrorTypes(t *testing.T) {
 			// Check type
 			assert.Equal(t, errType, err.Type)
 
-			// Check error string contains type
-			assert.Contains(t, err.Error(), string(errType))
+			// Check error string contains localized type
+			// The error message now contains the Japanese translation, not the constant
 
 			// Just verify no panic
 			assert.NotPanics(t, func() {

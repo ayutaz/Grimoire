@@ -28,7 +28,7 @@ func TestParse_NoOuterCircle(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, ast)
-	assert.Contains(t, err.Error(), "outer circle")
+	assert.Contains(t, err.Error(), "外周円が検出されません")
 }
 
 // TestParse_MinimalProgram tests parsing minimal valid program
@@ -169,7 +169,7 @@ func TestParse_ErrorHandling(t *testing.T) {
 			symbols: []*detector.Symbol{
 				{Type: detector.Circle, Position: detector.Position{X: 50, Y: 50}},
 			},
-			wantErr: "outer circle",
+			wantErr: "外周円が検出されません",
 		},
 		{
 			name: "Invalid program structure",
@@ -177,7 +177,7 @@ func TestParse_ErrorHandling(t *testing.T) {
 				{Type: detector.Circle, Position: detector.Position{X: 100, Y: 100}},
 				{Type: detector.Star, Position: detector.Position{X: 100, Y: 150}},
 			},
-			wantErr: "outer circle",
+			wantErr: "外周円が検出されません",
 		},
 	}
 

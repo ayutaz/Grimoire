@@ -222,6 +222,10 @@ func getLocalizedErrorType(errorType ErrorType) string {
 		return i18n.T("error.unsupported_operation")
 	case ExecutionError:
 		return i18n.T("error.execution_error")
+	case ValidationError:
+		return i18n.T("error.validation_error")
+	case IOError:
+		return i18n.T("error.io_error")
 	default:
 		return string(errorType)
 	}
