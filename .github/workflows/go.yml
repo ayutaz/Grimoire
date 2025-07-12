@@ -26,22 +26,44 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
     
-    - name: Get Go paths
+    - name: Get Go paths (Unix)
       id: go-paths
+      if: runner.os != 'Windows'
       run: |
         echo "mod-cache=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
         echo "build-cache=$(go env GOCACHE)" >> $GITHUB_OUTPUT
     
-    - name: Cache Go modules
+    - name: Get Go paths (Windows)
+      id: go-paths-windows
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        echo "mod-cache=$(go env GOMODCACHE)" >> $env:GITHUB_OUTPUT
+        echo "build-cache=$(go env GOCACHE)" >> $env:GITHUB_OUTPUT
+    
+    - name: Cache Go modules (Unix)
+      if: runner.os != 'Windows'
       uses: actions/cache@v4
       continue-on-error: true
       with:
         path: |
           ${{ steps.go-paths.outputs.mod-cache }}
           ${{ steps.go-paths.outputs.build-cache }}
-        key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-${{ runner.arch }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-${{ matrix.go }}-
+          ${{ runner.os }}-${{ runner.arch }}-go-${{ matrix.go }}-
+    
+    - name: Cache Go modules (Windows)
+      if: runner.os == 'Windows'
+      uses: actions/cache@v4
+      continue-on-error: true
+      with:
+        path: |
+          ${{ steps.go-paths-windows.outputs.mod-cache }}
+          ${{ steps.go-paths-windows.outputs.build-cache }}
+        key: ${{ runner.os }}-${{ runner.arch }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ runner.arch }}-go-${{ matrix.go }}-
     
     - name: Download dependencies
       run: go mod download
