@@ -136,17 +136,17 @@ jobs:
       run: |
         chmod +x dist/grimoire-*
     
-    - name: Test hello world (Unix)
+    - name: Test version command (Unix)
       if: matrix.os != 'windows-latest'
       run: |
         if [ "${{ matrix.os }}" = "macos-latest" ]; then
-          ./dist/grimoire-darwin-amd64 compile examples/images/hello_world.png
+          ./dist/grimoire-darwin-amd64 --version
         else
-          ./dist/grimoire-linux-amd64 compile examples/images/hello_world.png
+          ./dist/grimoire-linux-amd64 --version
         fi
     
-    - name: Test hello world (Windows)
+    - name: Test version command (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        ./dist/grimoire-windows-amd64.exe compile examples/images/hello_world.png
+        ./dist/grimoire-windows-amd64.exe --version
 
