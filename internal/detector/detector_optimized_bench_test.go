@@ -55,13 +55,6 @@ func BenchmarkDetectorComparison(b *testing.B) {
 			}
 		})
 
-		b.Run(fmt.Sprintf("SimpleOptimized_%dsymbols", tc.numSymbols), func(b *testing.B) {
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
-				detector := NewSimpleOptimizedDetector(Config{})
-				_, _, _ = detector.Detect(imgPath)
-			}
-		})
 	}
 }
 
