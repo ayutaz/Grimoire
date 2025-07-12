@@ -1,0 +1,12 @@
+Detected 1 lines
+Line (48,99)->(252,101): from=true, to=true
+Connection added: square -> circle (solid)
+Classifying shape at (377,195): vertices=4, area=300.0, circ=0.35, aspect=1.00
+Found 2 contours:
+[0] Type: circle, Area: 2827.00, Circularity: 0.95, Center: (100,100), Points: 63
+[1] Type: square, Area: 400.00, Circularity: 0.78, Center: (50,50), Points: 84
+goos: darwin
+goarch: arm64
+pkg: github.com/ayutaz/grimoire/internal/detector
+BenchmarkFindContoursComparison/Standard_400x400-10         	    1341	   8905804 ns/op	 1873069 B/op	    1855 allocs/op
+BenchmarkFindContoursComparison/Parallel_400x400-10         	

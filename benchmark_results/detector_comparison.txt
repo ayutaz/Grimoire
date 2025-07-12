@@ -1,0 +1,20 @@
+Detected 1 lines
+Line (48,99)->(252,101): from=true, to=true
+Connection added: square -> circle (solid)
+Classifying shape at (377,195): vertices=4, area=300.0, circ=0.35, aspect=1.00
+Found 2 contours:
+[0] Type: circle, Area: 2827.00, Circularity: 0.95, Center: (100,100), Points: 63
+[1] Type: square, Area: 400.00, Circularity: 0.78, Center: (50,50), Points: 84
+goos: darwin
+goarch: arm64
+pkg: github.com/ayutaz/grimoire/internal/detector
+BenchmarkDetectorComparison/Standard_400x400_10symbols-10         	     246	  49689386 ns/op	 2119438 B/op	    1661 allocs/op
+BenchmarkDetectorComparison/Parallel_400x400_10symbols-10         	     283	  42380586 ns/op	 2108451 B/op	  162125 allocs/op
+BenchmarkDetectorComparison/Standard_800x800_50symbols-10         	      61	 194627574 ns/op	17577904 B/op	    5409 allocs/op
+BenchmarkDetectorComparison/Parallel_800x800_50symbols-10         	      70	 168670258 ns/op	19222995 B/op	  645846 allocs/op
+BenchmarkDetectorComparison/Standard_1200x1200_100symbols-10      	      27	 432639307 ns/op	67093212 B/op	   10463 allocs/op
+BenchmarkDetectorComparison/Parallel_1200x1200_100symbols-10      	      31	 380520681 ns/op	71935653 B/op	 1450263 allocs/op
+BenchmarkDetectorComparison/Standard_1600x1600_200symbols-10      	      14	 783423122 ns/op	228153063 B/op	   19476 allocs/op
+BenchmarkDetectorComparison/Parallel_1600x1600_200symbols-10      	      16	 675817745 ns/op	230701418 B/op	 2578133 allocs/op
+PASS
+ok  	github.com/ayutaz/grimoire/internal/detector	105.528s

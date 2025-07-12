@@ -232,7 +232,19 @@ func (d *ParallelDetector) findContoursParallel(binary *image.Gray) []Contour {
 func (d *ParallelDetector) Detect(imagePath string) ([]*Symbol, []Connection, error) {
 	// Check cache first
 	if cached := d.cache.getSymbols(imagePath); cached != nil {
-		connections := d.improvedDetectConnections(nil, cached)
+		// Still need the binary image for connection detection
+		binary := d.cache.getPreprocessed(imagePath)
+		if binary == nil {
+			// Need to reload and preprocess the image for connections
+			img, err := d.loadAndValidateImage(imagePath)
+			if err != nil {
+				return nil, nil, err
+			}
+			gray := d.toGrayscale(img)
+			binary = d.preprocessImage(gray)
+			d.cache.setPreprocessed(imagePath, binary)
+		}
+		connections := d.improvedDetectConnections(binary, cached)
 		return cached, connections, nil
 	}
 
