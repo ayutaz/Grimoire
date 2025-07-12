@@ -244,17 +244,34 @@ func TestExecutePythonErrors(t *testing.T) {
 
 // TestExecutePythonFileCreationError tests executePython when temp file creation fails
 func TestExecutePythonFileCreationError(t *testing.T) {
-	// Skip this test on Windows as it uses different temp directory logic
-	if runtime.GOOS == "windows" {
-		t.Skip("Skipping test on Windows due to different temp directory handling")
+	// Handle different temp directory environment variables for different OS
+	var tempEnvVar string
+	var originalTemp string
+	var invalidPath string
+
+	switch runtime.GOOS {
+	case "windows":
+		// Windows uses TEMP or TMP
+		tempEnvVar = "TEMP"
+		originalTemp = os.Getenv(tempEnvVar)
+		invalidPath = "Z:\\invalid\\path\\that\\does\\not\\exist"
+	default:
+		// Unix-like systems use TMPDIR
+		tempEnvVar = "TMPDIR"
+		originalTemp = os.Getenv(tempEnvVar)
+		invalidPath = "/invalid/path/that/does/not/exist"
 	}
 
-	// Save original TempDir
-	originalTempDir := os.Getenv("TMPDIR")
+	// Set temp directory to an invalid path
+	os.Setenv(tempEnvVar, invalidPath)
+	defer os.Setenv(tempEnvVar, originalTemp)
 
-	// Set TMPDIR to an invalid path
-	os.Setenv("TMPDIR", "/invalid/path/that/does/not/exist")
-	defer os.Setenv("TMPDIR", originalTempDir)
+	// Also set TMP on Windows as a fallback
+	if runtime.GOOS == "windows" {
+		originalTMP := os.Getenv("TMP")
+		os.Setenv("TMP", invalidPath)
+		defer os.Setenv("TMP", originalTMP)
+	}
 
 	// This should fail to create temp file
 	err := executePython("print('test')")
