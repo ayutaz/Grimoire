@@ -157,7 +157,7 @@ func TestFormatErrorWithGenericError(t *testing.T) {
 	}{
 		{
 			name:          "generic error without 'no such file'",
-			err:           errors.New("permission denied"),
+			err:           errors.New("internal processing error"),
 			imagePath:     "/path/to/image.png",
 			expectedType:  grimoireErrors.ExecutionError,
 			expectedInMsg: "An error occurred",

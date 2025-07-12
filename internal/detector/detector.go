@@ -9,8 +9,10 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 
 	grimoireErrors "github.com/ayutaz/grimoire/internal/errors"
+	"github.com/ayutaz/grimoire/internal/security"
 )
 
 // Config holds detector configuration
@@ -362,35 +364,58 @@ func (d *Detector) deduplicateNearbyStars(symbols []*Symbol) []*Symbol {
 	return filtered
 }
 
-// loadAndValidateImage loads and validates the image file
+// loadAndValidateImage loads and validates the image file with security checks
 func (d *Detector) loadAndValidateImage(imagePath string) (image.Image, error) {
-	// Check if file exists
-	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
-		return nil, grimoireErrors.FileNotFoundError(imagePath)
-	}
+	// Create image validator with default settings
+	validator := security.NewImageValidator()
 
-	// Check file extension
-	ext := filepath.Ext(imagePath)
-	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
-		return nil, grimoireErrors.UnsupportedFormatError(ext).
-			WithDetails(fmt.Sprintf("File: %s", filepath.Base(imagePath)))
-	}
+	// Create safe image decoder
+	decoder := security.NewSafeImageDecoder(validator)
 
-	// Open image file
-	file, err := os.Open(imagePath)
+	// Decode image with all security validations
+	img, err := decoder.DecodeImage(imagePath)
 	if err != nil {
-		return nil, grimoireErrors.NewError(grimoireErrors.FileReadError, "Failed to open image file").
-			WithInnerError(err).
-			WithLocation(imagePath, 0, 0)
-	}
-	defer file.Close()
+		// Convert security errors to grimoire errors for consistency
+		errStr := err.Error()
 
-	// Decode image
-	img, format, err := image.Decode(file)
-	if err != nil {
-		return nil, grimoireErrors.NewError(grimoireErrors.ImageProcessingError, "Failed to decode image").
+		// Check for file not found errors
+		if strings.Contains(errStr, "file not found") || os.IsNotExist(err) {
+			return nil, grimoireErrors.FileNotFoundError(imagePath)
+		}
+		if strings.Contains(errStr, "unsupported file extension") || strings.Contains(errStr, "unsupported file format") {
+			ext := filepath.Ext(imagePath)
+			return nil, grimoireErrors.UnsupportedFormatError(ext).
+				WithDetails(fmt.Sprintf("File: %s", filepath.Base(imagePath)))
+		}
+
+		if strings.Contains(errStr, "path traversal") {
+			// Don't expose the actual path in error message for security
+			safeFileName := filepath.Base(imagePath)
+			if strings.Contains(safeFileName, "..") {
+				safeFileName = "invalid-path"
+			}
+			return nil, grimoireErrors.NewError(grimoireErrors.ValidationError, "Invalid file path detected").
+				WithLocation(safeFileName, 0, 0).
+				WithSuggestion("Use a valid file path without directory traversal attempts")
+		}
+
+		if strings.Contains(errStr, "exceeds maximum") || strings.Contains(errStr, "exceeds safe limits") {
+			return nil, grimoireErrors.NewError(grimoireErrors.ValidationError, "Image exceeds size limits").
+				WithInnerError(err).
+				WithLocation(imagePath, 0, 0).
+				WithSuggestion("Use a smaller image (max 50MB file size, 10000x10000 pixels)")
+		}
+
+		// Check for permission errors
+		if strings.Contains(errStr, "permission denied") || strings.Contains(errStr, "access is denied") {
+			return nil, grimoireErrors.NewError(grimoireErrors.FileReadError, "Failed to read image file").
+				WithInnerError(err).
+				WithLocation(imagePath, 0, 0)
+		}
+
+		// Generic image processing error
+		return nil, grimoireErrors.NewError(grimoireErrors.ImageProcessingError, "Failed to validate and decode image").
 			WithInnerError(err).
-			WithDetails(fmt.Sprintf("Format: %s", format)).
 			WithLocation(imagePath, 0, 0).
 			WithSuggestion("Ensure the image is a valid PNG or JPEG file and not corrupted")
 	}

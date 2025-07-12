@@ -225,6 +225,16 @@ func formatError(err error, imagePath string) error {
 		return grimoireErrors.FileNotFoundError(imagePath)
 	}
 
+	// Handle permission errors and other file read errors
+	if strings.Contains(err.Error(), "permission denied") ||
+		strings.Contains(err.Error(), "access is denied") ||
+		strings.Contains(err.Error(), "failed to open file") {
+		return grimoireErrors.NewError(grimoireErrors.FileReadError, i18n.T("error.file_read_error")).
+			WithInnerError(err).
+			WithLocation(imagePath, 0, 0).
+			WithSuggestion(i18n.T("suggest.check_file_path"))
+	}
+
 	return grimoireErrors.NewError(grimoireErrors.ExecutionError, i18n.T("msg.error_occurred")).
 		WithInnerError(err).
 		WithLocation(imagePath, 0, 0)
