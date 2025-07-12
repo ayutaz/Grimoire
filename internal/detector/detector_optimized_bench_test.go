@@ -294,7 +294,7 @@ func createBinaryImageWithConnections(width, height int, symbols []*Symbol) *ima
 
 			if dist < 200 && rand.Float64() < 0.3 {
 				// Draw line
-				drawBinaryLine(img, 
+				drawBinaryLine(img,
 					int(sym1.Position.X), int(sym1.Position.Y),
 					int(sym2.Position.X), int(sym2.Position.Y))
 			}
@@ -320,10 +320,10 @@ func generateTestContours(count int) []Contour {
 		}
 
 		contours[i] = Contour{
-			Points: points,
-			Center: image.Point{X: centerX, Y: centerY},
-			Area:   math.Pi * float64(radius) * float64(radius),
-			Perimeter: 2 * math.Pi * float64(radius),
+			Points:      points,
+			Center:      image.Point{X: centerX, Y: centerY},
+			Area:        math.Pi * float64(radius) * float64(radius),
+			Perimeter:   2 * math.Pi * float64(radius),
 			Circularity: 0.8 + rand.Float64()*0.2,
 		}
 	}
@@ -339,7 +339,7 @@ func generateTestSymbols(count int) []*Symbol {
 
 	for i := 0; i < count; i++ {
 		symbols[i] = &Symbol{
-			Type:     symbolTypes[rand.Intn(len(symbolTypes))],
+			Type: symbolTypes[rand.Intn(len(symbolTypes))],
 			Position: Position{
 				X: float64(rand.Intn(1800) + 100),
 				Y: float64(rand.Intn(1800) + 100),
@@ -376,7 +376,7 @@ func drawSquareThick(img *image.RGBA, cx, cy, size, thickness int) {
 			break
 		}
 		// Top and bottom
-		for x := cx - s; x <= cx + s; x++ {
+		for x := cx - s; x <= cx+s; x++ {
 			if x >= 0 && x < img.Bounds().Dx() {
 				if cy-s >= 0 {
 					img.Set(x, cy-s, color.Black)
@@ -387,7 +387,7 @@ func drawSquareThick(img *image.RGBA, cx, cy, size, thickness int) {
 			}
 		}
 		// Left and right
-		for y := cy - s; y <= cy + s; y++ {
+		for y := cy - s; y <= cy+s; y++ {
 			if y >= 0 && y < img.Bounds().Dy() {
 				if cx-s >= 0 {
 					img.Set(cx-s, y, color.Black)
@@ -402,13 +402,13 @@ func drawSquareThick(img *image.RGBA, cx, cy, size, thickness int) {
 
 func drawTriangleThick(img *image.RGBA, cx, cy, size, thickness int) {
 	height := int(float64(size) * math.Sqrt(3) / 2)
-	
+
 	for t := 0; t < thickness; t++ {
 		// Calculate vertices
 		x1, y1 := cx, cy-height+t
 		x2, y2 := cx-size+t, cy+height/2-t
 		x3, y3 := cx+size-t, cy+height/2-t
-		
+
 		drawLineThick(img, x1, y1, x2, y2, 1)
 		drawLineThick(img, x2, y2, x3, y3, 1)
 		drawLineThick(img, x3, y3, x1, y1, 1)
@@ -425,19 +425,19 @@ func drawHexagonThick(img *image.RGBA, cx, cy, size, thickness int) {
 
 func drawPolygonThick(img *image.RGBA, cx, cy, size, sides, thickness int) {
 	angleStep := 2 * math.Pi / float64(sides)
-	
+
 	for t := 0; t < thickness; t++ {
 		s := size - t
 		if s < 0 {
 			break
 		}
-		
+
 		var prevX, prevY int
 		for i := 0; i <= sides; i++ {
 			angle := float64(i)*angleStep - math.Pi/2
 			x := cx + int(float64(s)*math.Cos(angle))
 			y := cy + int(float64(s)*math.Sin(angle))
-			
+
 			if i > 0 {
 				drawLineThick(img, prevX, prevY, x, y, 1)
 			}
@@ -449,39 +449,39 @@ func drawPolygonThick(img *image.RGBA, cx, cy, size, sides, thickness int) {
 func drawStarThick(img *image.RGBA, cx, cy, size, thickness int) {
 	outerRadius := float64(size)
 	innerRadius := outerRadius * 0.4
-	
+
 	for t := 0; t < thickness; t++ {
 		outer := outerRadius - float64(t)
 		inner := innerRadius - float64(t)*0.4
 		if outer < 0 || inner < 0 {
 			break
 		}
-		
+
 		for i := 0; i < 10; i++ {
-			angle := float64(i) * math.Pi / 5 - math.Pi/2
+			angle := float64(i)*math.Pi/5 - math.Pi/2
 			radius := outer
 			if i%2 == 1 {
 				radius = inner
 			}
-			
+
 			x := cx + int(radius*math.Cos(angle))
 			y := cy + int(radius*math.Sin(angle))
-			
+
 			if i > 0 {
-				prevAngle := float64(i-1) * math.Pi / 5 - math.Pi/2
+				prevAngle := float64(i-1)*math.Pi/5 - math.Pi/2
 				prevRadius := outer
 				if (i-1)%2 == 1 {
 					prevRadius = inner
 				}
 				prevX := cx + int(prevRadius*math.Cos(prevAngle))
 				prevY := cy + int(prevRadius*math.Sin(prevAngle))
-				
+
 				drawLineThick(img, prevX, prevY, x, y, 1)
 			}
-			
+
 			if i == 9 {
 				// Close the star
-				firstAngle := -math.Pi/2
+				firstAngle := -math.Pi / 2
 				firstX := cx + int(outer*math.Cos(firstAngle))
 				firstY := cy + int(outer*math.Sin(firstAngle))
 				drawLineThick(img, x, y, firstX, firstY, 1)
@@ -503,7 +503,7 @@ func drawLineThick(img *image.RGBA, x1, y1, x2, y2, thickness int) {
 		sy = -1
 	}
 	err := dx - dy
-	
+
 	x, y := x1, y1
 	for {
 		// Draw with thickness
@@ -515,11 +515,11 @@ func drawLineThick(img *image.RGBA, x1, y1, x2, y2, thickness int) {
 				}
 			}
 		}
-		
+
 		if x == x2 && y == y2 {
 			break
 		}
-		
+
 		e2 := 2 * err
 		if e2 > -dy {
 			err -= dy
@@ -544,17 +544,17 @@ func drawBinaryLine(img *image.Gray, x1, y1, x2, y2 int) {
 		sy = -1
 	}
 	err := dx - dy
-	
+
 	x, y := x1, y1
 	for {
 		if x >= 0 && x < img.Bounds().Dx() && y >= 0 && y < img.Bounds().Dy() {
 			img.Set(x, y, color.Gray{0})
 		}
-		
+
 		if x == x2 && y == y2 {
 			break
 		}
-		
+
 		e2 := 2 * err
 		if e2 > -dy {
 			err -= dy
@@ -566,4 +566,3 @@ func drawBinaryLine(img *image.Gray, x1, y1, x2, y2 int) {
 		}
 	}
 }
-

@@ -10,10 +10,10 @@ import (
 // ParallelDetectorV2 is an improved parallel detector with better memory management
 type ParallelDetectorV2 struct {
 	*Detector
-	workerCount  int
-	contourPool  *sync.Pool
-	symbolPool   *sync.Pool
-	bufferPool   *sync.Pool
+	workerCount       int
+	contourPool       *sync.Pool
+	symbolPool        *sync.Pool
+	bufferPool        *sync.Pool
 	atomicSymbolCount int64
 }
 
@@ -100,136 +100,6 @@ func (pd *ParallelDetectorV2) findContoursOptimized(binary *image.Gray) []Contou
 	return pd.Detector.findContours(binary)
 }
 
-// processStrip processes a horizontal strip of the image
-func (pd *ParallelDetectorV2) processStrip(binary *image.Gray, startY, endY int) []Contour {
-	bounds := binary.Bounds()
-	width := bounds.Dx()
-
-	// Create a sub-image for this strip (with overlap)
-	overlap := 5
-	actualStartY := startY - overlap
-	if actualStartY < 0 {
-		actualStartY = 0
-	}
-	actualEndY := endY + overlap
-	if actualEndY > bounds.Max.Y {
-		actualEndY = bounds.Max.Y
-	}
-
-	// Find contours in this strip
-	visited := make([][]bool, actualEndY-actualStartY)
-	for i := range visited {
-		visited[i] = make([]bool, width)
-	}
-
-	contours := make([]Contour, 0, 100)
-
-	for y := actualStartY; y < actualEndY; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			// Skip if already visited or not a boundary pixel (black pixels have value 0)
-			if visited[y-actualStartY][x-bounds.Min.X] || binary.GrayAt(x, y).Y > 0 {
-				continue
-			}
-
-			// Get contour from pool
-			contour := pd.contourPool.Get().(*Contour)
-			contour.Points = contour.Points[:0] // Reset slice
-
-			// Trace contour
-			pd.traceContourOptimized(binary, x, y, visited, actualStartY, contour)
-
-			// Only keep contours that are mostly within the original strip
-			if len(contour.Points) > 10 {
-				centerY := 0
-				for _, p := range contour.Points {
-					centerY += p.Y
-				}
-				centerY /= len(contour.Points)
-
-				if centerY >= startY && centerY < endY {
-					contour.calculateProperties()
-					if contour.Area >= float64(pd.Detector.minContourArea) {
-						contours = append(contours, *contour)
-					}
-				}
-			}
-
-			// Return contour to pool
-			pd.contourPool.Put(contour)
-		}
-	}
-
-	return contours
-}
-
-// traceContourOptimized traces a contour with object pooling
-func (pd *ParallelDetectorV2) traceContourOptimized(img *image.Gray, startX, startY int, visited [][]bool, offsetY int, contour *Contour) {
-	bounds := img.Bounds()
-	
-	// Use iterative approach instead of recursive to avoid stack overflow
-	type point struct{ x, y int }
-	stack := make([]point, 1, 1000)
-	stack[0] = point{startX, startY}
-	
-	directions := []point{
-		{0, -1}, {1, -1}, {1, 0}, {1, 1},
-		{0, 1}, {-1, 1}, {-1, 0}, {-1, -1},
-	}
-	
-	for len(stack) > 0 {
-		// Pop from stack
-		p := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-		
-		// Check bounds
-		if p.x < bounds.Min.X || p.x >= bounds.Max.X ||
-			p.y < offsetY || p.y >= offsetY+len(visited) {
-			continue
-		}
-		
-		// Check if already visited
-		if visited[p.y-offsetY][p.x-bounds.Min.X] {
-			continue
-		}
-		
-		// Check if it's a boundary pixel (black pixels have value 0)
-		if img.GrayAt(p.x, p.y).Y > 0 {
-			continue
-		}
-		
-		// Mark as visited and add to contour
-		visited[p.y-offsetY][p.x-bounds.Min.X] = true
-		contour.Points = append(contour.Points, image.Point{X: p.x, Y: p.y})
-		
-		// Add neighbors to stack
-		for _, dir := range directions {
-			nx, ny := p.x+dir.x, p.y+dir.y
-			if nx >= bounds.Min.X && nx < bounds.Max.X &&
-				ny >= offsetY && ny < offsetY+len(visited) &&
-				!visited[ny-offsetY][nx-bounds.Min.X] {
-				stack = append(stack, point{nx, ny})
-			}
-		}
-		
-		// Limit contour size to prevent memory issues
-		if len(contour.Points) > 10000 {
-			break
-		}
-	}
-}
-
-// mergeContours merges contours that might have been split across strips
-func (pd *ParallelDetectorV2) mergeContours(contours []Contour) []Contour {
-	if len(contours) < 2 {
-		return contours
-	}
-
-	// Simple merge strategy: contours are unlikely to be split if strip height is reasonable
-	// For now, just return as-is
-	// TODO: Implement proper contour merging if needed
-	return contours
-}
-
 // detectSymbolsOptimized detects symbols with object pooling
 func (pd *ParallelDetectorV2) detectSymbolsOptimized(contours []Contour, binary *image.Gray) []*Symbol {
 	if len(contours) == 0 {
@@ -262,9 +132,9 @@ func (pd *ParallelDetectorV2) detectSymbolsOptimized(contours []Contour, binary 
 		wg.Add(1)
 		go func(batch []Contour) {
 			defer wg.Done()
-			
+
 			batchSymbols := make([]*Symbol, 0, len(batch))
-			
+
 			for _, contour := range batch {
 				if contour.Area < float64(pd.Detector.minContourArea) {
 					continue
@@ -293,7 +163,7 @@ func (pd *ParallelDetectorV2) detectSymbolsOptimized(contours []Contour, binary 
 
 				batchSymbols = append(batchSymbols, symbol)
 			}
-			
+
 			// Add batch results
 			if len(batchSymbols) > 0 {
 				resultsMutex.Lock()
@@ -341,9 +211,9 @@ func (pd *ParallelDetectorV2) detectConnectionsOptimized(binary *image.Gray, sym
 			wg.Add(1)
 			go func(startIdx, endIdx int) {
 				defer wg.Done()
-				
+
 				localConnections := pd.detectConnectionsBatch(binary, symbols, spatialIndex, startIdx, endIdx)
-				
+
 				if len(localConnections) > 0 {
 					connectionsMutex.Lock()
 					connections = append(connections, localConnections...)
@@ -453,11 +323,11 @@ func (si *SpatialIndex) getNearbySymbols(pos Position, maxDist float64) []*Symbo
 }
 
 // detectConnectionsBatch detects connections for a batch of symbols
-func (pd *ParallelDetectorV2) detectConnectionsBatch(binary *image.Gray, symbols []*Symbol, 
+func (pd *ParallelDetectorV2) detectConnectionsBatch(binary *image.Gray, symbols []*Symbol,
 	spatialIndex *SpatialIndex, startIdx, endIdx int) []Connection {
-	
+
 	connections := make([]Connection, 0)
-	
+
 	for i := startIdx; i < endIdx && i < len(symbols); i++ {
 		fromSymbol := symbols[i]
 		if fromSymbol.Type == OuterCircle {

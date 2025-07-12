@@ -104,7 +104,7 @@ func BenchmarkParserComparison(b *testing.B) {
 				_, _ = parser.Parse(symbols, connections)
 			}
 		})
-		
+
 		// Add V2 parser benchmark
 		b.Run(fmt.Sprintf("OptimizedV2_%dsymbols", tc.numSymbols), func(b *testing.B) {
 			b.ResetTimer()

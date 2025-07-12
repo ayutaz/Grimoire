@@ -18,26 +18,26 @@ type OptimizedParserV2 struct {
 
 // AdaptiveSpatialIndex adapts grid size based on symbol density
 type AdaptiveSpatialIndex struct {
-	symbols       []*detector.Symbol
-	nodes         []*symbolNode
-	gridSize      float64
-	grid          map[gridKey][]*symbolNode
-	useQuadTree   bool
-	quadTree      *QuadTree
-	symbolCount   int
+	symbols     []*detector.Symbol
+	nodes       []*symbolNode
+	gridSize    float64
+	grid        map[gridKey][]*symbolNode
+	useQuadTree bool
+	quadTree    *QuadTree
+	symbolCount int
 }
 
 // QuadTree for more efficient spatial indexing at large scales
 type QuadTree struct {
-	bounds       Rectangle
-	maxDepth     int
-	maxNodes     int
-	depth        int
-	nodes        []*symbolNode
-	northWest    *QuadTree
-	northEast    *QuadTree
-	southWest    *QuadTree
-	southEast    *QuadTree
+	bounds    Rectangle
+	maxDepth  int
+	maxNodes  int
+	depth     int
+	nodes     []*symbolNode
+	northWest *QuadTree
+	northEast *QuadTree
+	southWest *QuadTree
+	southEast *QuadTree
 }
 
 type Rectangle struct {
@@ -117,36 +117,36 @@ func (p *OptimizedParserV2) Parse(symbols []*detector.Symbol, connections []dete
 // buildAdaptiveSpatialIndex creates an adaptive spatial index
 func (p *OptimizedParserV2) buildAdaptiveSpatialIndex() {
 	symbolCount := len(p.symbols)
-	
+
 	// Calculate bounds
 	minX, minY := math.MaxFloat64, math.MaxFloat64
 	maxX, maxY := -math.MaxFloat64, -math.MaxFloat64
-	
+
 	for _, sym := range p.symbols {
 		minX = math.Min(minX, sym.Position.X)
 		minY = math.Min(minY, sym.Position.Y)
 		maxX = math.Max(maxX, sym.Position.X)
 		maxY = math.Max(maxY, sym.Position.Y)
 	}
-	
+
 	// Initialize symbol graph
 	p.symbolGraph = make(map[int]*symbolNode, symbolCount)
-	
+
 	// Build symbol cache for fast lookups
 	for i, sym := range p.symbols {
 		p.symbolCache[sym] = i
 	}
-	
+
 	// Decide whether to use QuadTree based on symbol count and distribution
 	useQuadTree := symbolCount > 200
-	
+
 	p.spatialIndex = &AdaptiveSpatialIndex{
 		symbols:     p.symbols,
 		nodes:       make([]*symbolNode, symbolCount),
 		symbolCount: symbolCount,
 		useQuadTree: useQuadTree,
 	}
-	
+
 	if useQuadTree {
 		// Use QuadTree for large symbol counts
 		p.spatialIndex.quadTree = &QuadTree{
@@ -161,14 +161,14 @@ func (p *OptimizedParserV2) buildAdaptiveSpatialIndex() {
 			depth:    0,
 			nodes:    make([]*symbolNode, 0),
 		}
-		
+
 		// Create nodes and add to QuadTree
 		for i, symbol := range p.symbols {
 			node := p.connectionPool.Get().(*symbolNode)
 			node.symbol = symbol
 			node.children = node.children[:0] // Reset slice
 			node.parent = nil
-			
+
 			p.symbolGraph[i] = node
 			p.spatialIndex.nodes[i] = node
 			p.spatialIndex.quadTree.insert(node)
@@ -180,20 +180,20 @@ func (p *OptimizedParserV2) buildAdaptiveSpatialIndex() {
 		if gridSize < 50 {
 			gridSize = 50
 		}
-		
+
 		p.spatialIndex.gridSize = gridSize
 		p.spatialIndex.grid = make(map[gridKey][]*symbolNode, int(gridDimension*gridDimension))
-		
+
 		// Create nodes and add to grid
 		for i, symbol := range p.symbols {
 			node := p.connectionPool.Get().(*symbolNode)
 			node.symbol = symbol
 			node.children = node.children[:0]
 			node.parent = nil
-			
+
 			p.symbolGraph[i] = node
 			p.spatialIndex.nodes[i] = node
-			
+
 			key := gridKey{
 				x: int(symbol.Position.X / gridSize),
 				y: int(symbol.Position.Y / gridSize),
@@ -213,18 +213,18 @@ func (qt *QuadTree) insert(node *symbolNode) {
 			return
 		}
 	}
-	
+
 	// Add to this node
 	qt.nodes = append(qt.nodes, node)
-	
+
 	// Subdivide if necessary
 	if len(qt.nodes) > qt.maxNodes && qt.depth < qt.maxDepth && qt.northWest == nil {
 		qt.subdivide()
-		
+
 		// Redistribute nodes
 		oldNodes := qt.nodes
 		qt.nodes = make([]*symbolNode, 0)
-		
+
 		for _, n := range oldNodes {
 			quadrant := qt.getQuadrant(n.symbol.Position)
 			if quadrant != nil {
@@ -241,7 +241,7 @@ func (qt *QuadTree) subdivide() {
 	halfHeight := qt.bounds.height / 2
 	x := qt.bounds.x
 	y := qt.bounds.y
-	
+
 	qt.northWest = &QuadTree{
 		bounds:   Rectangle{x, y, halfWidth, halfHeight},
 		maxDepth: qt.maxDepth,
@@ -249,7 +249,7 @@ func (qt *QuadTree) subdivide() {
 		depth:    qt.depth + 1,
 		nodes:    make([]*symbolNode, 0),
 	}
-	
+
 	qt.northEast = &QuadTree{
 		bounds:   Rectangle{x + halfWidth, y, halfWidth, halfHeight},
 		maxDepth: qt.maxDepth,
@@ -257,7 +257,7 @@ func (qt *QuadTree) subdivide() {
 		depth:    qt.depth + 1,
 		nodes:    make([]*symbolNode, 0),
 	}
-	
+
 	qt.southWest = &QuadTree{
 		bounds:   Rectangle{x, y + halfHeight, halfWidth, halfHeight},
 		maxDepth: qt.maxDepth,
@@ -265,7 +265,7 @@ func (qt *QuadTree) subdivide() {
 		depth:    qt.depth + 1,
 		nodes:    make([]*symbolNode, 0),
 	}
-	
+
 	qt.southEast = &QuadTree{
 		bounds:   Rectangle{x + halfWidth, y + halfHeight, halfWidth, halfHeight},
 		maxDepth: qt.maxDepth,
@@ -279,17 +279,17 @@ func (qt *QuadTree) getQuadrant(pos detector.Position) *QuadTree {
 	if qt.northWest == nil {
 		return nil
 	}
-	
+
 	midX := qt.bounds.x + qt.bounds.width/2
 	midY := qt.bounds.y + qt.bounds.height/2
-	
+
 	if pos.X < midX {
 		if pos.Y < midY {
 			return qt.northWest
 		}
 		return qt.southWest
 	}
-	
+
 	if pos.Y < midY {
 		return qt.northEast
 	}
@@ -301,14 +301,14 @@ func (qt *QuadTree) query(searchBounds Rectangle, results *[]*symbolNode) {
 	if !qt.intersects(searchBounds) {
 		return
 	}
-	
+
 	// Check nodes at this level
 	for _, node := range qt.nodes {
 		if searchBounds.contains(node.symbol.Position) {
 			*results = append(*results, node)
 		}
 	}
-	
+
 	// Recursively check subdivisions
 	if qt.northWest != nil {
 		qt.northWest.query(searchBounds, results)
@@ -333,7 +333,7 @@ func (qt *QuadTree) intersects(other Rectangle) bool {
 // getNearbyNodes returns nodes within a certain distance using the adaptive index
 func (asi *AdaptiveSpatialIndex) getNearbyNodes(pos detector.Position, maxDist float64) []*symbolNode {
 	results := make([]*symbolNode, 0, 10)
-	
+
 	if asi.useQuadTree && asi.quadTree != nil {
 		// Use QuadTree query
 		searchBounds := Rectangle{
@@ -343,7 +343,7 @@ func (asi *AdaptiveSpatialIndex) getNearbyNodes(pos detector.Position, maxDist f
 			height: maxDist * 2,
 		}
 		asi.quadTree.query(searchBounds, &results)
-		
+
 		// Filter by actual distance
 		filtered := results[:0]
 		maxDistSq := maxDist * maxDist
@@ -362,9 +362,9 @@ func (asi *AdaptiveSpatialIndex) getNearbyNodes(pos detector.Position, maxDist f
 			x: int(pos.X / asi.gridSize),
 			y: int(pos.Y / asi.gridSize),
 		}
-		
+
 		maxDistSq := maxDist * maxDist
-		
+
 		for dx := -cellRadius; dx <= cellRadius; dx++ {
 			for dy := -cellRadius; dy <= cellRadius; dy++ {
 				key := gridKey{x: centerKey.x + dx, y: centerKey.y + dy}
@@ -380,7 +380,7 @@ func (asi *AdaptiveSpatialIndex) getNearbyNodes(pos detector.Position, maxDist f
 			}
 		}
 	}
-	
+
 	return results
 }
 
@@ -393,15 +393,15 @@ func (p *OptimizedParserV2) buildASTParallel(outerCircle *symbolNode) (*Program,
 			topLevelNodes = append(topLevelNodes, node)
 		}
 	}
-	
+
 	if len(topLevelNodes) == 0 {
 		return nil, grimoireErrors.NewError(grimoireErrors.SyntaxError, "Empty program").
 			WithDetails("No symbols found inside the outer circle")
 	}
-	
+
 	// Process top-level nodes in parallel
 	statements := make([]Statement, len(topLevelNodes))
-	
+
 	var wg sync.WaitGroup
 	for i, node := range topLevelNodes {
 		wg.Add(1)
@@ -412,7 +412,7 @@ func (p *OptimizedParserV2) buildASTParallel(outerCircle *symbolNode) (*Program,
 		}(i, node)
 	}
 	wg.Wait()
-	
+
 	// Filter out nil statements
 	validStatements := make([]Statement, 0, len(statements))
 	for _, stmt := range statements {
@@ -420,11 +420,11 @@ func (p *OptimizedParserV2) buildASTParallel(outerCircle *symbolNode) (*Program,
 			validStatements = append(validStatements, stmt)
 		}
 	}
-	
+
 	// Build the program using the parent parser's logic
 	// Store statements temporarily
 	p.Parser.symbolGraph = p.symbolGraph
-	
+
 	// Create a simple program structure
 	return &Program{
 		HasOuterCircle: true,
@@ -439,7 +439,7 @@ func (p *OptimizedParserV2) applyConnections() {
 	for i, sym := range p.symbols {
 		symbolToIndex[sym] = i
 	}
-	
+
 	// Apply connections
 	for _, conn := range p.connections {
 		if fromIdx, ok := symbolToIndex[conn.From]; ok {
@@ -455,9 +455,50 @@ func (p *OptimizedParserV2) applyConnections() {
 
 // inferConnectionsOptimized infers connections using spatial index
 func (p *OptimizedParserV2) inferConnectionsOptimized() {
-	// Use the parent's inferConnections method
-	p.Parser.symbolGraph = p.symbolGraph
-	p.Parser.inferConnections()
+	for idx, node := range p.symbolGraph {
+		if node == nil || node.symbol == nil {
+			continue
+		}
+
+		// Skip if already has outgoing connections
+		if len(node.children) > 0 {
+			continue
+		}
+
+		// Use adaptive spatial index to find nearby nodes
+		nearbyNodes := p.spatialIndex.getNearbyNodes(node.symbol.Position, 150)
+
+		// Find the best connection based on pattern
+		var bestConnection *symbolNode
+		minDistance := math.MaxFloat64
+
+		for _, candidate := range nearbyNodes {
+			if candidate == node || candidate.symbol == nil {
+				continue
+			}
+
+			// Calculate distance
+			dx := candidate.symbol.Position.X - node.symbol.Position.X
+			dy := candidate.symbol.Position.Y - node.symbol.Position.Y
+			distance := math.Sqrt(dx*dx + dy*dy)
+
+			// Skip if too close
+			if distance < 30 {
+				continue
+			}
+
+			// Update if this is the closest valid connection
+			if distance < minDistance {
+				minDistance = distance
+				bestConnection = candidate
+			}
+		}
+
+		// Connect to the best candidate
+		if bestConnection != nil {
+			p.symbolGraph[idx].children = append(p.symbolGraph[idx].children, bestConnection)
+		}
+	}
 }
 
 // Cleanup returns nodes to the pool

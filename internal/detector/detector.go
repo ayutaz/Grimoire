@@ -452,24 +452,24 @@ func (d *Detector) hasLineBetween(binary *image.Gray, from, to Position) bool {
 	// Convert positions to image points
 	x1, y1 := int(from.X), int(from.Y)
 	x2, y2 := int(to.X), int(to.Y)
-	
+
 	// Calculate distance
 	dx := x2 - x1
 	dy := y2 - y1
 	distance := math.Sqrt(float64(dx*dx + dy*dy))
-	
+
 	// Sample points along the line
 	numSamples := int(distance / 2.0) // Sample every 2 pixels
 	if numSamples < 10 {
 		numSamples = 10
 	}
-	
+
 	blackPixels := 0
 	for i := 0; i <= numSamples; i++ {
 		t := float64(i) / float64(numSamples)
 		x := x1 + int(t*float64(dx))
 		y := y1 + int(t*float64(dy))
-		
+
 		// Check if pixel is within bounds
 		if x >= 0 && x < binary.Bounds().Dx() && y >= 0 && y < binary.Bounds().Dy() {
 			if binary.GrayAt(x, y).Y == 0 {
@@ -477,7 +477,7 @@ func (d *Detector) hasLineBetween(binary *image.Gray, from, to Position) bool {
 			}
 		}
 	}
-	
+
 	// Consider it a line if more than 60% of sampled pixels are black
 	return float64(blackPixels) > float64(numSamples)*0.6
 }
