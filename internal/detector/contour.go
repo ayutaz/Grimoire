@@ -288,7 +288,8 @@ func (c *Contour) getAspectRatio() float64 {
 		return 1.0
 	}
 
-	return math.Max(width, height) / math.Min(width, height)
+	// Return width/height ratio
+	return width / height
 }
 
 // mergeCircularContours attempts to merge contours that form a large circle

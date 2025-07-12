@@ -35,6 +35,67 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 	}
 
 	// Check for squares before star detection
+	// First check for small squares with low circularity
+	// Exclude triangles (3 vertices) and high circularity shapes (circles) from this check
+	if contour.Area >= 50 && contour.Area < 500 && vertices != 3 && contour.Circularity < 0.8 {
+		aspectRatio := contour.getAspectRatio()
+		// Now that aspect ratio is width/height, adjust the range
+		// Be more lenient for small shapes that might be distorted
+		maxAspectRatio := 2.0
+		minAspectRatio := 0.5
+		if contour.Area < 150 {
+			maxAspectRatio = 3.5
+			minAspectRatio = 0.28
+		} else if contour.Area < 250 {
+			// Medium small shapes can also be distorted
+			maxAspectRatio = 3.2
+			minAspectRatio = 0.31
+		}
+		if aspectRatio >= minAspectRatio && aspectRatio <= maxAspectRatio {
+			// For small shapes, use bounding box fill ratio as primary indicator
+			bbox := contour.getBoundingBox()
+			bboxArea := float64(bbox.Dx() * bbox.Dy())
+			if bboxArea > 0 {
+				fillRatio := contour.Area / bboxArea
+				// Small squares may have lower fill ratio due to aliasing
+				// Also consider shapes with 4-5 vertices as likely squares
+				if fillRatio >= 0.04 && fillRatio <= 1.0 {
+					// Additional check for very low fill ratio - verify it's square-like
+					if fillRatio < 0.3 {
+						// For very low fill ratio, require specific conditions
+						// Accept if: 4-7 vertices (but not 12 for stars), or moderate aspect ratio, or specific area range
+						condition1 := vertices >= 4 && vertices <= 7
+						condition2 := aspectRatio >= 0.8 && aspectRatio <= 1.25
+						condition3 := contour.Area > 200 && contour.Area < 300 && aspectRatio <= 3.2 && vertices < 10
+
+						// Exclude star-like patterns with many vertices
+						if vertices >= 10 {
+							condition1 = false
+						}
+						if condition1 || condition2 || condition3 {
+							if os.Getenv("GRIMOIRE_DEBUG") != "" {
+								fmt.Printf("Detected small square (low fill) at (%d,%d): "+
+									"area=%.1f, circ=%.2f, aspect=%.2f, fill=%.2f, vertices=%d\n",
+									contour.Center.X, contour.Center.Y, contour.Area, contour.Circularity,
+									aspectRatio, fillRatio, vertices)
+							}
+							return Square
+						}
+					} else {
+						if os.Getenv("GRIMOIRE_DEBUG") != "" {
+							fmt.Printf("Detected small square at (%d,%d): area=%.1f, circ=%.2f, aspect=%.2f, fill=%.2f, vertices=%d\n",
+								contour.Center.X, contour.Center.Y, contour.Area, contour.Circularity, aspectRatio, fillRatio, vertices)
+						}
+						return Square
+					}
+				} else if os.Getenv("GRIMOIRE_DEBUG") != "" {
+					fmt.Printf("Small shape rejected at (%d,%d): area=%.1f, circ=%.2f, aspect=%.2f, fill=%.2f, vertices=%d\n",
+						contour.Center.X, contour.Center.Y, contour.Area, contour.Circularity, aspectRatio, fillRatio, vertices)
+				}
+			}
+		}
+	}
+
 	// Special check for squares with moderate circularity (0.4-0.6)
 	// These are often misclassified as stars
 	if contour.Circularity >= 0.4 && contour.Circularity <= 0.6 &&
@@ -70,12 +131,30 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 
 	// Check for 4 vertices first (square detection)
 	if vertices == 4 {
+		// First try standard square detection
 		if d.isSquare(approx) {
 			return Square
 		}
 		// Check if it's actually a rounded square misclassified as circle
 		if d.isRoundedSquare(contour, approx) {
 			return Square
+		}
+		// For shapes with exactly 4 vertices but low circularity,
+		// check aspect ratio and fill ratio
+		aspectRatio := contour.getAspectRatio()
+		if aspectRatio >= 0.5 && aspectRatio <= 2.0 {
+			bbox := contour.getBoundingBox()
+			bboxArea := float64(bbox.Dx() * bbox.Dy())
+			if bboxArea > 0 {
+				fillRatio := contour.Area / bboxArea
+				if fillRatio >= 0.4 { // Lower threshold for 4-vertex shapes
+					if os.Getenv("GRIMOIRE_DEBUG") != "" {
+						fmt.Printf("Detected 4-vertex square at (%d,%d): circ=%.2f, area=%.1f, aspect=%.2f, fill=%.2f\n",
+							contour.Center.X, contour.Center.Y, contour.Circularity, contour.Area, aspectRatio, fillRatio)
+					}
+					return Square
+				}
+			}
 		}
 	}
 
@@ -87,16 +166,29 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 	// Note: Removed improveSquareDetection as it was too aggressive
 
 	// Additional check for squares with low circularity but square-like area
-	// Skip if it might be a star (very low circularity)
-	if contour.Circularity >= 0.35 && contour.Circularity <= 0.85 &&
-		contour.Area > 200 && contour.Area < 1500 &&
-		contour.getAspectRatio() > 0.7 && contour.getAspectRatio() < 1.3 {
+	// Include shapes with very low circularity if they have square-like properties
+	// Exclude triangles (3 vertices) from this check
+	if contour.Circularity >= 0.01 && contour.Circularity <= 0.85 &&
+		contour.Area > 50 && contour.Area < 1500 &&
+		contour.getAspectRatio() > 0.5 && contour.getAspectRatio() < 2.0 &&
+		vertices != 3 {
 		// Check if this might be a square based on fill ratio
 		bbox := contour.getBoundingBox()
 		bboxArea := float64(bbox.Dx() * bbox.Dy())
-		fillRatio := contour.Area / bboxArea
-		if fillRatio > 0.7 && fillRatio < 0.95 {
-			return Square
+		if bboxArea > 0 {
+			fillRatio := contour.Area / bboxArea
+			// Adjust fill ratio threshold based on shape size
+			minFillRatio := 0.5
+			if contour.Area > 200 {
+				minFillRatio = 0.7
+			}
+			if fillRatio > minFillRatio && fillRatio < 0.95 {
+				if os.Getenv("GRIMOIRE_DEBUG") != "" {
+					fmt.Printf("Detected square with low circularity at (%d,%d): circ=%.2f, area=%.1f, aspect=%.2f, fill=%.2f\n",
+						contour.Center.X, contour.Center.Y, contour.Circularity, contour.Area, contour.getAspectRatio(), fillRatio)
+				}
+				return Square
+			}
 		}
 	}
 
@@ -134,7 +226,9 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 	switch vertices {
 	case 3:
 		// Check if it's an operator first (less than or greater than)
-		if contour.Area > 200 && contour.getAspectRatio() >= 1.4 {
+		aspectRatio := contour.getAspectRatio()
+		// Accept both wide (> 1.4) and tall (< 0.71) triangles as potential operators
+		if contour.Area > 200 && (aspectRatio >= 1.4 || aspectRatio <= 0.71) {
 			// Check if it's a less than or greater than operator
 			if symbolType := d.classifyOperator(contour); symbolType != Unknown {
 				return symbolType
@@ -307,9 +401,10 @@ func (d *Detector) isSquare(vertices []image.Point) bool {
 		sides[i] = distance(vertices[i], vertices[j])
 	}
 
-	// Check if all sides are within 30% of each other (more lenient)
+	// Check if all sides are within 50% of each other (more lenient for small/distorted squares)
 	minSide := sides[0]
 	maxSide := sides[0]
+	avgSide := 0.0
 	for _, side := range sides {
 		if side < minSide {
 			minSide = side
@@ -317,10 +412,17 @@ func (d *Detector) isSquare(vertices []image.Point) bool {
 		if side > maxSide {
 			maxSide = side
 		}
+		avgSide += side
 	}
+	avgSide /= 4.0
 
-	// More lenient check for square-like shapes
-	if (maxSide-minSide)/minSide > 0.3 {
+	// More lenient check for square-like shapes, especially for small shapes
+	// Allow up to 50% variation for very small shapes
+	maxVariation := 0.3
+	if avgSide < 20 { // For small squares
+		maxVariation = 0.5
+	}
+	if minSide > 0 && (maxSide-minSide)/minSide > maxVariation {
 		return false
 	}
 
@@ -335,8 +437,12 @@ func (d *Detector) isSquare(vertices []image.Point) bool {
 		// Check if angle is close to 90 degrees (pi/2)
 		// The angle might be negative, so we need to handle that
 		absAngle := math.Abs(angle)
-		// Use 15 degree tolerance for stricter square detection
-		if math.Abs(absAngle-math.Pi/2) > math.Pi/12 { // 15 degree tolerance
+		// Use 30 degree tolerance for small/distorted squares
+		tolerance := math.Pi / 12 // 15 degrees
+		if avgSide < 20 {         // For small squares, be more lenient
+			tolerance = math.Pi / 6 // 30 degrees
+		}
+		if math.Abs(absAngle-math.Pi/2) > tolerance {
 			return false
 		}
 	}
@@ -346,21 +452,31 @@ func (d *Detector) isSquare(vertices []image.Point) bool {
 
 // isRoundedSquare checks if a contour is a rounded square
 func (d *Detector) isRoundedSquare(contour Contour, approx []image.Point) bool {
-	// Check aspect ratio
+	// Check aspect ratio - be more lenient for small shapes
 	aspectRatio := contour.getAspectRatio()
-	if aspectRatio < 0.8 || aspectRatio > 1.2 {
+	maxAspectDiff := 0.2
+	if contour.Area < 200 {
+		maxAspectDiff = 0.5 // More lenient for small shapes
+	}
+	if aspectRatio < (1.0-maxAspectDiff) || aspectRatio > (1.0+maxAspectDiff) {
 		return false
 	}
 
 	// Check if the contour fills most of its bounding box
 	bbox := contour.getBoundingBox()
 	bboxArea := float64(bbox.Dx() * bbox.Dy())
-	fillRatio := contour.Area / bboxArea
+	if bboxArea > 0 {
+		fillRatio := contour.Area / bboxArea
 
-	// Squares fill about 80-90% of their bounding box
-	// Circles fill about 78.5% (pi/4)
-	if fillRatio > 0.82 && fillRatio < 0.95 {
-		return true
+		// Squares fill about 80-90% of their bounding box
+		// Be more lenient for small shapes due to aliasing
+		minFillRatio := 0.82
+		if contour.Area < 200 {
+			minFillRatio = 0.6
+		}
+		if fillRatio > minFillRatio && fillRatio < 0.95 {
+			return true
+		}
 	}
 
 	return false
@@ -427,7 +543,25 @@ func (d *Detector) isDoubleCircle(contour Contour) bool {
 	actualArea := contour.Area
 
 	// Double circle will have less area than a filled circle
-	return actualArea < expectedArea*0.3 && actualArea > expectedArea*0.1
+	// Relaxed the upper bound from 0.3 to 0.6 to catch more double circles
+	// Some double circles might have thicker rings
+	fillRatio := actualArea / expectedArea
+
+	if os.Getenv("GRIMOIRE_DEBUG") != "" {
+		fmt.Printf("Checking double circle at (%d,%d): area=%.1f, expected=%.1f, fill=%.2f, circ=%.2f\n",
+			contour.Center.X, contour.Center.Y, actualArea, expectedArea, fillRatio, contour.Circularity)
+	}
+
+	// Additional check for small circles that might be double circles
+	// Small double circles might have different characteristics
+	if contour.Area < 500 && contour.Circularity > 0.8 {
+		// For small circles, use a more lenient fill ratio range
+		// But not too thin (at least 10% fill ratio for valid double circles)
+		return fillRatio < 0.7 && fillRatio > 0.1
+	}
+
+	// Standard double circle check
+	return fillRatio < 0.6 && fillRatio > 0.1
 }
 
 // classifyOperator attempts to classify special operator symbols
@@ -482,14 +616,16 @@ func (d *Detector) classifyOperator(contour Contour) SymbolType {
 	}
 
 	// Equal (=) - two parallel lines
-	if aspectRatio > 2.0 && d.isParallelLines(contour) {
+	// Equal sign is typically wider than tall
+	if (aspectRatio > 2.0 || aspectRatio < 0.5) && d.isParallelLines(contour) {
 		return Equal
 	}
 
 	// Less than (<) and Greater than (>)
 	// Require specific triangular shape with clear directionality
 	// Check aspect ratio to distinguish from regular triangles
-	if vertices == 3 && contour.Area > 200 && aspectRatio >= 1.4 {
+	// Accept both wide (> 1.4) and tall (< 0.71) triangles as operators
+	if vertices == 3 && contour.Area > 200 && (aspectRatio >= 1.4 || aspectRatio <= 0.71) {
 		if d.isPointingLeft(approx) {
 			return LessThan
 		} else if d.isPointingRight(approx) {
