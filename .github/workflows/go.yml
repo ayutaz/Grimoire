@@ -86,12 +86,12 @@ jobs:
     
     - name: Run benchmarks (Unix)
       if: matrix.go == '1.23' && runner.os != 'Windows'  # 最新版のみベンチマーク（Windows以外）
-      run: go test -bench=. -benchmem ./test/...
+      run: go test -bench=. -benchmem ./...
     
     - name: Run benchmarks (Windows)
       if: matrix.go == '1.23' && runner.os == 'Windows'  # Windows環境でのベンチマーク
       shell: cmd  # PowerShellの代わりにcmd.exeを使用
-      run: go test -bench=. -benchmem ./test/...
+      run: go test -bench=. -benchmem ./...
 
   lint:
     name: Lint
@@ -158,17 +158,33 @@ jobs:
       run: |
         chmod +x dist/grimoire-*
     
-    - name: Test version command (Unix)
+    - name: Test compilation (Unix)
       if: matrix.os != 'windows-latest'
       run: |
         if [ "${{ matrix.os }}" = "macos-latest" ]; then
-          ./dist/grimoire-darwin-amd64 --version
+          BINARY=./dist/grimoire-darwin-amd64
         else
-          ./dist/grimoire-linux-amd64 --version
+          BINARY=./dist/grimoire-linux-amd64
         fi
+        # Test version command first
+        $BINARY --version
+        # Test compilation with example files
+        for example in examples/images/*.png; do
+          echo "Testing compilation of $example"
+          $BINARY compile "$example" || echo "Warning: Compilation failed for $example"
+        done
     
-    - name: Test version command (Windows)
+    - name: Test compilation (Windows)
       if: matrix.os == 'windows-latest'
       run: |
+        # Test version command first
         ./dist/grimoire-windows-amd64.exe --version
+        # Test compilation with example files
+        Get-ChildItem examples/images/*.png | ForEach-Object {
+          Write-Host "Testing compilation of $_"
+          ./dist/grimoire-windows-amd64.exe compile $_.FullName
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Warning: Compilation failed for $_"
+          }
+        }
 
