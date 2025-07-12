@@ -31,7 +31,6 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 		if (contour.Area > 5000 || contour.Perimeter > 500) && d.isOuterCircle(contour) {
 			return OuterCircle
 		}
-		
 		// Check if it's a rounded square before classifying as circle
 		if vertices >= 3 && vertices <= 8 && d.isRoundedSquare(contour, approx) {
 			return Square
