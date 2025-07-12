@@ -76,7 +76,7 @@ func (v *ImageValidator) ValidateAndSanitizePath(inputPath string) (string, erro
 	if strings.Contains(inputPath, "../..") || strings.Contains(inputPath, "..\\..") {
 		return "", fmt.Errorf("path traversal attempt detected: %s", inputPath)
 	}
-	
+
 	// Check if the path attempts to go above the working directory
 	if strings.HasPrefix(inputPath, "../../../") {
 		return "", fmt.Errorf("path traversal attempt detected: %s", inputPath)
