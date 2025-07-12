@@ -126,7 +126,9 @@ func TestE2E_DebugCommand(t *testing.T) {
 
 	// Should show detected symbols
 	outputStr := string(output)
-	assert.Contains(t, outputStr, "Detected")
+	// Check for either English or Japanese "Detected" message
+	hasDetected := strings.Contains(outputStr, "Detected") || strings.Contains(outputStr, "検出しました")
+	assert.True(t, hasDetected, "Should contain detected message")
 	// Once implemented: assert.Contains(t, outputStr, "outer_circle")
 }
 

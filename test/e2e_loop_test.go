@@ -233,10 +233,12 @@ func TestE2E_ComplexProgram(t *testing.T) {
 		connectionCount := 0
 
 		for _, line := range lines {
-			if strings.Contains(line, "Type:") {
+			// Check for symbol lines in either English or Japanese
+			if strings.Contains(line, "Type:") || strings.Contains(line, "タイプ:") {
 				symbolCount++
 			}
-			if strings.Contains(line, "Connection") || strings.Contains(line, "->") {
+			// Connection lines always contain "->"
+			if strings.Contains(line, "->") {
 				connectionCount++
 			}
 		}
