@@ -160,30 +160,42 @@ func (l *Localizer) loadMessages() {
 		{ID: "msg.error_occurred", En: "An error occurred", Ja: "エラーが発生しました"},
 
 		// Suggestions
-		{ID: "suggest.check_file_path", En: "Please check the file path and ensure the file exists", Ja: "ファイルパスを確認し、ファイルが存在することを確認してください"},
-		{ID: "suggest.supported_formats", En: "Grimoire supports PNG and JPEG image formats", Ja: "GrimoireはPNGおよびJPEG画像形式をサポートしています"},
-		{ID: "suggest.ensure_clear_symbols", En: "Ensure the image contains clear magical symbols with good contrast", Ja: "画像に明確でコントラストの良い魔法シンボルが含まれていることを確認してください"},
+		{ID: "suggest.check_file_path", En: "Please check the file path and ensure the file exists",
+			Ja: "ファイルパスを確認し、ファイルが存在することを確認してください"},
+		{ID: "suggest.supported_formats", En: "Grimoire supports PNG and JPEG image formats",
+			Ja: "GrimoireはPNGおよびJPEG画像形式をサポートしています"},
+		{ID: "suggest.ensure_clear_symbols", En: "Ensure the image contains clear magical symbols with good contrast",
+			Ja: "画像に明確でコントラストの良い魔法シンボルが含まれていることを確認してください"},
 		{ID: "suggest.draw_clear_circle", En: "Draw a clear circle around your entire program", Ja: "プログラム全体を囲む明確な円を描いてください"},
-		{ID: "suggest.check_symbol_placement", En: "Check the symbol placement and connections in your diagram", Ja: "図のシンボルの配置と接続を確認してください"},
-		{ID: "suggest.check_python_installed", En: "Check that Python 3 is installed and in your PATH", Ja: "Python 3がインストールされ、PATHに含まれていることを確認してください"},
+		{ID: "suggest.check_symbol_placement", En: "Check the symbol placement and connections in your diagram",
+			Ja: "図のシンボルの配置と接続を確認してください"},
+		{ID: "suggest.check_python_installed", En: "Check that Python 3 is installed and in your PATH",
+			Ja: "Python 3がインストールされ、PATHに含まれていることを確認してください"},
 
 		// Details
-		{ID: "detail.all_programs_need_circle", En: "All Grimoire programs must be enclosed in a magic circle", Ja: "すべてのGrimoireプログラムは魔法陣で囲まれている必要があります"},
-		{ID: "detail.symbol_type_at_position", En: "Symbol type: %s at position (%.0f, %.0f)", Ja: "シンボルタイプ: %s 位置: (%.0f, %.0f)"},
+		{ID: "detail.all_programs_need_circle", En: "All Grimoire programs must be enclosed in a magic circle",
+			Ja: "すべてのGrimoireプログラムは魔法陣で囲まれている必要があります"},
+		{ID: "detail.symbol_type_at_position", En: "Symbol type: %s at position (%.0f, %.0f)",
+			Ja: "シンボルタイプ: %s 位置: (%.0f, %.0f)"},
 		{ID: "detail.expected_at_position", En: "Expected: %s at position (%.0f, %.0f)", Ja: "期待される値: %s 位置: (%.0f, %.0f)"},
 
 		// CLI messages
 		{ID: "cli.description_short", En: "A visual programming language using magic circles", Ja: "魔法陣を使用するビジュアルプログラミング言語"},
-		{ID: "cli.description_long", En: "Grimoire is a visual programming language where programs are expressed as magic circles.\nDraw your spells and watch them come to life!", Ja: "Grimoireはプログラムを魔法陣として表現するビジュアルプログラミング言語です。\n呪文を描いて、それが実現するのを見てください！"},
+		{ID: "cli.description_long",
+			En: "Grimoire is a visual programming language where programs are expressed as magic circles.\n" +
+				"Draw your spells and watch them come to life!",
+			Ja: "Grimoireはプログラムを魔法陣として表現するビジュアルプログラミング言語です。\n呪文を描いて、それが実現するのを見てください！"},
 		{ID: "cli.run_description", En: "Run a Grimoire program", Ja: "Grimoireプログラムを実行"},
 		{ID: "cli.compile_description", En: "Compile a Grimoire program to Python", Ja: "GrimoireプログラムをPythonにコンパイル"},
-		{ID: "cli.debug_description", En: "Debug a Grimoire program (show detected symbols)", Ja: "Grimoireプログラムをデバッグ（検出されたシンボルを表示）"},
+		{ID: "cli.debug_description", En: "Debug a Grimoire program (show detected symbols)",
+			Ja: "Grimoireプログラムをデバッグ（検出されたシンボルを表示）"},
 		{ID: "cli.validate_description", En: "Validate a magic circle for correctness", Ja: "魔法陣の正しさを検証"},
 		{ID: "cli.format_description", En: "Format and beautify a magic circle", Ja: "魔法陣をフォーマットして美しくする"},
 		{ID: "cli.optimize_description", En: "Optimize a magic circle program", Ja: "魔法陣プログラムを最適化"},
 		{ID: "cli.output_flag_description", En: "Output file path", Ja: "出力ファイルパス"},
 		{ID: "cli.format_output_flag_description", En: "Output formatted image path", Ja: "フォーマット済み画像の出力パス"},
-		{ID: "cli.optimize_output_flag_description", En: "Output optimized code path (use - for stdout)", Ja: "最適化されたコードの出力パス（標準出力には-を使用）"},
+		{ID: "cli.optimize_output_flag_description", En: "Output optimized code path (use - for stdout)",
+			Ja: "最適化されたコードの出力パス（標準出力には-を使用）"},
 		{ID: "cli.language_flag_description", En: "Language (en/ja)", Ja: "言語 (en/ja)"},
 		{ID: "cli.compile_success", En: "Successfully compiled to %s\n", Ja: "%s へのコンパイルに成功しました\n"},
 
@@ -192,9 +204,11 @@ func (l *Localizer) loadMessages() {
 		{ID: "debug.detected_summary", En: "Detected %d symbols and %d connections\n\n", Ja: "%d個のシンボルと%d個の接続を検出しました\n\n"},
 		{ID: "debug.symbols_header", En: "Symbols:", Ja: "シンボル:"},
 		{ID: "debug.connections_header", En: "\nConnections:", Ja: "\n接続:"},
-		{ID: "debug.symbol_info", En: "  [%d] Type: %-15s Position: (%.0f, %.0f) Size: %.1f Pattern: %s\n", Ja: "  [%d] タイプ: %-15s 位置: (%.0f, %.0f) サイズ: %.1f パターン: %s\n"},
+		{ID: "debug.symbol_info",
+			En: "  [%d] Type: %-15s Position: (%.0f, %.0f) Size: %.1f Pattern: %s\n",
+			Ja: "  [%d] タイプ: %-15s 位置: (%.0f, %.0f) サイズ: %.1f パターン: %s\n"},
 		{ID: "debug.connection_info", En: "  [%d] %s -> %s (%s)\n", Ja: "  [%d] %s -> %s (%s)\n"},
-		
+
 		// Validate messages
 		{ID: "validate.no_outer_circle", En: "No outer magic circle found", Ja: "外周の魔法陣が見つかりません"},
 		{ID: "validate.no_main_function", En: "No main function (double circle) found", Ja: "メイン関数（二重円）が見つかりません"},
@@ -204,17 +218,19 @@ func (l *Localizer) loadMessages() {
 		{ID: "validate.connections_found", En: "  - Connections found: %d\n", Ja: "  - 接続数: %d\n"},
 		{ID: "validate.issues_found", En: "✗ Validation issues found:\n", Ja: "✗ 検証で問題が見つかりました:\n"},
 		{ID: "validate.failed", En: "Magic circle validation failed", Ja: "魔法陣の検証に失敗しました"},
-		
+
 		// Format messages
 		{ID: "format.analyzing", En: "Analyzing magic circle structure...\n", Ja: "魔法陣の構造を分析中...\n"},
 		{ID: "format.align_symbols", En: "Consider aligning %s and %s symbols", Ja: "%sと%sのシンボルを整列させることを検討してください"},
 		{ID: "format.straighten_connection", En: "Straighten connection between %s and %s", Ja: "%sと%s間の接続を真っ直ぐにしてください"},
 		{ID: "format.well_formatted", En: "✓ Magic circle is well-formatted!\n", Ja: "✓ 魔法陣は適切にフォーマットされています！\n"},
 		{ID: "format.suggestions", En: "Formatting suggestions:\n", Ja: "フォーマットの提案:\n"},
-		{ID: "format.output_note", En: "\nNote: Automatic formatting to %s is not yet implemented.\n", Ja: "\n注意: %sへの自動フォーマットはまだ実装されていません。\n"},
-		
+		{ID: "format.output_note", En: "\nNote: Automatic formatting to %s is not yet implemented.\n",
+			Ja: "\n注意: %sへの自動フォーマットはまだ実装されていません。\n"},
+
 		// Optimize messages
-		{ID: "optimize.analyzing", En: "Analyzing program for optimization opportunities...\n", Ja: "最適化の機会を探してプログラムを分析中...\n"},
+		{ID: "optimize.analyzing", En: "Analyzing program for optimization opportunities...\n",
+			Ja: "最適化の機会を探してプログラムを分析中...\n"},
 		{ID: "optimize.unused_variable", En: "Unused variable: %s", Ja: "未使用の変数: %s"},
 		{ID: "optimize.duplicate_operation", En: "Duplicate operation detected", Ja: "重複した操作が検出されました"},
 		{ID: "optimize.well_optimized", En: "✓ Program is well-optimized!\n", Ja: "✓ プログラムは十分に最適化されています！\n"},

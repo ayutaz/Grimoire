@@ -16,10 +16,10 @@ type OptimizedParser struct {
 
 // SpatialIndex provides fast spatial lookups for symbols
 type SpatialIndex struct {
-	symbols    []*detector.Symbol
-	nodes      []*symbolNode
-	gridSize   float64
-	grid       map[gridKey][]*symbolNode
+	symbols  []*detector.Symbol
+	nodes    []*symbolNode
+	gridSize float64
+	grid     map[gridKey][]*symbolNode
 }
 
 type gridKey struct {
@@ -109,11 +109,11 @@ func (si *SpatialIndex) getGridKey(pos detector.Position) gridKey {
 // getNearbyNodes returns nodes within a certain distance
 func (si *SpatialIndex) getNearbyNodes(pos detector.Position, maxDist float64) []*symbolNode {
 	var result []*symbolNode
-	
+
 	// Calculate grid cells to check
 	cellRadius := int(math.Ceil(maxDist / si.gridSize))
 	centerKey := si.getGridKey(pos)
-	
+
 	for dx := -cellRadius; dx <= cellRadius; dx++ {
 		for dy := -cellRadius; dy <= cellRadius; dy++ {
 			key := gridKey{x: centerKey.x + dx, y: centerKey.y + dy}
@@ -127,7 +127,7 @@ func (si *SpatialIndex) getNearbyNodes(pos detector.Position, maxDist float64) [
 			}
 		}
 	}
-	
+
 	return result
 }
 
@@ -215,13 +215,13 @@ func (p *OptimizedParser) processNodeBatch(nodes []*symbolNode) {
 // connectMainEntry connects main entry to symbols below it
 func (p *OptimizedParser) connectMainEntry(node *symbolNode) {
 	mainY := node.symbol.Position.Y
-	
+
 	// Find symbols below main using spatial index
 	candidates := p.spatialIndex.getNearbyNodes(
 		detector.Position{X: node.symbol.Position.X, Y: mainY + 100},
 		150,
 	)
-	
+
 	for _, other := range candidates {
 		if other != node && other.symbol.Position.Y > mainY {
 			// Check horizontal alignment
@@ -238,27 +238,27 @@ func (p *OptimizedParser) connectMainEntry(node *symbolNode) {
 func (p *OptimizedParser) connectOperator(node *symbolNode) {
 	// Find nearby squares using spatial index
 	nearbyNodes := p.spatialIndex.getNearbyNodes(node.symbol.Position, 150)
-	
+
 	var operands []*symbolNode
 	for _, other := range nearbyNodes {
 		if other != node && other.symbol.Type == detector.Square {
 			operands = append(operands, other)
 		}
 	}
-	
+
 	// Sort by distance to get closest operands
 	sort.Slice(operands, func(i, j int) bool {
 		dist1 := distance(node.symbol.Position, operands[i].symbol.Position)
 		dist2 := distance(node.symbol.Position, operands[j].symbol.Position)
 		return dist1 < dist2
 	})
-	
+
 	// Connect closest operands (usually 2 for binary operators)
 	maxOperands := 2
 	if node.symbol.Type == detector.LogicalNot {
 		maxOperands = 1
 	}
-	
+
 	for i := 0; i < len(operands) && i < maxOperands; i++ {
 		operands[i].children = append(operands[i].children, node)
 	}
@@ -267,14 +267,14 @@ func (p *OptimizedParser) connectOperator(node *symbolNode) {
 // connectStar connects stars to nearest expressions above
 func (p *OptimizedParser) connectStar(node *symbolNode) {
 	starPos := node.symbol.Position
-	
+
 	// Find symbols above using spatial index
 	searchPos := detector.Position{X: starPos.X, Y: starPos.Y - 75}
 	candidates := p.spatialIndex.getNearbyNodes(searchPos, 150)
-	
+
 	var nearest *symbolNode
 	minDist := math.MaxFloat64
-	
+
 	for _, other := range candidates {
 		if other != node && other.symbol.Position.Y < starPos.Y {
 			dist := distance(starPos, other.symbol.Position)
@@ -284,7 +284,7 @@ func (p *OptimizedParser) connectStar(node *symbolNode) {
 			}
 		}
 	}
-	
+
 	if nearest != nil && minDist < 150*150 { // Using squared distance
 		nearest.children = append(nearest.children, node)
 		node.parent = nearest

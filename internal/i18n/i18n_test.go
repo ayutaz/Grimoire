@@ -157,7 +157,7 @@ func TestTranslateF(t *testing.T) {
 func TestGlobalFunctions(t *testing.T) {
 	// Set to Japanese
 	SetLanguage(Japanese)
-	
+
 	if GetLanguage() != Japanese {
 		t.Errorf("GetLanguage() = %v, want %v", GetLanguage(), Japanese)
 	}
@@ -178,7 +178,7 @@ func TestGlobalFunctions(t *testing.T) {
 
 	// Switch to English
 	SetLanguage(English)
-	
+
 	if GetLanguage() != English {
 		t.Errorf("GetLanguage() = %v, want %v", GetLanguage(), English)
 	}

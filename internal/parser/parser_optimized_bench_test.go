@@ -15,8 +15,9 @@ func createLargeBenchmarkSymbols(numSymbols int) []*detector.Symbol {
 		{Type: detector.DoubleCircle, Position: detector.Position{X: 400, Y: 100}},
 	}
 
-	rand.Seed(42) // Fixed seed for reproducible benchmarks
-	
+	// Use a fixed seed for reproducible benchmarks
+	rng := rand.New(rand.NewSource(42))
+
 	// Add random symbols
 	for i := 0; i < numSymbols-2; i++ {
 		symbolTypes := []detector.SymbolType{
@@ -25,32 +26,32 @@ func createLargeBenchmarkSymbols(numSymbols int) []*detector.Symbol {
 			detector.Convergence, detector.Divergence,
 			detector.Amplification, detector.Distribution,
 		}
-		
-		symbolType := symbolTypes[rand.Intn(len(symbolTypes))]
-		x := float64(100 + rand.Intn(600))
-		y := float64(150 + rand.Intn(600))
-		
+
+		symbolType := symbolTypes[rng.Intn(len(symbolTypes))]
+		x := float64(100 + rng.Intn(600))
+		y := float64(150 + rng.Intn(600))
+
 		symbol := &detector.Symbol{
 			Type:     symbolType,
 			Position: detector.Position{X: x, Y: y},
 		}
-		
+
 		// Add pattern for squares
 		if symbolType == detector.Square {
 			patterns := []string{"empty", "dot", "double_dot", "triple_dot"}
-			symbol.Pattern = patterns[rand.Intn(len(patterns))]
+			symbol.Pattern = patterns[rng.Intn(len(patterns))]
 		}
-		
+
 		symbols = append(symbols, symbol)
 	}
-	
+
 	return symbols
 }
 
 // createDenseConnections creates connections between nearby symbols
 func createDenseConnections(symbols []*detector.Symbol, density float64) []detector.Connection {
 	var connections []detector.Connection
-	
+
 	for i := 0; i < len(symbols); i++ {
 		for j := i + 1; j < len(symbols); j++ {
 			if rand.Float64() < density {
@@ -58,7 +59,7 @@ func createDenseConnections(symbols []*detector.Symbol, density float64) []detec
 				dx := symbols[i].Position.X - symbols[j].Position.X
 				dy := symbols[i].Position.Y - symbols[j].Position.Y
 				dist := dx*dx + dy*dy
-				
+
 				if dist < 150*150 { // Within connection range
 					connections = append(connections, detector.Connection{
 						From: symbols[i],
@@ -68,7 +69,7 @@ func createDenseConnections(symbols []*detector.Symbol, density float64) []detec
 			}
 		}
 	}
-	
+
 	return connections
 }
 
@@ -87,7 +88,7 @@ func BenchmarkParserComparison(b *testing.B) {
 	for _, tc := range testCases {
 		symbols := createLargeBenchmarkSymbols(tc.numSymbols)
 		connections := createDenseConnections(symbols, tc.density)
-		
+
 		b.Run(fmt.Sprintf("Standard_%dsymbols", tc.numSymbols), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -95,7 +96,7 @@ func BenchmarkParserComparison(b *testing.B) {
 				_, _ = parser.Parse(symbols, connections)
 			}
 		})
-		
+
 		b.Run(fmt.Sprintf("Optimized_%dsymbols", tc.numSymbols), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -109,10 +110,10 @@ func BenchmarkParserComparison(b *testing.B) {
 // Benchmark symbol graph building
 func BenchmarkSymbolGraphBuilding(b *testing.B) {
 	testCases := []int{50, 100, 200, 500}
-	
+
 	for _, numSymbols := range testCases {
 		symbols := createLargeBenchmarkSymbols(numSymbols)
-		
+
 		b.Run(fmt.Sprintf("Standard_%dsymbols", numSymbols), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -121,7 +122,7 @@ func BenchmarkSymbolGraphBuilding(b *testing.B) {
 				parser.buildSymbolGraph()
 			}
 		})
-		
+
 		b.Run(fmt.Sprintf("Optimized_%dsymbols", numSymbols), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -137,10 +138,10 @@ func BenchmarkSymbolGraphBuilding(b *testing.B) {
 // Benchmark connection inference
 func BenchmarkConnectionInference(b *testing.B) {
 	testCases := []int{50, 100, 200}
-	
+
 	for _, numSymbols := range testCases {
 		symbols := createLargeBenchmarkSymbols(numSymbols)
-		
+
 		b.Run(fmt.Sprintf("Standard_%dsymbols", numSymbols), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -150,7 +151,7 @@ func BenchmarkConnectionInference(b *testing.B) {
 				parser.inferConnections()
 			}
 		})
-		
+
 		b.Run(fmt.Sprintf("Optimized_%dsymbols", numSymbols), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -168,11 +169,11 @@ func BenchmarkConnectionInference(b *testing.B) {
 func BenchmarkSpatialIndex(b *testing.B) {
 	numSymbols := 500
 	symbols := createLargeBenchmarkSymbols(numSymbols)
-	
+
 	parser := NewOptimizedParser()
 	parser.symbols = symbols
 	parser.buildSpatialIndex()
-	
+
 	b.Run("PointLookup", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -183,7 +184,7 @@ func BenchmarkSpatialIndex(b *testing.B) {
 			_ = parser.spatialIndex.getNearbyNodes(pos, 150)
 		}
 	})
-	
+
 	b.Run("RangeLookup_Small", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -194,7 +195,7 @@ func BenchmarkSpatialIndex(b *testing.B) {
 			_ = parser.spatialIndex.getNearbyNodes(pos, 50)
 		}
 	})
-	
+
 	b.Run("RangeLookup_Large", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -218,14 +219,14 @@ func BenchmarkExpressionParsing(b *testing.B) {
 		{Type: detector.Amplification, Position: detector.Position{X: 250, Y: 200}},
 		{Type: detector.Star, Position: detector.Position{X: 250, Y: 300}},
 	}
-	
+
 	parser := NewParser()
 	parser.symbols = symbols
 	parser.buildSymbolGraph()
 	parser.inferConnections()
-	
+
 	cache := NewExpressionCache()
-	
+
 	b.Run("WithoutCache", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -235,13 +236,13 @@ func BenchmarkExpressionParsing(b *testing.B) {
 			}
 		}
 	})
-	
+
 	b.Run("WithCache", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			for idx := range symbols {
 				node := parser.symbolGraph[idx]
-				
+
 				if expr, ok := cache.get(node); ok {
 					_ = expr
 				} else {
@@ -300,18 +301,18 @@ func BenchmarkStatementParsing(b *testing.B) {
 			},
 		},
 	}
-	
+
 	for _, tc := range statementTypes {
 		b.Run(tc.name, func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				parser := NewParser()
 				parser.symbols = []*detector.Symbol{tc.symbol}
-				
+
 				if tc.setup != nil {
 					tc.setup(parser)
 				}
-				
+
 				parser.buildSymbolGraph()
 				node := parser.symbolGraph[0]
 				_ = parser.parseStatement(node)

@@ -25,62 +25,62 @@ func TestDebugCommandSuccess(t *testing.T) {
 	// Create a realistic test image with outer circle and symbols
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "debug_test.png")
-	
+
 	// Create a more realistic image
 	img := image.NewRGBA(image.Rect(0, 0, 500, 500))
 	draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
-	
+
 	// Draw outer circle (thick)
 	drawCircle(img, 250, 250, 200, 195, color.Black)
-	
+
 	// Draw a star in the center
 	drawStar(img, 250, 250, 30, color.Black)
-	
+
 	// Draw a small circle
 	drawCircle(img, 150, 150, 25, 20, color.Black)
-	
+
 	// Draw a square
 	drawSquare(img, 350, 150, 40, color.Black)
-	
+
 	// Draw connections
 	drawLine(img, 250, 250, 150, 150, color.Black)
 	drawLine(img, 250, 250, 350, 150, color.Black)
-	
+
 	// Save the image
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
 	err = png.Encode(f, img)
 	require.NoError(t, err)
 	f.Close()
-	
+
 	// Run debug command
 	cmd := &cobra.Command{}
 	args := []string{testImage}
-	
+
 	// Capture stdout
 	oldStdout := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
-	
+
 	err = debugCommand(cmd, args)
-	
+
 	w.Close()
 	os.Stdout = oldStdout
-	
+
 	// Read output
 	var buf bytes.Buffer
 	_, _ = buf.ReadFrom(r)
 	output := buf.String()
-	
+
 	// Verify success
 	assert.NoError(t, err, "Debug command should succeed")
 	assert.Contains(t, output, "=== ")
 	assert.Contains(t, output, "のデバッグ情報 ===")
 	assert.Contains(t, output, "個のシンボルと")
-	
+
 	// Should show symbols section
 	assert.Contains(t, output, "シンボル:")
-	
+
 	// May or may not have connections, but should handle both cases
 	if strings.Contains(output, "接続") && !strings.Contains(output, "0個の接続") {
 		assert.Contains(t, output, "接続:")
@@ -92,38 +92,38 @@ func TestDebugCommandWithConnections(t *testing.T) {
 	// Mock the detector to return specific symbols and connections
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "connections_test.png")
-	
+
 	// Create a complex image with guaranteed connections
 	img := createComplexImageWithConnections()
-	
+
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
 	err = png.Encode(f, img)
 	require.NoError(t, err)
 	f.Close()
-	
+
 	// Run debug command
 	cmd := &cobra.Command{}
 	args := []string{testImage}
-	
+
 	// Capture stdout
 	oldStdout := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
-	
+
 	err = debugCommand(cmd, args)
-	
+
 	w.Close()
 	os.Stdout = oldStdout
-	
+
 	// Read output
 	var buf bytes.Buffer
 	_, _ = buf.ReadFrom(r)
 	output := buf.String()
-	
+
 	// Should execute without error
 	assert.NoError(t, err, "Debug command should succeed")
-	
+
 	// Should contain debug output
 	assert.Contains(t, output, "のデバッグ情報")
 	assert.Contains(t, output, filepath.Base(testImage))
@@ -136,10 +136,10 @@ func TestFormatErrorWithGrimoireError(t *testing.T) {
 		grimoireErrors.NoOuterCircle,
 		"No outer circle detected",
 	).WithLocation("test.png", 10, 20)
-	
+
 	// Format it
 	result := formatError(grimoireErr, "ignored.png")
-	
+
 	// Should return the same error unchanged
 	assert.Equal(t, grimoireErr, result)
 	assert.Contains(t, result.Error(), "外周円が検出されません")
@@ -148,11 +148,11 @@ func TestFormatErrorWithGrimoireError(t *testing.T) {
 // TestFormatErrorWithGenericError tests formatError with generic errors
 func TestFormatErrorWithGenericError(t *testing.T) {
 	tests := []struct {
-		name           string
-		err            error
-		imagePath      string
-		expectedType   grimoireErrors.ErrorType
-		expectedInMsg  string
+		name          string
+		err           error
+		imagePath     string
+		expectedType  grimoireErrors.ErrorType
+		expectedInMsg string
 	}{
 		{
 			name:          "generic error without 'no such file'",
@@ -176,24 +176,24 @@ func TestFormatErrorWithGenericError(t *testing.T) {
 			expectedInMsg: "operation timed out",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatError(tt.err, tt.imagePath)
-			
+
 			// Should be a GrimoireError
 			grimoireErr, ok := result.(*grimoireErrors.GrimoireError)
 			assert.True(t, ok, "Should return a GrimoireError")
-			
+
 			// Check error type
 			assert.Equal(t, tt.expectedType, grimoireErr.Type)
-			
+
 			// Check that inner error is preserved
 			assert.Equal(t, tt.err, grimoireErr.InnerError)
-			
+
 			// Check location
 			assert.Equal(t, tt.imagePath, grimoireErr.FileName)
-			
+
 			// Check error message contains expected text
 			assert.Contains(t, result.Error(), "実行エラー")
 		})
@@ -228,7 +228,7 @@ func TestExecutePythonErrors(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := executePython(tt.code)
@@ -245,11 +245,11 @@ func TestExecutePythonErrors(t *testing.T) {
 func TestExecutePythonFileCreationError(t *testing.T) {
 	// Save original TempDir
 	originalTempDir := os.Getenv("TMPDIR")
-	
+
 	// Set TMPDIR to an invalid path
 	os.Setenv("TMPDIR", "/invalid/path/that/does/not/exist")
 	defer os.Setenv("TMPDIR", originalTempDir)
-	
+
 	// This should fail to create temp file
 	err := executePython("print('test')")
 	assert.Error(t, err, "Should return error when temp file creation fails")
@@ -260,7 +260,7 @@ func TestExecutePythonWriteError(t *testing.T) {
 	// Create a string that might cause issues
 	// This is a best-effort test as it's hard to reliably trigger write errors
 	largeCode := "# " + strings.Repeat("x", 1024*1024) + "\nprint('test')"
-	
+
 	err := executePython(largeCode)
 	// This may or may not error depending on system limits, but we're testing the code path
 	if err != nil {
@@ -272,7 +272,7 @@ func TestExecutePythonWriteError(t *testing.T) {
 func TestProcessImageErrors(t *testing.T) {
 	// This function is already well tested through other test cases,
 	// but we can add edge cases
-	
+
 	tests := []struct {
 		name      string
 		imagePath string
@@ -289,7 +289,7 @@ func TestProcessImageErrors(t *testing.T) {
 			wantErr:   true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := processImage(tt.imagePath)
@@ -305,8 +305,8 @@ func TestProcessImageErrors(t *testing.T) {
 // Helper functions for drawing shapes
 
 func drawCircle(img *image.RGBA, cx, cy, outerRadius, innerRadius int, c color.Color) {
-	for y := cy - outerRadius; y <= cy + outerRadius; y++ {
-		for x := cx - outerRadius; x <= cx + outerRadius; x++ {
+	for y := cy - outerRadius; y <= cy+outerRadius; y++ {
+		for x := cx - outerRadius; x <= cx+outerRadius; x++ {
 			dx := x - cx
 			dy := y - cy
 			dist := dx*dx + dy*dy
@@ -353,7 +353,7 @@ func drawLine(img *image.RGBA, x1, y1, x2, y2 int, c color.Color) {
 		sy = -1
 	}
 	err := dx - dy
-	
+
 	for {
 		img.Set(x1, y1, c)
 		if x1 == x2 && y1 == y2 {
@@ -381,17 +381,17 @@ func abs(x int) int {
 func createComplexImageWithConnections() *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, 600, 600))
 	draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
-	
+
 	// Draw outer circle
 	drawCircle(img, 300, 300, 250, 245, color.Black)
-	
+
 	// Draw multiple symbols
-	drawStar(img, 300, 300, 25, color.Black)     // Center star
+	drawStar(img, 300, 300, 25, color.Black)       // Center star
 	drawCircle(img, 200, 200, 30, 25, color.Black) // Top-left circle
-	drawSquare(img, 380, 200, 50, color.Black)    // Top-right square
+	drawSquare(img, 380, 200, 50, color.Black)     // Top-right square
 	drawCircle(img, 200, 400, 30, 25, color.Black) // Bottom-left circle
-	drawSquare(img, 380, 380, 50, color.Black)    // Bottom-right square
-	
+	drawSquare(img, 380, 380, 50, color.Black)     // Bottom-right square
+
 	// Draw connections between all symbols
 	drawLine(img, 300, 300, 200, 200, color.Black)
 	drawLine(img, 300, 300, 405, 225, color.Black)
@@ -399,7 +399,7 @@ func createComplexImageWithConnections() *image.RGBA {
 	drawLine(img, 300, 300, 405, 405, color.Black)
 	drawLine(img, 200, 200, 405, 225, color.Black)
 	drawLine(img, 200, 400, 405, 405, color.Black)
-	
+
 	return img
 }
 
@@ -407,10 +407,10 @@ func createComplexImageWithConnections() *image.RGBA {
 func TestDebugCommandDirectly(t *testing.T) {
 	// Create a mock implementation that returns various scenarios
 	testCases := []struct {
-		name               string
-		setupImage         func() string
-		expectedInOutput   []string
-		shouldHaveSymbols  bool
+		name                  string
+		setupImage            func() string
+		expectedInOutput      []string
+		shouldHaveSymbols     bool
 		shouldHaveConnections bool
 	}{
 		{
@@ -429,7 +429,7 @@ func TestDebugCommandDirectly(t *testing.T) {
 				"個のシンボルと",
 				"シンボル:",
 			},
-			shouldHaveSymbols: true,
+			shouldHaveSymbols:     true,
 			shouldHaveConnections: true,
 		},
 		{
@@ -449,37 +449,37 @@ func TestDebugCommandDirectly(t *testing.T) {
 				"のデバッグ情報",
 				"個のシンボルと",
 			},
-			shouldHaveSymbols: false,
+			shouldHaveSymbols:     false,
 			shouldHaveConnections: false,
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			imagePath := tc.setupImage()
-			
+
 			// Capture stdout
 			oldStdout := os.Stdout
 			r, w, _ := os.Pipe()
 			os.Stdout = w
-			
+
 			// Call debugCommand directly
 			cmd := &cobra.Command{}
 			err := debugCommand(cmd, []string{imagePath})
-			
+
 			w.Close()
 			os.Stdout = oldStdout
-			
+
 			// Read output
 			var buf bytes.Buffer
 			_, _ = buf.ReadFrom(r)
 			output := buf.String()
-			
+
 			// Check for expected output
 			for _, expected := range tc.expectedInOutput {
 				assert.Contains(t, output, expected, "Output should contain: %s", expected)
 			}
-			
+
 			// The command may succeed or fail depending on detection,
 			// but it should handle both cases gracefully
 			if err != nil {
@@ -494,14 +494,14 @@ func TestDebugCommandDirectly(t *testing.T) {
 func TestDebugCommandWithMockData(t *testing.T) {
 	// This test ensures the debug output formatting works correctly
 	// by creating an image that should produce predictable results
-	
+
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "mock_test.png")
-	
+
 	// Create image with precise shapes
 	img := image.NewRGBA(image.Rect(0, 0, 512, 512))
 	draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
-	
+
 	// Draw a perfect outer circle
 	center := 256
 	for angle := 0.0; angle < 360.0; angle += 0.1 {
@@ -514,7 +514,7 @@ func TestDebugCommandWithMockData(t *testing.T) {
 			}
 		}
 	}
-	
+
 	// Draw a clear star in the center
 	for i := -20; i <= 20; i++ {
 		for j := -2; j <= 2; j++ {
@@ -522,37 +522,37 @@ func TestDebugCommandWithMockData(t *testing.T) {
 			img.Set(center+j, center+i, color.Black)
 		}
 	}
-	
+
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
 	err = png.Encode(f, img)
 	require.NoError(t, err)
 	f.Close()
-	
+
 	// Run debug command
 	cmd := &cobra.Command{}
-	
+
 	// Capture stdout
 	oldStdout := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
-	
-	err = debugCommand(cmd, []string{testImage})
-	
+
+	_ = debugCommand(cmd, []string{testImage})
+
 	w.Close()
 	os.Stdout = oldStdout
-	
+
 	// Read output
 	var buf bytes.Buffer
 	_, _ = buf.ReadFrom(r)
 	output := buf.String()
-	
+
 	// Verify the output format
 	assert.Contains(t, output, fmt.Sprintf("=== %s のデバッグ情報 ===", filepath.Base(testImage)))
 	assert.Contains(t, output, "個のシンボルと")
 	assert.Contains(t, output, "個のシンボルと")
 	assert.Contains(t, output, "個の接続")
-	
+
 	// The actual detection may vary, but the format should be consistent
 	t.Logf("Debug output:\n%s", output)
 }
@@ -562,29 +562,29 @@ func TestCompileCommandWriteError(t *testing.T) {
 	// Create a valid test image
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "test.png")
-	
+
 	// Create image with outer circle and star
 	img := image.NewRGBA(image.Rect(0, 0, 400, 400))
 	draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
 	drawCircle(img, 200, 200, 180, 175, color.Black)
 	drawStar(img, 200, 200, 20, color.Black)
-	
+
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
 	err = png.Encode(f, img)
 	require.NoError(t, err)
 	f.Close()
-	
+
 	// Try to write to a directory that doesn't exist
 	nonExistentDir := filepath.Join(tmpDir, "nonexistent", "deep", "path")
 	outputFile := filepath.Join(nonExistentDir, "output.py")
-	
+
 	cmd := &cobra.Command{}
 	cmd.Flags().StringP("output", "o", "", "Output file path")
 	cmd.ParseFlags([]string{"-o", outputFile})
-	
+
 	err = compileCommand(cmd, []string{testImage})
-	
+
 	// Should get a file write error
 	assert.Error(t, err, "Should return error when output file can't be written")
 	grimoireErr, ok := err.(*grimoireErrors.GrimoireError)
@@ -596,30 +596,30 @@ func TestCompileCommandWriteError(t *testing.T) {
 func TestRunCommandExecutionError(t *testing.T) {
 	// Save original PATH
 	originalPath := os.Getenv("PATH")
-	
+
 	// Set PATH to empty to make python3 not found
 	os.Setenv("PATH", "")
 	defer os.Setenv("PATH", originalPath)
-	
+
 	// Create a valid test image
 	tmpDir := t.TempDir()
 	testImage := filepath.Join(tmpDir, "test.png")
-	
+
 	// Create image with outer circle and star
 	img := image.NewRGBA(image.Rect(0, 0, 400, 400))
 	draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
 	drawCircle(img, 200, 200, 180, 175, color.Black)
 	drawStar(img, 200, 200, 20, color.Black)
-	
+
 	f, err := os.Create(testImage)
 	require.NoError(t, err)
 	err = png.Encode(f, img)
-	require.NoError(t, err) 
+	require.NoError(t, err)
 	f.Close()
-	
+
 	cmd := &cobra.Command{}
 	err = runCommand(cmd, []string{testImage})
-	
+
 	// Should get execution error
 	assert.Error(t, err, "Should return error when Python can't be executed")
 	grimoireErr, ok := err.(*grimoireErrors.GrimoireError)
@@ -627,4 +627,3 @@ func TestRunCommandExecutionError(t *testing.T) {
 	assert.Equal(t, grimoireErrors.ExecutionError, grimoireErr.Type)
 	assert.Contains(t, err.Error(), "Python")
 }
-

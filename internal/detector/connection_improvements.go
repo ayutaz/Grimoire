@@ -223,8 +223,8 @@ func (d *Detector) symbolsMightBeDiagonallyConnected(sym1, sym2 *Symbol, binary 
 	}
 
 	// Calculate angle between symbols
-	dx := float64(sym2.Position.X - sym1.Position.X)
-	dy := float64(sym2.Position.Y - sym1.Position.Y)
+	dx := sym2.Position.X - sym1.Position.X
+	dy := sym2.Position.Y - sym1.Position.Y
 	angle := math.Atan2(dy, dx)
 
 	// Check if angle is roughly diagonal (45 or -45 degrees)
@@ -264,8 +264,8 @@ func (d *Detector) hasPixelPath(start, end Position, binary *image.Gray) bool {
 
 	for i := 0; i <= steps; i++ {
 		t := float64(i) / float64(steps)
-		x := int(float64(start.X) + t*float64(dx))
-		y := int(float64(start.Y) + t*float64(dy))
+		x := int(start.X + t*dx)
+		y := int(start.Y + t*dy)
 
 		// Check in a small area around the point
 		for dy := -2; dy <= 2; dy++ {

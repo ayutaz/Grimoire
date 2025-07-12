@@ -14,9 +14,9 @@ func TestClassifyShape_EdgeCases(t *testing.T) {
 	detector := NewDetector(Config{})
 
 	tests := []struct {
-		name     string
-		contour  Contour
-		expected SymbolType
+		name      string
+		contour   Contour
+		expected  SymbolType
 		withDebug bool
 	}{
 		{
@@ -159,7 +159,7 @@ func TestClassifyShape_EdgeCases(t *testing.T) {
 				os.Setenv("GRIMOIRE_DEBUG", "1")
 				defer os.Unsetenv("GRIMOIRE_DEBUG")
 			}
-			
+
 			result := detector.classifyShape(tc.contour)
 			assert.Equal(t, tc.expected, result)
 		})
@@ -223,9 +223,9 @@ func TestApproximatePolygon_EdgeCases(t *testing.T) {
 	detector := NewDetector(Config{})
 
 	tests := []struct {
-		name           string
-		contour        Contour
-		expectedCount  int
+		name          string
+		contour       Contour
+		expectedCount int
 	}{
 		{
 			name: "Contour with less than 3 points",
@@ -238,8 +238,8 @@ func TestApproximatePolygon_EdgeCases(t *testing.T) {
 		{
 			name: "Contour with small perimeter",
 			contour: Contour{
-				Points:      generateTrianglePoints(10, 10, 5),
-				Perimeter:   15.0,
+				Points:    generateTrianglePoints(10, 10, 5),
+				Perimeter: 15.0,
 			},
 			expectedCount: 2, // Will be simplified due to small epsilon
 		},
@@ -288,11 +288,11 @@ func generateArrowPoints(cx, cy int) []image.Point {
 func generateParallelLines(cx, cy int) []image.Point {
 	points := []image.Point{}
 	// Top line
-	for x := cx - 40; x <= cx + 40; x++ {
+	for x := cx - 40; x <= cx+40; x++ {
 		points = append(points, image.Point{X: x, Y: cy - 10})
 	}
 	// Bottom line
-	for x := cx + 40; x >= cx - 40; x-- {
+	for x := cx + 40; x >= cx-40; x-- {
 		points = append(points, image.Point{X: x, Y: cy + 10})
 	}
 	return points
@@ -319,54 +319,54 @@ func generateGreaterThanShape(cx, cy int) []image.Point {
 func generateRoundedSquarePoints(cx, cy, size int) []image.Point {
 	points := []image.Point{}
 	cornerRadius := size / 5
-	
+
 	// Top edge with rounded corners
-	for x := cx - size/2 + cornerRadius; x <= cx + size/2 - cornerRadius; x++ {
+	for x := cx - size/2 + cornerRadius; x <= cx+size/2-cornerRadius; x++ {
 		points = append(points, image.Point{X: x, Y: cy - size/2})
 	}
-	
+
 	// Top-right corner
-	for angle := -math.Pi/2; angle <= 0.0; angle += 0.1 {
+	for angle := -math.Pi / 2; angle <= 0.0; angle += 0.1 {
 		x := cx + size/2 - cornerRadius + int(float64(cornerRadius)*math.Cos(angle))
 		y := cy - size/2 + cornerRadius + int(float64(cornerRadius)*math.Sin(angle))
 		points = append(points, image.Point{X: x, Y: y})
 	}
-	
+
 	// Right edge
-	for y := cy - size/2 + cornerRadius; y <= cy + size/2 - cornerRadius; y++ {
+	for y := cy - size/2 + cornerRadius; y <= cy+size/2-cornerRadius; y++ {
 		points = append(points, image.Point{X: cx + size/2, Y: y})
 	}
-	
+
 	// Bottom-right corner
 	for angle := 0.0; angle <= math.Pi/2; angle += 0.1 {
 		x := cx + size/2 - cornerRadius + int(float64(cornerRadius)*math.Cos(angle))
 		y := cy + size/2 - cornerRadius + int(float64(cornerRadius)*math.Sin(angle))
 		points = append(points, image.Point{X: x, Y: y})
 	}
-	
+
 	// Bottom edge
-	for x := cx + size/2 - cornerRadius; x >= cx - size/2 + cornerRadius; x-- {
+	for x := cx + size/2 - cornerRadius; x >= cx-size/2+cornerRadius; x-- {
 		points = append(points, image.Point{X: x, Y: cy + size/2})
 	}
-	
+
 	// Bottom-left corner
-	for angle := math.Pi/2; angle <= math.Pi; angle += 0.1 {
+	for angle := math.Pi / 2; angle <= math.Pi; angle += 0.1 {
 		x := cx - size/2 + cornerRadius + int(float64(cornerRadius)*math.Cos(angle))
 		y := cy + size/2 - cornerRadius + int(float64(cornerRadius)*math.Sin(angle))
 		points = append(points, image.Point{X: x, Y: y})
 	}
-	
+
 	// Left edge
-	for y := cy + size/2 - cornerRadius; y >= cy - size/2 + cornerRadius; y-- {
+	for y := cy + size/2 - cornerRadius; y >= cy-size/2+cornerRadius; y-- {
 		points = append(points, image.Point{X: cx - size/2, Y: y})
 	}
-	
+
 	// Top-left corner
 	for angle := math.Pi; angle <= 3*math.Pi/2; angle += 0.1 {
 		x := cx - size/2 + cornerRadius + int(float64(cornerRadius)*math.Cos(angle))
 		y := cy - size/2 + cornerRadius + int(float64(cornerRadius)*math.Sin(angle))
 		points = append(points, image.Point{X: x, Y: y})
 	}
-	
+
 	return points
 }

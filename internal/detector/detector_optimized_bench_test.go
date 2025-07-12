@@ -12,7 +12,7 @@ import (
 // createComplexBenchmarkImage creates a complex test image with many symbols
 func createComplexBenchmarkImage(size int, numSymbols int) *image.Gray {
 	img := image.NewGray(image.Rect(0, 0, size, size))
-	
+
 	// Fill with white
 	for y := 0; y < size; y++ {
 		for x := 0; x < size; x++ {
@@ -26,17 +26,18 @@ func createComplexBenchmarkImage(size int, numSymbols int) *image.Gray {
 	drawCircleOpt(img, centerX, centerY, radius, 5)
 
 	// Draw random symbols inside
-	rand.Seed(42) // Fixed seed for reproducible benchmarks
-	
+	// Use a fixed seed for reproducible benchmarks
+	rng := rand.New(rand.NewSource(42))
+
 	for i := 0; i < numSymbols; i++ {
 		// Random position within circle
-		angle := rand.Float64() * 2 * math.Pi
-		r := rand.Float64() * float64(radius-50)
+		angle := rng.Float64() * 2 * math.Pi
+		r := rng.Float64() * float64(radius-50)
 		x := centerX + int(r*math.Cos(angle))
 		y := centerY + int(r*math.Sin(angle))
-		
+
 		// Random symbol type
-		switch rand.Intn(6) {
+		switch rng.Intn(6) {
 		case 0: // Square
 			drawSquareOpt(img, x, y, 30)
 		case 1: // Circle
@@ -56,8 +57,8 @@ func createComplexBenchmarkImage(size int, numSymbols int) *image.Gray {
 }
 
 func drawCircleOpt(img *image.Gray, cx, cy, r, thickness int) {
-	for y := cy - r - thickness; y <= cy + r + thickness; y++ {
-		for x := cx - r - thickness; x <= cx + r + thickness; x++ {
+	for y := cy - r - thickness; y <= cy+r+thickness; y++ {
+		for x := cx - r - thickness; x <= cx+r+thickness; x++ {
 			dx := x - cx
 			dy := y - cy
 			dist := math.Sqrt(float64(dx*dx + dy*dy))
@@ -96,7 +97,7 @@ func drawTriangle(img *image.Gray, cx, cy, size int) {
 		}
 	}
 	// Draw base
-	for i := -size/2; i <= size/2; i++ {
+	for i := -size / 2; i <= size/2; i++ {
 		img.Set(cx+i, cy+h/2, color.Gray{0})
 	}
 }
@@ -104,28 +105,28 @@ func drawTriangle(img *image.Gray, cx, cy, size int) {
 func drawStarOpt(img *image.Gray, cx, cy, size int) {
 	// Draw 5-pointed star
 	for i := 0; i < 5; i++ {
-		angle1 := float64(i) * 2 * math.Pi / 5 - math.Pi/2
-		angle2 := float64(i+2) * 2 * math.Pi / 5 - math.Pi/2
-		
+		angle1 := float64(i)*2*math.Pi/5 - math.Pi/2
+		angle2 := float64(i+2)*2*math.Pi/5 - math.Pi/2
+
 		x1 := cx + int(float64(size)*math.Cos(angle1))
 		y1 := cy + int(float64(size)*math.Sin(angle1))
 		x2 := cx + int(float64(size)*math.Cos(angle2))
 		y2 := cy + int(float64(size)*math.Sin(angle2))
-		
+
 		drawLineOpt(img, x1, y1, x2, y2)
 	}
 }
 
 func drawPentagon(img *image.Gray, cx, cy, size int) {
 	for i := 0; i < 5; i++ {
-		angle1 := float64(i) * 2 * math.Pi / 5 - math.Pi/2
-		angle2 := float64(i+1) * 2 * math.Pi / 5 - math.Pi/2
-		
+		angle1 := float64(i)*2*math.Pi/5 - math.Pi/2
+		angle2 := float64(i+1)*2*math.Pi/5 - math.Pi/2
+
 		x1 := cx + int(float64(size)*math.Cos(angle1))
 		y1 := cy + int(float64(size)*math.Sin(angle1))
 		x2 := cx + int(float64(size)*math.Cos(angle2))
 		y2 := cy + int(float64(size)*math.Sin(angle2))
-		
+
 		drawLineOpt(img, x1, y1, x2, y2)
 	}
 }
@@ -134,12 +135,12 @@ func drawHexagon(img *image.Gray, cx, cy, size int) {
 	for i := 0; i < 6; i++ {
 		angle1 := float64(i) * 2 * math.Pi / 6
 		angle2 := float64(i+1) * 2 * math.Pi / 6
-		
+
 		x1 := cx + int(float64(size)*math.Cos(angle1))
 		y1 := cy + int(float64(size)*math.Sin(angle1))
 		x2 := cx + int(float64(size)*math.Cos(angle2))
 		y2 := cy + int(float64(size)*math.Sin(angle2))
-		
+
 		drawLineOpt(img, x1, y1, x2, y2)
 	}
 }
@@ -156,16 +157,16 @@ func drawLineOpt(img *image.Gray, x1, y1, x2, y2 int) {
 		sy = -1
 	}
 	err := dx - dy
-	
+
 	for {
 		if x1 >= 0 && x1 < img.Bounds().Dx() && y1 >= 0 && y1 < img.Bounds().Dy() {
 			img.Set(x1, y1, color.Gray{0})
 		}
-		
+
 		if x1 == x2 && y1 == y2 {
 			break
 		}
-		
+
 		e2 := 2 * err
 		if e2 > -dy {
 			err -= dy
@@ -199,22 +200,22 @@ func BenchmarkDetectorComparison(b *testing.B) {
 
 	for _, tc := range testCases {
 		img := createComplexBenchmarkImage(tc.imageSize, tc.numSymbols)
-		
+
 		b.Run(fmt.Sprintf("Standard_%dx%d_%dsymbols", tc.imageSize, tc.imageSize, tc.numSymbols), func(b *testing.B) {
 			detector := NewDetector(Config{Debug: false})
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				binary := detector.preprocessImage(img)
 				contours := detector.findContours(binary)
 				_ = detector.detectSymbolsFromContours(contours, binary)
 			}
 		})
-		
+
 		b.Run(fmt.Sprintf("Parallel_%dx%d_%dsymbols", tc.imageSize, tc.imageSize, tc.numSymbols), func(b *testing.B) {
 			detector := NewParallelDetector(Config{Debug: false})
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				binary := detector.preprocessImage(img)
 				contours := detector.findContoursParallel(binary)
@@ -227,20 +228,20 @@ func BenchmarkDetectorComparison(b *testing.B) {
 // Benchmark contour finding
 func BenchmarkFindContoursComparison(b *testing.B) {
 	sizes := []int{400, 800, 1200}
-	
+
 	for _, size := range sizes {
 		img := createComplexBenchmarkImage(size, size/10)
 		detector := NewDetector(Config{Debug: false})
 		parallelDetector := NewParallelDetector(Config{Debug: false})
 		binary := detector.preprocessImage(img)
-		
+
 		b.Run(fmt.Sprintf("Standard_%dx%d", size, size), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				_ = detector.findContours(binary)
 			}
 		})
-		
+
 		b.Run(fmt.Sprintf("Parallel_%dx%d", size, size), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -264,24 +265,24 @@ func BenchmarkSymbolDetectionComparison(b *testing.B) {
 			contours = append(contours, createComplexContour())
 		}
 	}
-	
+
 	// Calculate properties for all contours
 	for i := range contours {
 		contours[i].calculateProperties()
 	}
-	
+
 	img := createBenchmarkImage(800)
 	detector := NewDetector(Config{Debug: false})
 	parallelDetector := NewParallelDetector(Config{Debug: false})
 	binary := detector.preprocessImage(img)
-	
+
 	b.Run("Standard", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_ = detector.detectSymbolsFromContours(contours, binary)
 		}
 	})
-	
+
 	b.Run("Parallel", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -294,7 +295,7 @@ func BenchmarkSymbolDetectionComparison(b *testing.B) {
 func BenchmarkDetectorCache(b *testing.B) {
 	cache := NewDetectorCache(100)
 	img := createBenchmarkImage(800)
-	
+
 	// Populate cache
 	for i := 0; i < 50; i++ {
 		key := fmt.Sprintf("image_%d", i)
@@ -304,7 +305,7 @@ func BenchmarkDetectorCache(b *testing.B) {
 			{Type: Star, Position: Position{X: 200, Y: 200}},
 		})
 	}
-	
+
 	b.Run("CacheHit", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -313,7 +314,7 @@ func BenchmarkDetectorCache(b *testing.B) {
 			_ = cache.getSymbols(key)
 		}
 	})
-	
+
 	b.Run("CacheMiss", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {

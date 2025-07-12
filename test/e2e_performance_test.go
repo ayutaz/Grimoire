@@ -19,7 +19,7 @@ import (
 func createPerformanceTestImage(filename string, complexity string) error {
 	var size int
 	var symbols []symbolSpec
-	
+
 	switch complexity {
 	case "simple":
 		size = 400
@@ -74,29 +74,29 @@ func createPerformanceTestImage(filename string, complexity string) error {
 	default:
 		return fmt.Errorf("unknown complexity: %s", complexity)
 	}
-	
+
 	// Create image
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
-	
+
 	// Fill with white
 	for y := 0; y < size; y++ {
 		for x := 0; x < size; x++ {
 			img.Set(x, y, color.RGBA{255, 255, 255, 255})
 		}
 	}
-	
+
 	// Draw symbols
 	for _, sym := range symbols {
 		drawSymbol(img, sym)
 	}
-	
+
 	// Save image
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	
+
 	return png.Encode(file, img)
 }
 
@@ -108,7 +108,7 @@ type symbolSpec struct {
 
 func drawSymbol(img *image.RGBA, spec symbolSpec) {
 	black := color.RGBA{0, 0, 0, 255}
-	
+
 	switch spec.symbolType {
 	case detector.OuterCircle:
 		drawRGBACircle(img, spec.x, spec.y, spec.size, 5, black)
@@ -129,7 +129,7 @@ func drawSymbol(img *image.RGBA, spec symbolSpec) {
 		// Draw as special symbols
 		drawRGBACircle(img, spec.x, spec.y, spec.size, 2, black)
 		// Add internal pattern
-		for i := -spec.size/2; i <= spec.size/2; i += 5 {
+		for i := -spec.size / 2; i <= spec.size/2; i += 5 {
 			img.Set(spec.x+i, spec.y, black)
 			img.Set(spec.x, spec.y+i, black)
 		}
@@ -137,8 +137,8 @@ func drawSymbol(img *image.RGBA, spec symbolSpec) {
 }
 
 func drawRGBACircle(img *image.RGBA, cx, cy, r, thickness int, c color.RGBA) {
-	for y := cy - r - thickness; y <= cy + r + thickness; y++ {
-		for x := cx - r - thickness; x <= cx + r + thickness; x++ {
+	for y := cy - r - thickness; y <= cy+r+thickness; y++ {
+		for x := cx - r - thickness; x <= cx+r+thickness; x++ {
 			dx := x - cx
 			dy := y - cy
 			dist := math.Sqrt(float64(dx*dx + dy*dy))
@@ -173,35 +173,35 @@ func drawRGBATriangle(img *image.RGBA, cx, cy, size int, c color.RGBA) {
 			img.Set(x2, y, c)
 		}
 	}
-	for i := -size/2; i <= size/2; i++ {
+	for i := -size / 2; i <= size/2; i++ {
 		img.Set(cx+i, cy+h/2, c)
 	}
 }
 
 func drawRGBAPentagon(img *image.RGBA, cx, cy, size int, c color.RGBA) {
 	for i := 0; i < 5; i++ {
-		angle1 := float64(i) * 2 * math.Pi / 5 - math.Pi/2
-		angle2 := float64(i+1) * 2 * math.Pi / 5 - math.Pi/2
-		
+		angle1 := float64(i)*2*math.Pi/5 - math.Pi/2
+		angle2 := float64(i+1)*2*math.Pi/5 - math.Pi/2
+
 		x1 := cx + int(float64(size)*math.Cos(angle1))
 		y1 := cy + int(float64(size)*math.Sin(angle1))
 		x2 := cx + int(float64(size)*math.Cos(angle2))
 		y2 := cy + int(float64(size)*math.Sin(angle2))
-		
+
 		drawRGBALine(img, x1, y1, x2, y2, c)
 	}
 }
 
 func drawRGBAStar(img *image.RGBA, cx, cy, size int, c color.RGBA) {
 	for i := 0; i < 5; i++ {
-		angle1 := float64(i) * 2 * math.Pi / 5 - math.Pi/2
-		angle2 := float64(i+2) * 2 * math.Pi / 5 - math.Pi/2
-		
+		angle1 := float64(i)*2*math.Pi/5 - math.Pi/2
+		angle2 := float64(i+2)*2*math.Pi/5 - math.Pi/2
+
 		x1 := cx + int(float64(size)*math.Cos(angle1))
 		y1 := cy + int(float64(size)*math.Sin(angle1))
 		x2 := cx + int(float64(size)*math.Cos(angle2))
 		y2 := cy + int(float64(size)*math.Sin(angle2))
-		
+
 		drawRGBALine(img, x1, y1, x2, y2, c)
 	}
 }
@@ -218,16 +218,16 @@ func drawRGBALine(img *image.RGBA, x1, y1, x2, y2 int, c color.RGBA) {
 		sy = -1
 	}
 	err := dx - dy
-	
+
 	for {
 		if x1 >= 0 && x1 < img.Bounds().Dx() && y1 >= 0 && y1 < img.Bounds().Dy() {
 			img.Set(x1, y1, c)
 		}
-		
+
 		if x1 == x2 && y1 == y2 {
 			break
 		}
-		
+
 		e2 := 2 * err
 		if e2 > -dy {
 			err -= dy
@@ -250,18 +250,18 @@ func abs(x int) int {
 // Benchmark end-to-end performance
 func BenchmarkEndToEndPerformance(b *testing.B) {
 	complexities := []string{"simple", "medium", "complex"}
-	
+
 	// Create temporary directory for test images
 	tempDir := b.TempDir()
-	
+
 	for _, complexity := range complexities {
 		imagePath := filepath.Join(tempDir, fmt.Sprintf("test_%s.png", complexity))
-		
+
 		// Create test image
 		if err := createPerformanceTestImage(imagePath, complexity); err != nil {
 			b.Fatalf("Failed to create test image: %v", err)
 		}
-		
+
 		b.Run(fmt.Sprintf("Standard_%s", complexity), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -270,13 +270,13 @@ func BenchmarkEndToEndPerformance(b *testing.B) {
 				if err != nil {
 					b.Fatalf("Detection failed: %v", err)
 				}
-				
+
 				// Parse to AST
 				ast, err := parser.Parse(symbols, connections)
 				if err != nil {
 					b.Fatalf("Parsing failed: %v", err)
 				}
-				
+
 				// Compile to code
 				_, err = compiler.Compile(ast)
 				if err != nil {
@@ -284,7 +284,7 @@ func BenchmarkEndToEndPerformance(b *testing.B) {
 				}
 			}
 		})
-		
+
 		b.Run(fmt.Sprintf("Optimized_%s", complexity), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -294,14 +294,14 @@ func BenchmarkEndToEndPerformance(b *testing.B) {
 				if err != nil {
 					b.Fatalf("Detection failed: %v", err)
 				}
-				
+
 				// Use optimized parser
 				optimizedParser := parser.NewOptimizedParser()
 				ast, err := optimizedParser.Parse(symbols, connections)
 				if err != nil {
 					b.Fatalf("Parsing failed: %v", err)
 				}
-				
+
 				// Compile to code (already optimized)
 				_, err = compiler.Compile(ast)
 				if err != nil {
@@ -317,11 +317,11 @@ func BenchmarkPipelineStages(b *testing.B) {
 	// Create test image
 	tempDir := b.TempDir()
 	imagePath := filepath.Join(tempDir, "test_medium.png")
-	
+
 	if err := createPerformanceTestImage(imagePath, "medium"); err != nil {
 		b.Fatalf("Failed to create test image: %v", err)
 	}
-	
+
 	// Benchmark detection stage
 	b.Run("Detection_Standard", func(b *testing.B) {
 		b.ResetTimer()
@@ -332,7 +332,7 @@ func BenchmarkPipelineStages(b *testing.B) {
 			}
 		}
 	})
-	
+
 	b.Run("Detection_Optimized", func(b *testing.B) {
 		parallelDetector := detector.NewParallelDetector(detector.Config{Debug: false})
 		b.ResetTimer()
@@ -343,10 +343,10 @@ func BenchmarkPipelineStages(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// Get symbols for parsing benchmarks
 	symbols, connections, _ := detector.DetectSymbols(imagePath)
-	
+
 	// Benchmark parsing stage
 	b.Run("Parsing_Standard", func(b *testing.B) {
 		b.ResetTimer()
@@ -357,7 +357,7 @@ func BenchmarkPipelineStages(b *testing.B) {
 			}
 		}
 	})
-	
+
 	b.Run("Parsing_Optimized", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -368,10 +368,10 @@ func BenchmarkPipelineStages(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// Get AST for compilation benchmarks
 	ast, _ := parser.Parse(symbols, connections)
-	
+
 	// Benchmark compilation stage
 	b.Run("Compilation", func(b *testing.B) {
 		b.ResetTimer()
@@ -389,11 +389,11 @@ func BenchmarkMemoryUsage(b *testing.B) {
 	// Create test image
 	tempDir := b.TempDir()
 	imagePath := filepath.Join(tempDir, "test_complex.png")
-	
+
 	if err := createPerformanceTestImage(imagePath, "complex"); err != nil {
 		b.Fatalf("Failed to create test image: %v", err)
 	}
-	
+
 	b.Run("Standard", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
@@ -403,7 +403,7 @@ func BenchmarkMemoryUsage(b *testing.B) {
 			_, _ = compiler.Compile(ast)
 		}
 	})
-	
+
 	b.Run("Optimized", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()

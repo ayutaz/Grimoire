@@ -20,11 +20,11 @@ import (
 func Execute(version, commit, date string) error {
 	// Initialize i18n before creating commands
 	i18n.Init()
-	
+
 	rootCmd := &cobra.Command{
-		Use:   "grimoire",
-		Short: i18n.T("cli.description_short"),
-		Long:  i18n.T("cli.description_long"),
+		Use:     "grimoire",
+		Short:   i18n.T("cli.description_short"),
+		Long:    i18n.T("cli.description_long"),
 		Version: fmt.Sprintf("%s (commit: %s, built: %s)", version, commit, date),
 	}
 
@@ -92,7 +92,7 @@ func Execute(version, commit, date string) error {
 		}
 		return nil
 	}
-	
+
 	rootCmd.AddCommand(runCmd, compileCmd, debugCmd, validateCmd, formatCmd, optimizeCmd)
 	return rootCmd.Execute()
 }
@@ -321,8 +321,8 @@ func formatCommand(cmd *cobra.Command, args []string) error {
 				continue
 			}
 			// Check if symbols are nearly aligned but not quite
-			dx := math.Abs(float64(s1.Position.X - s2.Position.X))
-			dy := math.Abs(float64(s1.Position.Y - s2.Position.Y))
+			dx := math.Abs(s1.Position.X - s2.Position.X)
+			dy := math.Abs(s1.Position.Y - s2.Position.Y)
 			if (dx > 0 && dx < 10) || (dy > 0 && dy < 10) {
 				suggestions = append(suggestions, fmt.Sprintf(i18n.T("format.align_symbols"), s1.Type, s2.Type))
 			}
@@ -331,7 +331,7 @@ func formatCommand(cmd *cobra.Command, args []string) error {
 
 	// Check connection angles
 	for _, c := range connections {
-		angle := math.Atan2(float64(c.To.Position.Y-c.From.Position.Y), float64(c.To.Position.X-c.From.Position.X))
+		angle := math.Atan2(c.To.Position.Y-c.From.Position.Y, c.To.Position.X-c.From.Position.X)
 		angleDeg := angle * 180 / math.Pi
 		// Check if angle is close to but not exactly 0, 45, 90, 135, 180, -45, -90, -135
 		standardAngles := []float64{0, 45, 90, 135, 180, -45, -90, -135}
@@ -391,13 +391,13 @@ func optimizeCommand(cmd *cobra.Command, args []string) error {
 		// Check for unused variables
 		defined := make(map[string]bool)
 		used := make(map[string]bool)
-		
+
 		// Analyze global statements
 		for _, stmt := range ast.Globals {
 			analyzeDefined(stmt, defined)
 			analyzeUsed(stmt, used)
 		}
-		
+
 		// Analyze functions
 		for _, fn := range ast.Functions {
 			for _, stmt := range fn.Body {
@@ -405,7 +405,7 @@ func optimizeCommand(cmd *cobra.Command, args []string) error {
 				analyzeUsed(stmt, used)
 			}
 		}
-		
+
 		// Analyze main entry
 		if ast.MainEntry != nil {
 			for _, stmt := range ast.MainEntry.Body {
@@ -413,7 +413,7 @@ func optimizeCommand(cmd *cobra.Command, args []string) error {
 				analyzeUsed(stmt, used)
 			}
 		}
-		
+
 		for var_ := range defined {
 			if !used[var_] {
 				optimizations = append(optimizations, fmt.Sprintf(i18n.T("optimize.unused_variable"), var_))

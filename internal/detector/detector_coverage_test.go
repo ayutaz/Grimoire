@@ -18,12 +18,12 @@ func TestDetectConnections_Comprehensive(t *testing.T) {
 	detector := NewDetector(Config{})
 
 	tests := []struct {
-		name            string
-		createImage     func() *image.Gray
-		symbols         []*Symbol
-		expectedConns   int
-		expectedTypes   []string
-		withDebug       bool
+		name          string
+		createImage   func() *image.Gray
+		symbols       []*Symbol
+		expectedConns int
+		expectedTypes []string
+		withDebug     bool
 	}{
 		{
 			name: "Simple horizontal connection",
@@ -225,52 +225,52 @@ func TestIsValidConnection(t *testing.T) {
 		expected bool
 	}{
 		{
-			name: "Valid connection - symbols close to line endpoints",
-			line: Line{Start: image.Point{X: 50, Y: 100}, End: image.Point{X: 250, Y: 100}},
-			from: &Symbol{Type: Square, Position: Position{X: 50, Y: 100}, Size: 20},
-			to:   &Symbol{Type: Circle, Position: Position{X: 250, Y: 100}, Size: 20},
+			name:     "Valid connection - symbols close to line endpoints",
+			line:     Line{Start: image.Point{X: 50, Y: 100}, End: image.Point{X: 250, Y: 100}},
+			from:     &Symbol{Type: Square, Position: Position{X: 50, Y: 100}, Size: 20},
+			to:       &Symbol{Type: Circle, Position: Position{X: 250, Y: 100}, Size: 20},
 			expected: true,
 		},
 		{
-			name: "Invalid - from outer circle",
-			line: Line{Start: image.Point{X: 50, Y: 100}, End: image.Point{X: 250, Y: 100}},
-			from: &Symbol{Type: OuterCircle, Position: Position{X: 50, Y: 100}, Size: 20},
-			to:   &Symbol{Type: Circle, Position: Position{X: 250, Y: 100}, Size: 20},
+			name:     "Invalid - from outer circle",
+			line:     Line{Start: image.Point{X: 50, Y: 100}, End: image.Point{X: 250, Y: 100}},
+			from:     &Symbol{Type: OuterCircle, Position: Position{X: 50, Y: 100}, Size: 20},
+			to:       &Symbol{Type: Circle, Position: Position{X: 250, Y: 100}, Size: 20},
 			expected: false,
 		},
 		{
-			name: "Invalid - to outer circle",
-			line: Line{Start: image.Point{X: 50, Y: 100}, End: image.Point{X: 250, Y: 100}},
-			from: &Symbol{Type: Square, Position: Position{X: 50, Y: 100}, Size: 20},
-			to:   &Symbol{Type: OuterCircle, Position: Position{X: 250, Y: 100}, Size: 20},
+			name:     "Invalid - to outer circle",
+			line:     Line{Start: image.Point{X: 50, Y: 100}, End: image.Point{X: 250, Y: 100}},
+			from:     &Symbol{Type: Square, Position: Position{X: 50, Y: 100}, Size: 20},
+			to:       &Symbol{Type: OuterCircle, Position: Position{X: 250, Y: 100}, Size: 20},
 			expected: false,
 		},
 		{
-			name: "Invalid - line too short",
-			line: Line{Start: image.Point{X: 50, Y: 100}, End: image.Point{X: 60, Y: 100}},
-			from: &Symbol{Type: Square, Position: Position{X: 50, Y: 100}, Size: 20},
-			to:   &Symbol{Type: Circle, Position: Position{X: 60, Y: 100}, Size: 20},
+			name:     "Invalid - line too short",
+			line:     Line{Start: image.Point{X: 50, Y: 100}, End: image.Point{X: 60, Y: 100}},
+			from:     &Symbol{Type: Square, Position: Position{X: 50, Y: 100}, Size: 20},
+			to:       &Symbol{Type: Circle, Position: Position{X: 60, Y: 100}, Size: 20},
 			expected: false,
 		},
 		{
-			name: "Invalid - start too far from symbol",
-			line: Line{Start: image.Point{X: 150, Y: 100}, End: image.Point{X: 250, Y: 100}},
-			from: &Symbol{Type: Square, Position: Position{X: 50, Y: 100}, Size: 20},
-			to:   &Symbol{Type: Circle, Position: Position{X: 250, Y: 100}, Size: 20},
+			name:     "Invalid - start too far from symbol",
+			line:     Line{Start: image.Point{X: 150, Y: 100}, End: image.Point{X: 250, Y: 100}},
+			from:     &Symbol{Type: Square, Position: Position{X: 50, Y: 100}, Size: 20},
+			to:       &Symbol{Type: Circle, Position: Position{X: 250, Y: 100}, Size: 20},
 			expected: false,
 		},
 		{
-			name: "Invalid - end too far from symbol",
-			line: Line{Start: image.Point{X: 50, Y: 100}, End: image.Point{X: 150, Y: 100}},
-			from: &Symbol{Type: Square, Position: Position{X: 50, Y: 100}, Size: 20},
-			to:   &Symbol{Type: Circle, Position: Position{X: 250, Y: 100}, Size: 20},
+			name:     "Invalid - end too far from symbol",
+			line:     Line{Start: image.Point{X: 50, Y: 100}, End: image.Point{X: 150, Y: 100}},
+			from:     &Symbol{Type: Square, Position: Position{X: 50, Y: 100}, Size: 20},
+			to:       &Symbol{Type: Circle, Position: Position{X: 250, Y: 100}, Size: 20},
 			expected: false,
 		},
 		{
-			name: "Valid - larger symbols have larger tolerance",
-			line: Line{Start: image.Point{X: 80, Y: 100}, End: image.Point{X: 220, Y: 100}},
-			from: &Symbol{Type: Square, Position: Position{X: 50, Y: 100}, Size: 40},
-			to:   &Symbol{Type: Circle, Position: Position{X: 250, Y: 100}, Size: 40},
+			name:     "Valid - larger symbols have larger tolerance",
+			line:     Line{Start: image.Point{X: 80, Y: 100}, End: image.Point{X: 220, Y: 100}},
+			from:     &Symbol{Type: Square, Position: Position{X: 50, Y: 100}, Size: 40},
+			to:       &Symbol{Type: Circle, Position: Position{X: 250, Y: 100}, Size: 40},
 			expected: true,
 		},
 	}
@@ -373,9 +373,9 @@ func TestClassifyShape_Comprehensive(t *testing.T) {
 	detector := NewDetector(Config{})
 
 	tests := []struct {
-		name     string
-		contour  Contour
-		expected SymbolType
+		name      string
+		contour   Contour
+		expected  SymbolType
 		withDebug bool
 	}{
 		{
@@ -497,7 +497,7 @@ func TestClassifyShape_Comprehensive(t *testing.T) {
 				Circularity: 0.35,
 				Center:      image.Point{X: 377, Y: 195},
 			},
-			expected: Square,
+			expected:  Square,
 			withDebug: true,
 		},
 	}
@@ -508,7 +508,7 @@ func TestClassifyShape_Comprehensive(t *testing.T) {
 				os.Setenv("GRIMOIRE_DEBUG", "1")
 				defer os.Unsetenv("GRIMOIRE_DEBUG")
 			}
-			
+
 			result := detector.classifyShape(tc.contour)
 			assert.Equal(t, tc.expected, result)
 		})
@@ -793,4 +793,3 @@ func generateYShapePoints(cx, cy int) []image.Point {
 	}
 	return points
 }
-

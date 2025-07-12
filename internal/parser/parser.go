@@ -815,8 +815,8 @@ func hasOperatorChild(node *symbolNode) bool {
 }
 
 func distance(p1, p2 detector.Position) float64 {
-	dx := float64(p1.X - p2.X)
-	dy := float64(p1.Y - p2.Y)
+	dx := p1.X - p2.X
+	dy := p1.Y - p2.Y
 	return dx*dx + dy*dy // Return squared distance for efficiency
 }
 

@@ -124,11 +124,7 @@ func (d *Detector) cornersFormSquare(corners []image.Point) bool {
 	// Check diagonals are similar
 	diag1 := distance(corners[0], corners[2])
 	diag2 := distance(corners[1], corners[3])
-	if math.Abs(diag1-diag2)/diag1 > 0.2 { // 20% tolerance
-		return false
-	}
-
-	return true
+	return math.Abs(diag1-diag2)/diag1 <= 0.2 // 20% tolerance
 }
 
 // hasStraightEdges checks if contour has straight edges

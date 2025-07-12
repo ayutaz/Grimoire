@@ -16,12 +16,12 @@ type ParallelDetector struct {
 
 // DetectorCache stores intermediate results for reuse
 type DetectorCache struct {
-	mu              sync.RWMutex
-	preprocessed    map[string]*image.Gray
-	contours        map[string][]Contour
-	symbols         map[string][]*Symbol
-	maxCacheSize    int
-	accessOrder     []string
+	mu           sync.RWMutex
+	preprocessed map[string]*image.Gray
+	contours     map[string][]Contour
+	symbols      map[string][]*Symbol
+	maxCacheSize int
+	accessOrder  []string
 }
 
 // NewParallelDetector creates a new parallel detector
@@ -81,7 +81,7 @@ func (d *ParallelDetector) detectSymbolsFromContoursParallel(contours []Contour,
 
 	// Create worker pool
 	workChan := make(chan int, len(contours))
-	
+
 	// Start workers
 	for w := 0; w < d.numWorkers; w++ {
 		wg.Add(1)
@@ -163,22 +163,22 @@ func (d *ParallelDetector) detectSymbolsFromContoursParallel(contours []Contour,
 func (d *ParallelDetector) findContoursParallel(binary *image.Gray) []Contour {
 	bounds := binary.Bounds()
 	height := bounds.Dy()
-	
+
 	// Split image into horizontal strips for parallel processing
 	stripsPerWorker := height / d.numWorkers
 	if stripsPerWorker < 50 { // Minimum strip height
 		stripsPerWorker = 50
 	}
-	
+
 	numStrips := height / stripsPerWorker
 	if numStrips < 1 {
 		numStrips = 1
 	}
-	
+
 	// Process strips in parallel
 	var wg sync.WaitGroup
 	contoursChan := make(chan []Contour, numStrips)
-	
+
 	for i := 0; i < numStrips; i++ {
 		wg.Add(1)
 		startY := i * stripsPerWorker
@@ -186,22 +186,22 @@ func (d *ParallelDetector) findContoursParallel(binary *image.Gray) []Contour {
 		if i == numStrips-1 {
 			endY = height
 		}
-		
+
 		go func(sy, ey int) {
 			defer wg.Done()
 			// Extract sub-image
 			subBounds := image.Rect(0, sy, bounds.Dx(), ey)
 			subImage := image.NewGray(subBounds)
-			
+
 			for y := sy; y < ey; y++ {
 				for x := 0; x < bounds.Dx(); x++ {
 					subImage.Set(x, y, binary.At(x, y))
 				}
 			}
-			
+
 			// Find contours in strip
 			stripContours := d.findContours(subImage)
-			
+
 			// Adjust Y coordinates
 			for i := range stripContours {
 				for j := range stripContours[i].Points {
@@ -209,22 +209,22 @@ func (d *ParallelDetector) findContoursParallel(binary *image.Gray) []Contour {
 				}
 				stripContours[i].calculateProperties()
 			}
-			
+
 			contoursChan <- stripContours
 		}(startY, endY)
 	}
-	
+
 	go func() {
 		wg.Wait()
 		close(contoursChan)
 	}()
-	
+
 	// Collect all contours
 	var allContours []Contour
 	for contours := range contoursChan {
 		allContours = append(allContours, contours...)
 	}
-	
+
 	return allContours
 }
 
@@ -294,12 +294,12 @@ func (c *DetectorCache) getPreprocessed(key string) *image.Gray {
 func (c *DetectorCache) setPreprocessed(key string, img *image.Gray) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	// Evict oldest if needed
 	if len(c.preprocessed) >= c.maxCacheSize {
 		c.evictOldest()
 	}
-	
+
 	c.preprocessed[key] = img
 	c.updateAccessOrder(key)
 }
@@ -314,12 +314,12 @@ func (c *DetectorCache) getSymbols(key string) []*Symbol {
 func (c *DetectorCache) setSymbols(key string, symbols []*Symbol) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	// Evict oldest if needed
 	if len(c.symbols) >= c.maxCacheSize {
 		c.evictOldest()
 	}
-	
+
 	c.symbols[key] = symbols
 	c.updateAccessOrder(key)
 }
@@ -340,10 +340,10 @@ func (c *DetectorCache) evictOldest() {
 	if len(c.accessOrder) == 0 {
 		return
 	}
-	
+
 	oldest := c.accessOrder[0]
 	c.accessOrder = c.accessOrder[1:]
-	
+
 	delete(c.preprocessed, oldest)
 	delete(c.contours, oldest)
 	delete(c.symbols, oldest)

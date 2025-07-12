@@ -42,7 +42,6 @@ func NewDetector(cfg Config) *Detector {
 	}
 }
 
-
 // DetectSymbols detects all symbols in the given image file
 func DetectSymbols(imagePath string) ([]*Symbol, []Connection, error) {
 	detector := NewDetector(Config{Debug: false})

@@ -3,7 +3,7 @@ package errors
 import (
 	"fmt"
 	"strings"
-	
+
 	"github.com/ayutaz/grimoire/internal/i18n"
 )
 
@@ -36,10 +36,10 @@ const (
 
 	// Runtime errors
 	ExecutionError ErrorType = "EXECUTION_ERROR"
-	
+
 	// Validation errors
 	ValidationError ErrorType = "VALIDATION_ERROR"
-	
+
 	// I/O errors
 	IOError ErrorType = "IO_ERROR"
 )
