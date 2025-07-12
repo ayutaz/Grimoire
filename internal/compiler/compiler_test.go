@@ -29,7 +29,7 @@ func TestCompile_EmptyProgram(t *testing.T) {
 
 	// Empty program should now return an error
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "No main entry point found")
+	assert.Contains(t, err.Error(), "メインエントリーポイントが見つかりません")
 	assert.Empty(t, code)
 }
 
@@ -196,7 +196,7 @@ func TestCompile_ErrorHandling(t *testing.T) {
 			ast: &parser.Program{
 				HasOuterCircle: false,
 			},
-			wantErr: "outer circle",
+			wantErr: "外周円が検出されません",
 		},
 		{
 			name: "Empty program",
@@ -205,7 +205,7 @@ func TestCompile_ErrorHandling(t *testing.T) {
 				Functions:      []*parser.FunctionDef{},
 				Globals:        []parser.Statement{},
 			},
-			wantErr: "No main entry point",
+			wantErr: "メインエントリーポイントが見つかりません",
 		},
 	}
 

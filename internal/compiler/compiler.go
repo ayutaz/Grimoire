@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	grimoireErrors "github.com/ayutaz/grimoire/internal/errors"
+	"github.com/ayutaz/grimoire/internal/i18n"
 	"github.com/ayutaz/grimoire/internal/parser"
 )
 
@@ -35,7 +36,7 @@ func (c *Compiler) Compile(ast *parser.Program) (string, error) {
 
 	// Validate AST
 	if ast == nil {
-		return "", grimoireErrors.NewError(grimoireErrors.CompilationError, "Cannot compile nil AST")
+		return "", grimoireErrors.NewError(grimoireErrors.CompilationError, i18n.T("error.cannot_compile_nil_ast"))
 	}
 
 	// Check for required outer circle
@@ -78,8 +79,8 @@ func (c *Compiler) Compile(ast *parser.Program) (string, error) {
 		}
 	} else if len(ast.Globals) == 0 && len(ast.Functions) == 0 {
 		// No main entry and no other code
-		return "", grimoireErrors.NewError(grimoireErrors.MissingMainEntry, "No main entry point found").
-			WithSuggestion("Add a double circle symbol to define the main entry point")
+		return "", grimoireErrors.NewError(grimoireErrors.MissingMainEntry, i18n.T("error.missing_main_entry")).
+			WithSuggestion(i18n.T("suggest.add_double_circle"))
 	}
 
 	return c.output.String(), nil
