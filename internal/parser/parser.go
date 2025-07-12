@@ -384,6 +384,11 @@ func (p *Parser) parseStatement(node *symbolNode) Statement {
 			}
 			return nil
 		}
+		// Skip symbols that are parts of expressions
+		if isExpressionSymbol(symbol.Type) {
+			// These are handled as part of expressions
+			return nil
+		}
 		// Report unexpected symbol
 		err := grimoireErrors.UnexpectedSymbolError(
 			string(symbol.Type), "statement symbol",
@@ -803,6 +808,12 @@ func isComparisonOperator(t detector.SymbolType) bool {
 	return t == detector.Equal || t == detector.NotEqual ||
 		t == detector.LessThan || t == detector.GreaterThan ||
 		t == detector.LessEqual || t == detector.GreaterEqual
+}
+
+func isExpressionSymbol(t detector.SymbolType) bool {
+	// Symbols that are part of expressions, not standalone statements
+	return t == detector.Circle || t == detector.EightPointedStar ||
+		t == detector.Unknown || t == detector.OuterCircle
 }
 
 func hasOperatorChild(node *symbolNode) bool {
