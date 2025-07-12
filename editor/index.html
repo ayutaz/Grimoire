@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grimoire Visual Editor</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <button id="newBtn" title="New">New</button>
+                <button id="saveBtn" title="Save">Save</button>
+                <button id="loadBtn" title="Load">Load</button>
+                <input type="file" id="loadInput" accept=".json" style="display: none;">
+                <button id="exportBtn" title="Export PNG">Export PNG</button>
+            </div>
+            <div class="toolbar-group">
+                <button id="undoBtn" title="Undo">↶</button>
+                <button id="redoBtn" title="Redo">↷</button>
+                <button id="clearBtn" title="Clear">Clear</button>
+            </div>
+            <div class="toolbar-group">
+                <label>
+                    <input type="checkbox" id="gridToggle" checked>
+                    Grid
+                </label>
+                <label>
+                    <input type="checkbox" id="snapToggle" checked>
+                    Snap
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Tool Panel -->
+        <aside class="tool-panel">
+            <h3>Tools</h3>
+            <div class="tools">
+                <button class="tool active" data-tool="select" title="Select (V)">
+                    <span class="tool-icon">↖</span>
+                    Select
+                </button>
+                <button class="tool" data-tool="circle" title="Circle (C)">
+                    <span class="tool-icon">○</span>
+                    Circle
+                </button>
+                <button class="tool" data-tool="connect" title="Connect (L)">
+                    <span class="tool-icon">─</span>
+                    Connect
+                </button>
+                <button class="tool" data-tool="text" title="Text (T)">
+                    <span class="tool-icon">T</span>
+                    Text
+                </button>
+            </div>
+        </aside>
+
+        <!-- Canvas Area -->
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+            <div class="canvas-overlay" id="canvasOverlay"></div>
+        </div>
+
+        <!-- Symbol Palette -->
+        <aside class="symbol-palette">
+            <h3>Symbols</h3>
+            
+            <!-- Structure Elements -->
+            <div class="symbol-category">
+                <h4>Structure</h4>
+                <div class="symbol-grid">
+                    <div class="symbol" data-symbol="⭕" data-type="outer-circle" title="Outer Circle">⭕</div>
+                    <div class="symbol" data-symbol="○" data-type="inner-circle" title="Inner Circle">○</div>
+                    <div class="symbol" data-symbol="◎" data-type="double-circle" title="Double Circle">◎</div>
+                    <div class="symbol" data-symbol="⭐" data-type="pentagram" title="Pentagram">⭐</div>
+                    <div class="symbol" data-symbol="✡" data-type="hexagram" title="Hexagram">✡</div>
+                    <div class="symbol" data-symbol="✦" data-type="octagram" title="Octagram">✦</div>
+                    <div class="symbol" data-symbol="△" data-type="triangle" title="Triangle">△</div>
+                    <div class="symbol" data-symbol="□" data-type="square" title="Square">□</div>
+                </div>
+            </div>
+
+            <!-- Mystical Operators -->
+            <div class="symbol-category">
+                <h4>Operators</h4>
+                <div class="symbol-grid">
+                    <div class="symbol" data-symbol="⟐" data-type="fusion" title="Fusion (Add)">⟐</div>
+                    <div class="symbol" data-symbol="⟑" data-type="separation" title="Separation (Subtract)">⟑</div>
+                    <div class="symbol" data-symbol="✦" data-type="amplify" title="Amplify (Multiply)">✦</div>
+                    <div class="symbol" data-symbol="⟠" data-type="divide" title="Division">⟠</div>
+                    <div class="symbol" data-symbol="⟷" data-type="transfer" title="Transfer (Assign)">⟷</div>
+                    <div class="symbol" data-symbol="⊗" data-type="seal" title="Seal (Constant)">⊗</div>
+                    <div class="symbol" data-symbol="⟳" data-type="cycle" title="Cycle (Loop)">⟳</div>
+                </div>
+            </div>
+
+            <!-- Comparison Symbols -->
+            <div class="symbol-category">
+                <h4>Comparison</h4>
+                <div class="symbol-grid">
+                    <div class="symbol" data-symbol="=" data-type="equal" title="Equal">=</div>
+                    <div class="symbol" data-symbol="≠" data-type="not-equal" title="Not Equal">≠</div>
+                    <div class="symbol" data-symbol="<" data-type="less" title="Less Than"><</div>
+                    <div class="symbol" data-symbol=">" data-type="greater" title="Greater Than">></div>
+                    <div class="symbol" data-symbol="≤" data-type="less-equal" title="Less or Equal">≤</div>
+                    <div class="symbol" data-symbol="≥" data-type="greater-equal" title="Greater or Equal">≥</div>
+                </div>
+            </div>
+
+            <!-- Logic Symbols -->
+            <div class="symbol-category">
+                <h4>Logic</h4>
+                <div class="symbol-grid">
+                    <div class="symbol" data-symbol="⊕" data-type="and" title="AND">⊕</div>
+                    <div class="symbol" data-symbol="⊖" data-type="or" title="OR">⊖</div>
+                    <div class="symbol" data-symbol="⊗" data-type="not" title="NOT">⊗</div>
+                    <div class="symbol" data-symbol="⊙" data-type="xor" title="XOR">⊙</div>
+                </div>
+            </div>
+
+            <!-- Energy Nodes -->
+            <div class="symbol-category">
+                <h4>Energy Nodes</h4>
+                <div class="symbol-grid">
+                    <div class="symbol" data-symbol="⬢" data-type="hex-crystal" title="Branch Point">⬢</div>
+                    <div class="symbol" data-symbol="◈" data-type="square-crystal" title="Aggregation">◈</div>
+                    <div class="symbol" data-symbol="⬟" data-type="penta-crystal" title="Transform">⬟</div>
+                    <div class="symbol" data-symbol="✧" data-type="star-crystal" title="Amplify">✧</div>
+                </div>
+            </div>
+
+            <!-- Special Symbols -->
+            <div class="symbol-category">
+                <h4>Special</h4>
+                <div class="symbol-grid">
+                    <div class="symbol" data-symbol="☀" data-type="sun" title="Start/True">☀</div>
+                    <div class="symbol" data-symbol="☾" data-type="moon" title="False/Alt">☾</div>
+                    <div class="symbol" data-symbol="☆" data-type="star" title="Output">☆</div>
+                    <div class="symbol" data-symbol="○○" data-type="double-node" title="Function">○○</div>
+                    <div class="symbol" data-symbol="♪" data-type="note" title="Sound">♪</div>
+                    <div class="symbol" data-symbol="✉" data-type="envelope" title="Message">✉</div>
+                    <div class="symbol" data-symbol="✓" data-type="check" title="Success">✓</div>
+                    <div class="symbol" data-symbol="+" data-type="plus" title="Plus">+</div>
+                    <div class="symbol" data-symbol="□•" data-type="data-node" title="Data Node">□•</div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Status Bar -->
+    <footer class="status-bar">
+        <span id="mousePos">X: 0, Y: 0</span>
+        <span id="zoomLevel">Zoom: 100%</span>
+        <span id="gridSize">Grid: 20px</span>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/symbols.js"></script>
+    <script src="js/canvas.js"></script>
+    <script src="js/tools.js"></script>
+    <script src="js/connections.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

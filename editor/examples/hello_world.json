@@ -1,0 +1,32 @@
+{
+  "version": "1.0",
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "grid": true,
+    "gridSize": 20
+  },
+  "elements": [
+    {
+      "id": "elem_0",
+      "type": "outer-circle",
+      "symbol": "⭕",
+      "x": 400,
+      "y": 300,
+      "size": 300,
+      "rotation": 0,
+      "properties": {}
+    },
+    {
+      "id": "elem_1",
+      "type": "star",
+      "symbol": "☆",
+      "x": 400,
+      "y": 300,
+      "size": 80,
+      "rotation": 0,
+      "properties": {}
+    }
+  ],
+  "connections": []
+}

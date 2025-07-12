@@ -1,0 +1,377 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header and Toolbar */
+header {
+    background-color: #2a2a2a;
+    border-bottom: 1px solid #3a3a3a;
+    padding: 8px;
+}
+
+.toolbar {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.toolbar-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+button {
+    background-color: #3a3a3a;
+    color: #e0e0e0;
+    border: 1px solid #4a4a4a;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+button:hover {
+    background-color: #4a4a4a;
+    border-color: #5a5a5a;
+}
+
+button:active {
+    background-color: #5a5a5a;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+}
+
+input[type="checkbox"] {
+    cursor: pointer;
+}
+
+/* Main Layout */
+main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* Tool Panel */
+.tool-panel {
+    width: 180px;
+    background-color: #252525;
+    border-right: 1px solid #3a3a3a;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.tool-panel h3 {
+    margin-bottom: 16px;
+    font-size: 16px;
+    color: #b0b0b0;
+}
+
+.tools {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tool {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    text-align: left;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.tool.active {
+    background-color: #0066cc;
+    border-color: #0066cc;
+}
+
+.tool-icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+}
+
+/* Canvas Container */
+.canvas-container {
+    flex: 1;
+    position: relative;
+    background-color: #1e1e1e;
+    overflow: hidden;
+}
+
+#canvas {
+    position: absolute;
+    cursor: crosshair;
+    background-color: #f0f0f0;
+}
+
+.canvas-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* Symbol Palette */
+.symbol-palette {
+    width: 240px;
+    background-color: #252525;
+    border-left: 1px solid #3a3a3a;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.symbol-palette h3 {
+    margin-bottom: 16px;
+    font-size: 16px;
+    color: #b0b0b0;
+}
+
+.symbol-category {
+    margin-bottom: 24px;
+}
+
+.symbol-category h4 {
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #909090;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.symbol-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.symbol {
+    background-color: #3a3a3a;
+    border: 1px solid #4a4a4a;
+    border-radius: 4px;
+    padding: 8px;
+    text-align: center;
+    font-size: 20px;
+    cursor: grab;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.symbol:hover {
+    background-color: #4a4a4a;
+    border-color: #5a5a5a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.symbol:active {
+    cursor: grabbing;
+    transform: translateY(0);
+}
+
+/* Status Bar */
+.status-bar {
+    background-color: #2a2a2a;
+    border-top: 1px solid #3a3a3a;
+    padding: 6px 16px;
+    display: flex;
+    gap: 24px;
+    font-size: 12px;
+    color: #909090;
+}
+
+/* Canvas Elements */
+.canvas-element {
+    position: absolute;
+    cursor: move;
+}
+
+.canvas-element.selected {
+    outline: 2px solid #0066cc;
+    outline-offset: 2px;
+}
+
+.resize-handle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: #0066cc;
+    border: 1px solid #fff;
+    cursor: nwse-resize;
+}
+
+.resize-handle.nw { top: -4px; left: -4px; cursor: nw-resize; }
+.resize-handle.ne { top: -4px; right: -4px; cursor: ne-resize; }
+.resize-handle.sw { bottom: -4px; left: -4px; cursor: sw-resize; }
+.resize-handle.se { bottom: -4px; right: -4px; cursor: se-resize; }
+
+/* Connection Lines */
+.connection-line {
+    stroke: #333;
+    stroke-width: 2;
+    fill: none;
+}
+
+.connection-line.selected {
+    stroke: #0066cc;
+    stroke-width: 3;
+}
+
+.connection-line:hover {
+    stroke: #555;
+    stroke-width: 3;
+    cursor: pointer;
+}
+
+/* Grid Pattern */
+.grid-pattern {
+    stroke: #ddd;
+    stroke-width: 0.5;
+}
+
+/* Context Menu */
+.context-menu {
+    position: absolute;
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    padding: 4px;
+    min-width: 150px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.context-menu-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background-color 0.2s;
+}
+
+.context-menu-item:hover {
+    background-color: #3a3a3a;
+}
+
+/* Drag Ghost */
+.drag-ghost {
+    position: fixed;
+    pointer-events: none;
+    opacity: 0.7;
+    z-index: 1000;
+    font-size: 32px;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid #3a3a3a;
+    border-top-color: #0066cc;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .tool-panel {
+        width: 150px;
+    }
+    
+    .symbol-palette {
+        width: 200px;
+    }
+    
+    .symbol-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Dark Mode Adjustments */
+@media (prefers-color-scheme: light) {
+    body {
+        background-color: #f5f5f5;
+        color: #333;
+    }
+    
+    header,
+    .status-bar {
+        background-color: #fff;
+        border-color: #ddd;
+    }
+    
+    .tool-panel,
+    .symbol-palette {
+        background-color: #fafafa;
+        border-color: #ddd;
+    }
+    
+    button,
+    .tool,
+    .symbol {
+        background-color: #fff;
+        color: #333;
+        border-color: #ddd;
+    }
+    
+    button:hover,
+    .tool:hover,
+    .symbol:hover {
+        background-color: #f0f0f0;
+        border-color: #ccc;
+    }
+    
+    #canvas {
+        background-color: #fff;
+    }
+    
+    .grid-pattern {
+        stroke: #eee;
+    }
+}

@@ -1,0 +1,162 @@
+{
+  "version": "1.0",
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "grid": true,
+    "gridSize": 20
+  },
+  "elements": [
+    {
+      "id": "elem_0",
+      "type": "outer-circle",
+      "symbol": "⭕",
+      "x": 400,
+      "y": 300,
+      "size": 400,
+      "rotation": 0,
+      "properties": {}
+    },
+    {
+      "id": "elem_1",
+      "type": "inner-circle",
+      "symbol": "○",
+      "x": 400,
+      "y": 200,
+      "size": 120,
+      "rotation": 0,
+      "properties": {}
+    },
+    {
+      "id": "elem_2",
+      "type": "data-node",
+      "symbol": "□•",
+      "x": 340,
+      "y": 200,
+      "size": 40,
+      "rotation": 0,
+      "properties": {}
+    },
+    {
+      "id": "elem_3",
+      "type": "triangle",
+      "symbol": "△",
+      "x": 460,
+      "y": 200,
+      "size": 60,
+      "rotation": 0,
+      "properties": {}
+    },
+    {
+      "id": "elem_4",
+      "type": "less-equal",
+      "symbol": "≤",
+      "x": 420,
+      "y": 260,
+      "size": 40,
+      "rotation": 0,
+      "properties": {}
+    },
+    {
+      "id": "elem_5",
+      "type": "greater",
+      "symbol": ">",
+      "x": 500,
+      "y": 260,
+      "size": 40,
+      "rotation": 0,
+      "properties": {}
+    },
+    {
+      "id": "elem_6",
+      "type": "star",
+      "symbol": "☆",
+      "x": 380,
+      "y": 320,
+      "size": 50,
+      "rotation": 0,
+      "properties": {}
+    },
+    {
+      "id": "elem_7",
+      "type": "double-node",
+      "symbol": "○○",
+      "x": 500,
+      "y": 320,
+      "size": 60,
+      "rotation": 0,
+      "properties": {}
+    },
+    {
+      "id": "elem_8",
+      "type": "plus",
+      "symbol": "+",
+      "x": 500,
+      "y": 380,
+      "size": 40,
+      "rotation": 0,
+      "properties": {}
+    },
+    {
+      "id": "elem_9",
+      "type": "star",
+      "symbol": "☆",
+      "x": 400,
+      "y": 420,
+      "size": 60,
+      "rotation": 0,
+      "properties": {}
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_0",
+      "from": "elem_2",
+      "to": "elem_3",
+      "type": "energy_flow",
+      "style": "solid"
+    },
+    {
+      "id": "conn_1",
+      "from": "elem_3",
+      "to": "elem_4",
+      "type": "conditional",
+      "style": "dashed"
+    },
+    {
+      "id": "conn_2",
+      "from": "elem_3",
+      "to": "elem_5",
+      "type": "conditional",
+      "style": "dashed"
+    },
+    {
+      "id": "conn_3",
+      "from": "elem_4",
+      "to": "elem_6",
+      "type": "energy_flow",
+      "style": "solid"
+    },
+    {
+      "id": "conn_4",
+      "from": "elem_5",
+      "to": "elem_7",
+      "type": "energy_flow",
+      "style": "solid"
+    },
+    {
+      "id": "conn_5",
+      "from": "elem_7",
+      "to": "elem_8",
+      "type": "energy_flow",
+      "style": "solid"
+    },
+    {
+      "id": "conn_6",
+      "from": "elem_8",
+      "to": "elem_9",
+      "type": "energy_flow",
+      "style": "solid"
+    }
+  ]
+}
