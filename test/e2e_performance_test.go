@@ -25,14 +25,14 @@ func createPerformanceTestImage(filename string, complexity string) error {
 		symbols = []symbolSpec{
 			{detector.OuterCircle, 200, 200, 180},
 			// Create a minimal valid program - just output a constant
-			{detector.Seal, 200, 150, 30},      // Constant (seal pattern in square)
-			{detector.Star, 200, 250, 20},      // Output star
+			{detector.Seal, 200, 150, 30}, // Constant (seal pattern in square)
+			{detector.Star, 200, 250, 20}, // Output star
 		}
 	case "medium":
 		size = 800
 		symbols = []symbolSpec{
 			{detector.OuterCircle, 400, 400, 380},
-			{detector.Circle, 400, 100, 40},  // Use regular circle instead of double circle
+			{detector.Circle, 400, 100, 40}, // Use regular circle instead of double circle
 			// Variables
 			{detector.Square, 200, 200, 30},
 			{detector.Square, 300, 200, 30},
@@ -52,7 +52,7 @@ func createPerformanceTestImage(filename string, complexity string) error {
 		size = 1200
 		symbols = []symbolSpec{
 			{detector.OuterCircle, 600, 600, 580},
-			{detector.Circle, 600, 100, 50},  // Use regular circle instead of double circle
+			{detector.Circle, 600, 100, 50}, // Use regular circle instead of double circle
 		}
 		// Add many symbols in a grid pattern
 		for y := 200; y < 1000; y += 100 {
@@ -138,8 +138,8 @@ func drawSymbol(img *image.RGBA, spec symbolSpec) {
 		// Draw square with seal pattern (filled)
 		drawRGBASquare(img, spec.x, spec.y, spec.size, black)
 		// Fill interior
-		for y := spec.y - spec.size/2 + 2; y < spec.y + spec.size/2 - 2; y++ {
-			for x := spec.x - spec.size/2 + 2; x < spec.x + spec.size/2 - 2; x++ {
+		for y := spec.y - spec.size/2 + 2; y < spec.y+spec.size/2-2; y++ {
+			for x := spec.x - spec.size/2 + 2; x < spec.x+spec.size/2-2; x++ {
 				img.Set(x, y, black)
 			}
 		}
