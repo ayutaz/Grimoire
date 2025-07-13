@@ -396,7 +396,7 @@ func BenchmarkCIPerformance(b *testing.B) {
 	center := image.Point{X: imgSize / 2, Y: imgSize / 2}
 	radius := imgSize/2 - 20
 	// Draw multiple circles to make it thicker
-	for r := radius - 2; r <= radius + 2; r++ {
+	for r := radius - 2; r <= radius+2; r++ {
 		drawCircle(img, center, r, color.Black)
 	}
 
