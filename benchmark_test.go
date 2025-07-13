@@ -386,31 +386,31 @@ func BenchmarkCIPerformance(b *testing.B) {
 	imgSize := 400
 	img := image.NewRGBA(image.Rect(0, 0, imgSize, imgSize))
 	draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
-	
+
 	// Draw outer circle
 	center := image.Point{X: imgSize / 2, Y: imgSize / 2}
 	radius := imgSize/2 - 20
 	drawCircle(img, center, radius, color.Black)
-	
+
 	// Draw a few symbols
 	drawSquare(img, image.Point{X: 150, Y: 150}, 20, color.Black)
 	drawCircle(img, image.Point{X: 250, Y: 150}, 20, color.Black)
 	drawTriangle(img, image.Point{X: 200, Y: 250}, 20, color.Black)
-	
+
 	// Save image
 	tmpDir := b.TempDir()
 	imgPath := filepath.Join(tmpDir, "ci_test_simple.png")
 	saveTestImage(b, img, imgPath)
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		// Test basic detection only
 		symbols, _, err := detector.DetectSymbols(imgPath)
 		if err != nil {
 			b.Fatalf("Detection failed: %v", err)
 		}
-		
+
 		// Just verify we found some symbols
 		if len(symbols) < 2 { // At least outer circle and one symbol
 			b.Fatalf("Expected at least 2 symbols, got %d", len(symbols))
