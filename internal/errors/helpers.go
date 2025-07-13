@@ -64,7 +64,7 @@ func SuggestSimilar(invalid string, validOptions []string) string {
 	// Simple similarity check (could be enhanced with Levenshtein distance)
 	var suggestions []string
 	invalidLower := strings.ToLower(invalid)
-	
+
 	for _, option := range validOptions {
 		optionLower := strings.ToLower(option)
 		// Check if option contains the invalid string or vice versa
@@ -85,11 +85,11 @@ func SuggestSimilar(invalid string, validOptions []string) string {
 
 // ErrorContext provides additional context for errors
 type ErrorContext struct {
-	Operation   string                 // What operation was being performed
-	InputFile   string                 // Input file being processed
-	OutputFile  string                 // Output file being written
-	Stage       string                 // Processing stage (detection, parsing, compilation)
-	Metadata    map[string]interface{} // Additional metadata
+	Operation  string                 // What operation was being performed
+	InputFile  string                 // Input file being processed
+	OutputFile string                 // Output file being written
+	Stage      string                 // Processing stage (detection, parsing, compilation)
+	Metadata   map[string]interface{} // Additional metadata
 }
 
 // NewErrorContext creates a new error context
@@ -132,24 +132,24 @@ func (ctx *ErrorContext) WithMetadata(key string, value interface{}) *ErrorConte
 // ApplyToError applies the context to an error
 func (ctx *ErrorContext) ApplyToError(err *GrimoireError) *GrimoireError {
 	enhanced := NewEnhancedError(err)
-	
+
 	if ctx.Operation != "" {
-		enhanced.WithContext("operation", ctx.Operation)
+		_ = enhanced.WithContext("operation", ctx.Operation)
 	}
 	if ctx.InputFile != "" {
-		enhanced.WithContext("input_file", ctx.InputFile)
+		_ = enhanced.WithContext("input_file", ctx.InputFile)
 		if err.FileName == "" {
 			err.FileName = ctx.InputFile
 		}
 	}
 	if ctx.OutputFile != "" {
-		enhanced.WithContext("output_file", ctx.OutputFile)
+		_ = enhanced.WithContext("output_file", ctx.OutputFile)
 	}
 	if ctx.Stage != "" {
-		enhanced.WithContext("stage", ctx.Stage)
+		_ = enhanced.WithContext("stage", ctx.Stage)
 	}
 	for k, v := range ctx.Metadata {
-		enhanced.WithContext(k, v)
+		_ = enhanced.WithContext(k, v)
 	}
 
 	// Return the enhanced error as a GrimoireError for compatibility

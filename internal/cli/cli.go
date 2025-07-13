@@ -104,7 +104,7 @@ func Execute(version, commit, date string) error {
 	// Add global flags
 	rootCmd.PersistentFlags().String("lang", "", i18n.T("cli.language_flag_description"))
 	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug mode with detailed error information")
-	
+
 	rootCmd.AddCommand(runCmd, compileCmd, debugCmd, validateCmd, formatCmd, optimizeCmd)
 	return rootCmd.Execute()
 }
@@ -231,7 +231,7 @@ func formatError(err error, imagePath string) error {
 		// Enhance the error with additional context
 		if grimoireErr, ok := err.(*grimoireErrors.GrimoireError); ok {
 			enhanced := grimoireErrors.NewEnhancedError(grimoireErr)
-			enhanced.WithContext("input_file", imagePath)
+			_ = enhanced.WithContext("input_file", imagePath)
 			return enhanced
 		}
 		return err

@@ -107,9 +107,9 @@ func TestEnhancedError(t *testing.T) {
 
 func TestErrorWithHint(t *testing.T) {
 	tests := []struct {
-		errorType      ErrorType
-		expectHint     bool
-		expectDetails  bool
+		errorType     ErrorType
+		expectHint    bool
+		expectDetails bool
 	}{
 		{MissingMainEntry, true, true},
 		{NoOuterCircle, true, true},
@@ -122,11 +122,11 @@ func TestErrorWithHint(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(string(tt.errorType), func(t *testing.T) {
 			err := NewError(tt.errorType, "Test error")
-			
+
 			if tt.expectHint && err.Suggestion == "" {
 				t.Errorf("Expected hint for error type %s, but got none", tt.errorType)
 			}
-			
+
 			if tt.expectDetails && err.Details == "" {
 				t.Errorf("Expected details for error type %s, but got none", tt.errorType)
 			}
@@ -207,13 +207,13 @@ func TestSuggestSimilar(t *testing.T) {
 	validOptions := []string{"circle", "square", "triangle", "pentagon"}
 
 	tests := []struct {
-		input          string
+		input            string
 		expectSuggestion bool
 	}{
-		{"circ", true},    // Partial match
-		{"CIRCLE", true},  // Case insensitive
-		{"squar", true},   // Partial match
-		{"xyz", false},    // No match
+		{"circ", true},   // Partial match
+		{"CIRCLE", true}, // Case insensitive
+		{"squar", true},  // Partial match
+		{"xyz", false},   // No match
 	}
 
 	for _, tt := range tests {

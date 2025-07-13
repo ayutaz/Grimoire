@@ -107,7 +107,7 @@ func (e *EnhancedError) CaptureStackTrace() {
 	const maxDepth = 32
 	pcs := make([]uintptr, maxDepth)
 	n := runtime.Callers(3, pcs) // Skip runtime.Callers, CaptureStackTrace, and NewEnhancedError
-	
+
 	if n == 0 {
 		return
 	}
@@ -115,7 +115,7 @@ func (e *EnhancedError) CaptureStackTrace() {
 	frames := runtime.CallersFrames(pcs[:n])
 	for {
 		frame, more := frames.Next()
-		
+
 		// Skip internal runtime frames
 		if strings.Contains(frame.File, "runtime/") {
 			if !more {
@@ -162,7 +162,7 @@ func (e *EnhancedError) Error() string {
 	if len(e.StackTrace) > 0 && IsDebugMode() {
 		stackParts := []string{"Stack Trace:"}
 		for i, frame := range e.StackTrace {
-			stackParts = append(stackParts, fmt.Sprintf("  %d. %s\n     %s:%d", 
+			stackParts = append(stackParts, fmt.Sprintf("  %d. %s\n     %s:%d",
 				i+1, frame.Function, frame.File, frame.Line))
 		}
 		parts = append(parts, strings.Join(stackParts, "\n"))
