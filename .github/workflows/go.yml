@@ -110,14 +110,14 @@ jobs:
       if: matrix.go == '1.23' && runner.os != 'Windows'  # 最新版のみベンチマーク（Windows以外）
       run: |
         echo "Running lightweight benchmarks for CI..."
-        go test -bench=BenchmarkCI -benchmem -benchtime=10s -timeout=5m ./...
+        go test -bench=BenchmarkCIPerformance -benchmem -benchtime=10s -timeout=5m ./...
     
     - name: Run benchmarks (Windows)
       if: matrix.go == '1.23' && runner.os == 'Windows'  # Windows環境でのベンチマーク
       shell: cmd  # PowerShellの代わりにcmd.exeを使用
       run: |
         echo Running lightweight benchmarks for CI...
-        go test -bench=BenchmarkCI -benchmem -benchtime=10s -timeout=5m ./...
+        go test -bench=BenchmarkCIPerformance -benchmem -benchtime=10s -timeout=5m ./...
 
   lint:
     name: Lint
