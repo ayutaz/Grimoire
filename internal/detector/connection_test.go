@@ -196,4 +196,3 @@ func normalizeAngle(angle float64) float64 {
 	}
 	return angle
 }
-
