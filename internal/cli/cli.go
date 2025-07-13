@@ -32,6 +32,16 @@ func Execute(version, commit, date string) error {
 			if debugFlag || os.Getenv("GRIMOIRE_DEBUG") != "" {
 				grimoireErrors.EnableDebugMode()
 			}
+			
+			// Handle language flag
+			if lang, _ := cmd.Flags().GetString("lang"); lang != "" {
+				switch strings.ToLower(lang) {
+				case "ja", "japanese":
+					i18n.SetLanguage(i18n.Japanese)
+				case "en", "english":
+					i18n.SetLanguage(i18n.English)
+				}
+			}
 			return nil
 		},
 	}
@@ -89,20 +99,8 @@ func Execute(version, commit, date string) error {
 
 	// Add global language flag
 	rootCmd.PersistentFlags().StringP("lang", "l", "", i18n.T("cli.language_flag_description"))
-	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		if lang, _ := cmd.Flags().GetString("lang"); lang != "" {
-			switch strings.ToLower(lang) {
-			case "ja", "japanese":
-				i18n.SetLanguage(i18n.Japanese)
-			case "en", "english":
-				i18n.SetLanguage(i18n.English)
-			}
-		}
-		return nil
-	}
 
-	// Add global flags
-	rootCmd.PersistentFlags().String("lang", "", i18n.T("cli.language_flag_description"))
+	// Add global flags (lang flag is already defined above)
 	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug mode with detailed error information")
 
 	rootCmd.AddCommand(runCmd, compileCmd, debugCmd, validateCmd, formatCmd, optimizeCmd)
