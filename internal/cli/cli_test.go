@@ -684,8 +684,11 @@ func TestFormatErrorAllPaths(t *testing.T) {
 				f, err := os.Create(testFile)
 				require.NoError(t, err)
 				f.Close()
-				os.Chmod(testFile, 0o000) // No permissions
-				return testFile, func() { os.Chmod(testFile, 0o644) }
+				err = os.Chmod(testFile, 0o000) // No permissions
+				require.NoError(t, err)
+				return testFile, func() {
+					_ = os.Chmod(testFile, 0o644)
+				}
 			},
 			wantErr: "ファイル読み込みエラー",
 		},

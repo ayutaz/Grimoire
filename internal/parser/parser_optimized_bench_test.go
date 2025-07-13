@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"testing"
 
 	"github.com/ayutaz/grimoire/internal/detector"
@@ -85,6 +86,11 @@ func BenchmarkParserComparison(b *testing.B) {
 		{500, 0.02},
 	}
 
+	// Limit test cases in CI to avoid timeouts
+	if os.Getenv("CI") != "" {
+		testCases = testCases[:2] // Only test 50 and 100 symbols in CI
+	}
+
 	for _, tc := range testCases {
 		symbols := createLargeBenchmarkSymbols(tc.numSymbols)
 		connections := createDenseConnections(symbols, tc.density)
@@ -102,6 +108,16 @@ func BenchmarkParserComparison(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				parser := NewOptimizedParser()
 				_, _ = parser.Parse(symbols, connections)
+			}
+		})
+
+		// Add V2 parser benchmark
+		b.Run(fmt.Sprintf("OptimizedV2_%dsymbols", tc.numSymbols), func(b *testing.B) {
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				parser := NewOptimizedParserV2()
+				_, _ = parser.Parse(symbols, connections)
+				parser.Cleanup()
 			}
 		})
 	}
