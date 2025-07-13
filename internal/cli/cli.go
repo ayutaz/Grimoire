@@ -32,7 +32,7 @@ func Execute(version, commit, date string) error {
 			if debugFlag || os.Getenv("GRIMOIRE_DEBUG") != "" {
 				grimoireErrors.EnableDebugMode()
 			}
-			
+
 			// Handle language flag
 			if lang, _ := cmd.Flags().GetString("lang"); lang != "" {
 				switch strings.ToLower(lang) {
