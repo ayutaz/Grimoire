@@ -25,6 +25,11 @@ func BenchmarkDetectorComparison(b *testing.B) {
 		{500, 0.5},
 		{1000, 0.4},
 	}
+	
+	// Limit test cases in CI to avoid timeouts
+	if os.Getenv("CI") != "" {
+		testCases = testCases[:3] // Only test up to 200 symbols in CI
+	}
 
 	for _, tc := range testCases {
 		// Create test image

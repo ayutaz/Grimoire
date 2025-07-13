@@ -108,12 +108,12 @@ jobs:
     
     - name: Run benchmarks (Unix)
       if: matrix.go == '1.23' && runner.os != 'Windows'  # 最新版のみベンチマーク（Windows以外）
-      run: go test -bench=. -benchmem ./...
+      run: go test -bench=. -benchmem -benchtime=10s -timeout=5m ./...
     
     - name: Run benchmarks (Windows)
       if: matrix.go == '1.23' && runner.os == 'Windows'  # Windows環境でのベンチマーク
       shell: cmd  # PowerShellの代わりにcmd.exeを使用
-      run: go test -bench=. -benchmem ./...
+      run: go test -bench=. -benchmem -benchtime=10s -timeout=5m ./...
 
   lint:
     name: Lint

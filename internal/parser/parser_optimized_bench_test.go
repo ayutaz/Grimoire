@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"testing"
 
 	"github.com/ayutaz/grimoire/internal/detector"
@@ -83,6 +84,11 @@ func BenchmarkParserComparison(b *testing.B) {
 		{100, 0.1},
 		{200, 0.05},
 		{500, 0.02},
+	}
+	
+	// Limit test cases in CI to avoid timeouts
+	if os.Getenv("CI") != "" {
+		testCases = testCases[:2] // Only test 50 and 100 symbols in CI
 	}
 
 	for _, tc := range testCases {
