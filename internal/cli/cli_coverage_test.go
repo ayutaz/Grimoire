@@ -141,8 +141,11 @@ func TestFormatErrorWithGrimoireError(t *testing.T) {
 	// Format it
 	result := formatError(grimoireErr, "ignored.png")
 
-	// Should return the same error unchanged
-	assert.Equal(t, grimoireErr, result)
+	// Should return an EnhancedError
+	enhancedErr, ok := result.(*grimoireErrors.EnhancedError)
+	assert.True(t, ok, "Expected EnhancedError, got %T", result)
+	assert.NotNil(t, enhancedErr)
+	assert.Contains(t, result.Error(), "E2002") // Check for error code
 	assert.Contains(t, result.Error(), "外周円が検出されません")
 }
 
