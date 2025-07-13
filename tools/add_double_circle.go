@@ -17,7 +17,7 @@ func main() {
 	}
 
 	inputPath := os.Args[1]
-	
+
 	// Open the input image
 	file, err := os.Open(inputPath)
 	if err != nil {
@@ -43,7 +43,7 @@ func main() {
 	centerY := 100
 	outerRadius := 25
 	innerRadius := 20
-	
+
 	// Draw outer circle
 	drawCircle(rgba, centerX, centerY, outerRadius, color.Black)
 	// Draw inner circle
@@ -71,7 +71,7 @@ func drawCircle(img *image.RGBA, centerX, centerY, radius int, c color.Color) {
 	for angle := 0.0; angle < 2*math.Pi; angle += 0.01 {
 		x := centerX + int(float64(radius)*math.Cos(angle))
 		y := centerY + int(float64(radius)*math.Sin(angle))
-		
+
 		// Draw with thickness
 		for dx := -1; dx <= 1; dx++ {
 			for dy := -1; dy <= 1; dy++ {
@@ -84,3 +84,4 @@ func drawCircle(img *image.RGBA, centerX, centerY, radius int, c color.Color) {
 		}
 	}
 }
+
