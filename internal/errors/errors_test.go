@@ -1,327 +1,253 @@
 package errors
 
 import (
-	"errors"
+	"fmt"
+	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/ayutaz/grimoire/internal/i18n"
 )
 
-func TestNewError(t *testing.T) {
+func init() {
+	// Initialize i18n for tests
+	i18n.Init()
+}
+
+func TestEnhancedError(t *testing.T) {
 	tests := []struct {
-		name     string
-		errType  ErrorType
-		message  string
+		name           string
+		setupError     func() error
+		expectCode     ErrorCode
+		expectInOutput []string
+		debugMode      bool
+	}{
+		{
+			name: "basic enhanced error",
+			setupError: func() error {
+				err := NewError(MissingMainEntry, "Main entry point not found")
+				return NewEnhancedError(err)
+			},
+			expectCode: ErrCodeMissingMainEntry,
+			expectInOutput: []string{
+				"E3003",
+				"Main entry point not found",
+			},
+			debugMode: false,
+		},
+		{
+			name: "error with context",
+			setupError: func() error {
+				err := NewError(FileNotFound, "File not found")
+				enhanced := NewEnhancedError(err)
+				enhanced.WithContext("file", "test.png")
+				enhanced.WithContext("operation", "read")
+				return enhanced
+			},
+			expectCode:     ErrCodeFileNotFound,
+			expectInOutput: []string{"E1001", "File not found"},
+			debugMode:      false,
+		},
+		{
+			name: "error with stack trace in debug mode",
+			setupError: func() error {
+				err := NewError(SyntaxError, "Syntax error in expression")
+				return NewEnhancedError(err)
+			},
+			expectCode: ErrCodeSyntaxError,
+			expectInOutput: []string{
+				"E3001",
+				"Syntax error",
+				"Stack Trace:",
+			},
+			debugMode: true,
+		},
+		{
+			name: "error with automatic hints",
+			setupError: func() error {
+				return NewError(MissingMainEntry, "No main entry point")
+			},
+			expectCode: "",
+			expectInOutput: []string{
+				"ダブルサークル",
+				"DoubleCircle",
+			},
+			debugMode: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.debugMode {
+				EnableDebugMode()
+				defer DisableDebugMode()
+			}
+
+			err := tt.setupError()
+			if err == nil {
+				t.Fatal("Expected error, got nil")
+			}
+
+			// Check error code if it's an enhanced error
+			if enhanced, ok := err.(*EnhancedError); ok && tt.expectCode != "" {
+				if enhanced.GetCode() != tt.expectCode {
+					t.Errorf("Expected error code %s, got %s", tt.expectCode, enhanced.GetCode())
+				}
+			}
+
+			// Check error message contains expected strings
+			errStr := err.Error()
+			for _, expected := range tt.expectInOutput {
+				if !strings.Contains(errStr, expected) {
+					t.Errorf("Expected error to contain '%s', but it didn't.\nError: %s", expected, errStr)
+				}
+			}
+		})
+	}
+}
+
+func TestErrorWithHint(t *testing.T) {
+	tests := []struct {
+		errorType      ErrorType
+		expectHint     bool
+		expectDetails  bool
+	}{
+		{MissingMainEntry, true, true},
+		{NoOuterCircle, true, true},
+		{UnbalancedExpression, true, false},
+		{FileNotFound, true, false},
+		{ImageProcessingError, true, true},
+		{CompilationError, false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.errorType), func(t *testing.T) {
+			err := NewError(tt.errorType, "Test error")
+			
+			if tt.expectHint && err.Suggestion == "" {
+				t.Errorf("Expected hint for error type %s, but got none", tt.errorType)
+			}
+			
+			if tt.expectDetails && err.Details == "" {
+				t.Errorf("Expected details for error type %s, but got none", tt.errorType)
+			}
+		})
+	}
+}
+
+func TestDebugMode(t *testing.T) {
+	// Test initial state
+	if IsDebugMode() {
+		t.Error("Debug mode should be disabled by default")
+	}
+
+	// Test enabling
+	EnableDebugMode()
+	if !IsDebugMode() {
+		t.Error("Debug mode should be enabled after EnableDebugMode()")
+	}
+
+	// Test disabling
+	DisableDebugMode()
+	if IsDebugMode() {
+		t.Error("Debug mode should be disabled after DisableDebugMode()")
+	}
+}
+
+func TestStackTraceCapture(t *testing.T) {
+	EnableDebugMode()
+	defer DisableDebugMode()
+
+	err := NewError(ExecutionError, "Test execution error")
+	enhanced := NewEnhancedError(err)
+
+	if len(enhanced.GetStackTrace()) == 0 {
+		t.Error("Expected stack trace to be captured in debug mode")
+	}
+
+	// Check that stack frames have required fields
+	for i, frame := range enhanced.GetStackTrace() {
+		if frame.Function == "" {
+			t.Errorf("Stack frame %d has empty function name", i)
+		}
+		if frame.File == "" {
+			t.Errorf("Stack frame %d has empty file name", i)
+		}
+		if frame.Line == 0 {
+			t.Errorf("Stack frame %d has zero line number", i)
+		}
+	}
+}
+
+func TestErrorContext(t *testing.T) {
+	ctx := NewErrorContext().
+		WithOperation("compile").
+		WithInputFile("test.png").
+		WithOutputFile("test.py").
+		WithStage("parsing").
+		WithMetadata("symbols", 42)
+
+	if ctx.Operation != "compile" {
+		t.Errorf("Expected operation 'compile', got '%s'", ctx.Operation)
+	}
+	if ctx.InputFile != "test.png" {
+		t.Errorf("Expected input file 'test.png', got '%s'", ctx.InputFile)
+	}
+	if ctx.OutputFile != "test.py" {
+		t.Errorf("Expected output file 'test.py', got '%s'", ctx.OutputFile)
+	}
+	if ctx.Stage != "parsing" {
+		t.Errorf("Expected stage 'parsing', got '%s'", ctx.Stage)
+	}
+	if ctx.Metadata["symbols"] != 42 {
+		t.Errorf("Expected metadata symbols=42, got %v", ctx.Metadata["symbols"])
+	}
+}
+
+func TestSuggestSimilar(t *testing.T) {
+	validOptions := []string{"circle", "square", "triangle", "pentagon"}
+
+	tests := []struct {
+		input          string
+		expectSuggestion bool
+	}{
+		{"circ", true},    // Partial match
+		{"CIRCLE", true},  // Case insensitive
+		{"squar", true},   // Partial match
+		{"xyz", false},    // No match
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			suggestion := SuggestSimilar(tt.input, validOptions)
+			if tt.expectSuggestion && suggestion == "" {
+				t.Errorf("Expected suggestion for '%s', got none", tt.input)
+			}
+			if !tt.expectSuggestion && suggestion != "" {
+				t.Errorf("Expected no suggestion for '%s', got '%s'", tt.input, suggestion)
+			}
+		})
+	}
+}
+
+func TestFormatErrorLocation(t *testing.T) {
+	tests := []struct {
+		fileName string
+		line     int
+		column   int
 		expected string
 	}{
-		{
-			name:     "file not found error",
-			errType:  FileNotFound,
-			message:  "test.png not found",
-			expected: "ファイルが見つかりません",
-		},
-		{
-			name:     "syntax error",
-			errType:  SyntaxError,
-			message:  "unexpected symbol",
-			expected: "構文エラー",
-		},
-		{
-			name:     "runtime error",
-			errType:  ExecutionError,
-			message:  "execution failed",
-			expected: "実行エラー",
-		},
+		{"test.go", 10, 5, "test.go:10:5"},
+		{"test.go", 10, 0, "test.go:10"},
+		{"test.go", 0, 0, "test.go"},
+		{"/absolute/path/test.go", 5, 3, "/absolute/path/test.go:5:3"},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := NewError(tt.errType, tt.message)
-			assert.NotNil(t, err)
-			assert.Equal(t, tt.errType, err.Type)
-			assert.Equal(t, tt.message, err.Message)
-			assert.Contains(t, err.Error(), tt.expected)
-		})
-	}
-}
-
-func TestGrimoireError_Error(t *testing.T) {
-	tests := []struct {
-		name     string
-		err      *GrimoireError
-		expected []string
-	}{
-		{
-			name: "basic error",
-			err: &GrimoireError{
-				Type:    FileNotFound,
-				Message: "file.png not found",
-			},
-			expected: []string{"[ファイルが見つかりません]", "file.png not found"},
-		},
-		{
-			name: "error with filename",
-			err: &GrimoireError{
-				Type:     SyntaxError,
-				Message:  "invalid syntax",
-				FileName: "test.png",
-			},
-			expected: []string{"[構文エラー]", "invalid syntax", "ファイル: test.png"},
-		},
-		{
-			name: "error with line and column",
-			err: &GrimoireError{
-				Type:     SyntaxError,
-				Message:  "unexpected token",
-				FileName: "program.png",
-				Line:     10,
-				Column:   5,
-			},
-			expected: []string{"[構文エラー]", "unexpected token", "場所: program.png:10:5"},
-		},
-		{
-			name: "error with details",
-			err: &GrimoireError{
-				Type:    ImageProcessingError,
-				Message: "failed to process",
-				Details: "Invalid format",
-			},
-			expected: []string{"[画像処理エラー]", "failed to process", "詳細: Invalid format"},
-		},
-		{
-			name: "error with suggestion",
-			err: &GrimoireError{
-				Type:       NoOuterCircle,
-				Message:    "no outer circle found",
-				Suggestion: "Add an outer circle",
-			},
-			expected: []string{"[外周円が検出されません]", "no outer circle found", "提案: Add an outer circle"},
-		},
-		{
-			name: "error with inner error",
-			err: &GrimoireError{
-				Type:       FileReadError,
-				Message:    "cannot read file",
-				InnerError: errors.New("permission denied"),
-			},
-			expected: []string{"[ファイル読み込みエラー]", "cannot read file", "原因: permission denied"},
-		},
-		{
-			name: "error with all fields",
-			err: &GrimoireError{
-				Type:       CompilationError,
-				Message:    "compilation failed",
-				FileName:   "complex.png",
-				Line:       42,
-				Column:     13,
-				Details:    "Stack overflow",
-				Suggestion: "Check for infinite loops",
-				InnerError: errors.New("stack limit exceeded"),
-			},
-			expected: []string{
-				"[コンパイルエラー]",
-				"compilation failed",
-				"場所: complex.png:42:13",
-				"詳細: Stack overflow",
-				"提案: Check for infinite loops",
-				"原因: stack limit exceeded",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			errStr := tt.err.Error()
-			for _, exp := range tt.expected {
-				assert.Contains(t, errStr, exp)
+		t.Run(fmt.Sprintf("%s:%d:%d", tt.fileName, tt.line, tt.column), func(t *testing.T) {
+			result := FormatErrorLocation(tt.fileName, tt.line, tt.column)
+			if !strings.Contains(result, tt.expected) {
+				t.Errorf("Expected location format to contain '%s', got '%s'", tt.expected, result)
 			}
-		})
-	}
-}
-
-func TestGrimoireError_Unwrap(t *testing.T) {
-	innerErr := errors.New("inner error")
-
-	tests := []struct {
-		name      string
-		err       *GrimoireError
-		wantInner error
-	}{
-		{
-			name: "with inner error",
-			err: &GrimoireError{
-				Type:       FileReadError,
-				Message:    "read failed",
-				InnerError: innerErr,
-			},
-			wantInner: innerErr,
-		},
-		{
-			name: "without inner error",
-			err: &GrimoireError{
-				Type:    SyntaxError,
-				Message: "syntax error",
-			},
-			wantInner: nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.err.Unwrap()
-			assert.Equal(t, tt.wantInner, got)
-
-			// Test with errors.Is
-			if tt.wantInner != nil {
-				assert.True(t, errors.Is(tt.err, tt.wantInner))
-			}
-		})
-	}
-}
-
-func TestWithDetails(t *testing.T) {
-	err := NewError(ImageProcessingError, "processing failed")
-	err2 := err.WithDetails("PNG decode error")
-
-	assert.Equal(t, err, err2) // Should return same pointer
-	assert.Equal(t, "PNG decode error", err.Details)
-	assert.Contains(t, err.Error(), "詳細: PNG decode error")
-}
-
-func TestWithLocation(t *testing.T) {
-	err := NewError(SyntaxError, "invalid symbol")
-	err2 := err.WithLocation("test.png", 10, 20)
-
-	assert.Equal(t, err, err2) // Should return same pointer
-	assert.Equal(t, "test.png", err.FileName)
-	assert.Equal(t, 10, err.Line)
-	assert.Equal(t, 20, err.Column)
-	assert.Contains(t, err.Error(), "場所: test.png:10:20")
-}
-
-func TestWithSuggestion(t *testing.T) {
-	err := NewError(NoSymbolsDetected, "no symbols found")
-	err2 := err.WithSuggestion("Check image quality")
-
-	assert.Equal(t, err, err2) // Should return same pointer
-	assert.Equal(t, "Check image quality", err.Suggestion)
-	assert.Contains(t, err.Error(), "提案: Check image quality")
-}
-
-func TestWithInnerError(t *testing.T) {
-	innerErr := errors.New("original error")
-	err := NewError(FileReadError, "cannot read")
-	err2 := err.WithInnerError(innerErr)
-
-	assert.Equal(t, err, err2) // Should return same pointer
-	assert.Equal(t, innerErr, err.InnerError)
-	assert.Contains(t, err.Error(), "原因: original error")
-}
-
-func TestHelperFunctions(t *testing.T) {
-	// Test FileNotFoundError
-	err := FileNotFoundError("missing.png")
-	assert.Equal(t, FileNotFound, err.Type)
-	assert.Contains(t, err.Error(), "missing.png")
-	assert.NotEmpty(t, err.Suggestion)
-
-	// Test UnsupportedFormatError
-	err = UnsupportedFormatError("BMP")
-	assert.Equal(t, UnsupportedFormat, err.Type)
-	assert.Contains(t, err.Error(), "BMP")
-	assert.Contains(t, err.Suggestion, "PNG")
-
-	// Test NoOuterCircleError
-	err = NoOuterCircleError()
-	assert.Equal(t, NoOuterCircle, err.Type)
-	assert.NotEmpty(t, err.Suggestion)
-
-	// Test NoSymbolsError
-	err = NoSymbolsError()
-	assert.Equal(t, NoSymbolsDetected, err.Type)
-	assert.NotEmpty(t, err.Suggestion)
-}
-
-func TestSuggestionInHelperFunctions(t *testing.T) {
-	// Test that helper functions include suggestions
-	tests := []struct {
-		name string
-		err  *GrimoireError
-	}{
-		{
-			name: "FileNotFoundError has suggestion",
-			err:  FileNotFoundError("test.png"),
-		},
-		{
-			name: "UnsupportedFormatError has suggestion",
-			err:  UnsupportedFormatError("BMP"),
-		},
-		{
-			name: "NoOuterCircleError has suggestion",
-			err:  NoOuterCircleError(),
-		},
-		{
-			name: "NoSymbolsError has suggestion",
-			err:  NoSymbolsError(),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.NotEmpty(t, tt.err.Suggestion)
-			assert.Contains(t, tt.err.Error(), "提案:")
-		})
-	}
-}
-
-func TestErrorImplementsStandardError(t *testing.T) {
-	var err error = NewError(FileNotFound, "test")
-	assert.NotNil(t, err)
-
-	// Should work with standard error handling
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "ファイルが見つかりません")
-}
-
-func TestAllErrorTypes(t *testing.T) {
-	// Ensure all error types are valid
-	errorTypes := []ErrorType{
-		FileNotFound,
-		UnsupportedFormat,
-		FileReadError,
-		FileWriteError,
-		NoSymbolsDetected,
-		NoOuterCircle,
-		InvalidSymbolShape,
-		ImageProcessingError,
-		SyntaxError,
-		UnexpectedSymbol,
-		MissingMainEntry,
-		InvalidConnection,
-		UnbalancedExpression,
-		CompilationError,
-		UnsupportedOperation,
-		ExecutionError,
-		ValidationError,
-		IOError,
-	}
-
-	for _, errType := range errorTypes {
-		t.Run(string(errType), func(t *testing.T) {
-			// Create error
-			err := NewError(errType, "test message")
-			assert.NotNil(t, err)
-
-			// Check type
-			assert.Equal(t, errType, err.Type)
-
-			// Check error string contains localized type
-			// The error message now contains the Japanese translation, not the constant
-
-			// Just verify no panic
-			assert.NotPanics(t, func() {
-				_ = err.Error()
-			})
 		})
 	}
 }

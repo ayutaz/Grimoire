@@ -175,6 +175,28 @@ func (l *Localizer) loadMessages() {
 		{ID: "suggest.check_python_installed", En: "Check that Python 3 is installed and in your PATH",
 			Ja: "Python 3がインストールされ、PATHに含まれていることを確認してください"},
 
+		// Enhanced error hints
+		{ID: "error.hint.missing_main_entry", En: "Add a double circle (◎) symbol at the top of your magic circle to define the main entry point",
+			Ja: "魔法陣の上部にダブルサークル（◎）シンボルを追加してメインエントリーポイントを定義してください"},
+		{ID: "error.detail.missing_main_entry", En: "The double circle (DoubleCircle) symbol was not detected in the image",
+			Ja: "二重円（DoubleCircle）シンボルが画像内で検出されませんでした"},
+		{ID: "error.hint.no_outer_circle", En: "Draw a complete circle around your entire program. The circle should be closed and clearly visible",
+			Ja: "プログラム全体を囲む完全な円を描いてください。円は閉じていて明確に見える必要があります"},
+		{ID: "error.detail.no_outer_circle", En: "No outer circle was detected. All Grimoire programs must be enclosed in a magic circle",
+			Ja: "外周円が検出されませんでした。すべてのGrimoireプログラムは魔法陣で囲まれている必要があります"},
+		{ID: "error.hint.unbalanced_expression", En: "Check that all operators have the correct number of operands connected",
+			Ja: "すべての演算子に正しい数のオペランドが接続されていることを確認してください"},
+		{ID: "error.hint.file_not_found", En: "Check the file path. Current directory: %s",
+			Ja: "ファイルパスを確認してください。現在のディレクトリ: %s"},
+		{ID: "error.hint.image_processing", En: "Ensure the image is not corrupted and has sufficient resolution (recommended: at least 600x600 pixels)",
+			Ja: "画像が破損していないこと、十分な解像度があることを確認してください（推奨: 最低600x600ピクセル）"},
+		{ID: "error.detail.image_processing", En: "Failed to process the image. Common causes: corrupted file, unsupported color mode, or insufficient memory",
+			Ja: "画像の処理に失敗しました。一般的な原因: ファイルの破損、サポートされていないカラーモード、メモリ不足"},
+
+		// Error formatting helpers
+		{ID: "error.did_you_mean_single", En: "Did you mean: %s?", Ja: "もしかして: %s?"},
+		{ID: "error.did_you_mean_multiple", En: "Did you mean one of: %s?", Ja: "もしかして次のいずれか: %s?"},
+
 		// Details
 		{ID: "detail.all_programs_need_circle", En: "All Grimoire programs must be enclosed in a magic circle",
 			Ja: "すべてのGrimoireプログラムは魔法陣で囲まれている必要があります"},

@@ -26,6 +26,14 @@ func Execute(version, commit, date string) error {
 		Short:   i18n.T("cli.description_short"),
 		Long:    i18n.T("cli.description_long"),
 		Version: fmt.Sprintf("%s (commit: %s, built: %s)", version, commit, date),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// Enable debug mode if flag is set
+			debugFlag, _ := cmd.Flags().GetBool("debug")
+			if debugFlag || os.Getenv("GRIMOIRE_DEBUG") != "" {
+				grimoireErrors.EnableDebugMode()
+			}
+			return nil
+		},
 	}
 
 	// Run command
@@ -93,6 +101,10 @@ func Execute(version, commit, date string) error {
 		return nil
 	}
 
+	// Add global flags
+	rootCmd.PersistentFlags().String("lang", "", i18n.T("cli.language_flag_description"))
+	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug mode with detailed error information")
+	
 	rootCmd.AddCommand(runCmd, compileCmd, debugCmd, validateCmd, formatCmd, optimizeCmd)
 	return rootCmd.Execute()
 }
@@ -216,7 +228,12 @@ func executePython(code string) error {
 // formatError formats an error for user-friendly display
 func formatError(err error, imagePath string) error {
 	if grimoireErrors.IsGrimoireError(err) {
-		// Already formatted
+		// Enhance the error with additional context
+		if grimoireErr, ok := err.(*grimoireErrors.GrimoireError); ok {
+			enhanced := grimoireErrors.NewEnhancedError(grimoireErr)
+			enhanced.WithContext("input_file", imagePath)
+			return enhanced
+		}
 		return err
 	}
 

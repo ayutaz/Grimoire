@@ -101,10 +101,12 @@ func (e *GrimoireError) Unwrap() error {
 
 // NewError creates a new GrimoireError
 func NewError(errorType ErrorType, message string) *GrimoireError {
-	return &GrimoireError{
+	err := &GrimoireError{
 		Type:    errorType,
 		Message: message,
 	}
+	// Apply automatic hints based on error type
+	return ErrorWithHint(err)
 }
 
 // WithDetails adds details to the error

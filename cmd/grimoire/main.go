@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ayutaz/grimoire/internal/cli"
+	grimoireErrors "github.com/ayutaz/grimoire/internal/errors"
 	"github.com/ayutaz/grimoire/internal/i18n"
 )
 
@@ -24,7 +25,14 @@ func run() int {
 
 	// CLIの実行
 	if err := cli.Execute(version, commit, date); err != nil {
-		fmt.Fprintf(os.Stderr, i18n.T("error.error_prefix"), err)
+		// Format error output based on error type
+		if _, ok := err.(*grimoireErrors.EnhancedError); ok {
+			// Enhanced error already has proper formatting
+			fmt.Fprintln(os.Stderr, err)
+		} else {
+			// Legacy error format
+			fmt.Fprintf(os.Stderr, i18n.T("error.error_prefix"), err)
+		}
 		return 1
 	}
 
