@@ -27,7 +27,7 @@ func TestDiagonalLineDetection(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create test image
 			img := createDiagonalTestImage(tt.angle)
-			
+
 			// Save to temporary file
 			tmpfile, err := os.CreateTemp("", "diagonal_test_*.png")
 			if err != nil {
@@ -35,8 +35,8 @@ func TestDiagonalLineDetection(t *testing.T) {
 			}
 			defer os.Remove(tmpfile.Name())
 
-			if err := png.Encode(tmpfile, img); err != nil {
-				t.Fatal(err)
+			if encodeErr := png.Encode(tmpfile, img); encodeErr != nil {
+				t.Fatal(encodeErr)
 			}
 			tmpfile.Close()
 
@@ -57,10 +57,10 @@ func TestDiagonalLineDetection(t *testing.T) {
 			for _, conn := range connections {
 				dx := conn.To.Position.X - conn.From.Position.X
 				dy := conn.To.Position.Y - conn.From.Position.Y
-				
+
 				// Calculate connection angle
 				connAngle := math.Atan2(dy, dx)
-				
+
 				// Check if angle matches expected (with tolerance)
 				angleDiff := math.Abs(normalizeAngle(connAngle - tt.angle))
 				if angleDiff < math.Pi/8 { // 22.5° tolerance
@@ -112,7 +112,7 @@ func drawTestCircle(img *image.RGBA, center image.Point, radius int, c color.Col
 	for angle := 0.0; angle < 2*math.Pi; angle += 0.01 {
 		x := center.X + int(float64(radius)*math.Cos(angle))
 		y := center.Y + int(float64(radius)*math.Sin(angle))
-		
+
 		// Draw with thickness
 		for dx := -1; dx <= 1; dx++ {
 			for dy := -1; dy <= 1; dy++ {
@@ -196,3 +196,4 @@ func normalizeAngle(angle float64) float64 {
 	}
 	return angle
 }
+
