@@ -146,12 +146,14 @@ func (pd *ParallelDetectorV2) detectSymbolsOptimized(contours []Contour, binary 
 					continue
 				}
 
-				// Get symbol from pool
-				symbol := pd.symbolPool.Get().(*Symbol)
-				symbol.Type = symbolType
-				symbol.Position = Position{X: float64(contour.Center.X), Y: float64(contour.Center.Y)}
-				symbol.Size = contour.getEquivalentRadius()
-				symbol.Confidence = contour.Circularity
+				// Create new symbol instead of using pool to avoid race conditions
+				symbol := &Symbol{
+					Type:       symbolType,
+					Position:   Position{X: float64(contour.Center.X), Y: float64(contour.Center.Y)},
+					Size:       contour.getEquivalentRadius(),
+					Confidence: contour.Circularity,
+					Properties: make(map[string]interface{}),
+				}
 
 				// Detect pattern
 				if symbolType == Square || symbolType == Circle || symbolType == Pentagon ||

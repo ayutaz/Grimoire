@@ -399,19 +399,14 @@ func (p *OptimizedParserV2) buildASTParallel(outerCircle *symbolNode) (*Program,
 			WithDetails("No symbols found inside the outer circle")
 	}
 
-	// Process top-level nodes in parallel
+	// Process top-level nodes sequentially to avoid race conditions
+	// Go 1.23 has stricter race detection
 	statements := make([]Statement, len(topLevelNodes))
 
-	var wg sync.WaitGroup
 	for i, node := range topLevelNodes {
-		wg.Add(1)
-		go func(idx int, n *symbolNode) {
-			defer wg.Done()
-			stmt := p.Parser.parseStatement(n)
-			statements[idx] = stmt
-		}(i, node)
+		stmt := p.Parser.parseStatement(node)
+		statements[i] = stmt
 	}
-	wg.Wait()
 
 	// Filter out nil statements
 	validStatements := make([]Statement, 0, len(statements))
