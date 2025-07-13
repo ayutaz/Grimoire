@@ -13,16 +13,16 @@ import (
 // TestAnalyzeUsedExprEdgeCases tests analyzeUsedExpr with various expression types
 func TestAnalyzeUsedExprEdgeCases(t *testing.T) {
 	used := make(map[string]bool)
-	
+
 	// Test nil expression
 	analyzeUsedExpr(nil, used)
 	assert.Empty(t, used)
-	
+
 	// Test Identifier
 	id := &parser.Identifier{Name: "testVar"}
 	analyzeUsedExpr(id, used)
 	assert.True(t, used["testVar"])
-	
+
 	// Test BinaryOp
 	binOp := &parser.BinaryOp{
 		Left:     &parser.Identifier{Name: "left"},
@@ -33,7 +33,7 @@ func TestAnalyzeUsedExprEdgeCases(t *testing.T) {
 	analyzeUsedExpr(binOp, used)
 	assert.True(t, used["left"])
 	assert.True(t, used["right"])
-	
+
 	// Test UnaryOp
 	unaryOp := &parser.UnaryOp{
 		Operator: "-",
@@ -42,7 +42,7 @@ func TestAnalyzeUsedExprEdgeCases(t *testing.T) {
 	used = make(map[string]bool)
 	analyzeUsedExpr(unaryOp, used)
 	assert.True(t, used["unaryVar"])
-	
+
 	// Test FunctionCall
 	funcCall := &parser.FunctionCall{
 		Function: &parser.Identifier{Name: "testFunc"},
@@ -55,7 +55,7 @@ func TestAnalyzeUsedExprEdgeCases(t *testing.T) {
 	analyzeUsedExpr(funcCall, used)
 	assert.True(t, used["arg1"])
 	assert.True(t, used["arg2"])
-	
+
 	// Test ArrayLiteral
 	arrayLit := &parser.ArrayLiteral{
 		Elements: []parser.Expression{
@@ -72,7 +72,7 @@ func TestAnalyzeUsedExprEdgeCases(t *testing.T) {
 // TestAnalyzeDefinedEdgeCases tests analyzeDefined with various statement types
 func TestAnalyzeDefinedEdgeCases(t *testing.T) {
 	defined := make(map[string]bool)
-	
+
 	// Test Assignment
 	assignment := &parser.Assignment{
 		Target: &parser.Identifier{Name: "assignVar"},
@@ -80,7 +80,7 @@ func TestAnalyzeDefinedEdgeCases(t *testing.T) {
 	}
 	analyzeDefined(assignment, defined)
 	assert.True(t, defined["assignVar"])
-	
+
 	// Test ForLoop
 	forLoop := &parser.ForLoop{
 		Counter: &parser.Identifier{Name: "i"},
@@ -97,7 +97,7 @@ func TestAnalyzeDefinedEdgeCases(t *testing.T) {
 	analyzeDefined(forLoop, defined)
 	assert.True(t, defined["i"])
 	assert.True(t, defined["innerVar"])
-	
+
 	// Test IfStatement
 	ifStmt := &parser.IfStatement{
 		Condition: &parser.BinaryOp{
@@ -122,7 +122,7 @@ func TestAnalyzeDefinedEdgeCases(t *testing.T) {
 	analyzeDefined(ifStmt, defined)
 	assert.True(t, defined["thenVar"])
 	assert.True(t, defined["elseVar"])
-	
+
 	// Test WhileLoop
 	whileLoop := &parser.WhileLoop{
 		Condition: &parser.BinaryOp{
@@ -140,7 +140,7 @@ func TestAnalyzeDefinedEdgeCases(t *testing.T) {
 	defined = make(map[string]bool)
 	analyzeDefined(whileLoop, defined)
 	assert.True(t, defined["whileVar"])
-	
+
 	// Test ParallelBlock
 	parallelBlock := &parser.ParallelBlock{
 		Branches: [][]parser.Statement{
@@ -167,7 +167,7 @@ func TestAnalyzeDefinedEdgeCases(t *testing.T) {
 // TestAnalyzeUsedStatements tests analyzeUsed with various statement types
 func TestAnalyzeUsedStatements(t *testing.T) {
 	used := make(map[string]bool)
-	
+
 	// Test Assignment with variable usage
 	assignment := &parser.Assignment{
 		Target: &parser.Identifier{Name: "result"},
@@ -180,7 +180,7 @@ func TestAnalyzeUsedStatements(t *testing.T) {
 	analyzeUsed(assignment, used)
 	assert.True(t, used["a"])
 	assert.True(t, used["b"])
-	
+
 	// Test OutputStatement
 	output := &parser.OutputStatement{
 		Value: &parser.Identifier{Name: "outputVar"},
@@ -188,7 +188,7 @@ func TestAnalyzeUsedStatements(t *testing.T) {
 	used = make(map[string]bool)
 	analyzeUsed(output, used)
 	assert.True(t, used["outputVar"])
-	
+
 	// Test IfStatement with condition
 	ifStmt := &parser.IfStatement{
 		Condition: &parser.BinaryOp{
@@ -212,7 +212,7 @@ func TestAnalyzeUsedStatements(t *testing.T) {
 	assert.True(t, used["condVar"])
 	assert.True(t, used["thenOutput"])
 	assert.True(t, used["elseOutput"])
-	
+
 	// Test ForLoop
 	forLoop := &parser.ForLoop{
 		Counter: &parser.Identifier{Name: "i"},
@@ -229,7 +229,7 @@ func TestAnalyzeUsedStatements(t *testing.T) {
 	assert.True(t, used["startVar"])
 	assert.True(t, used["endVar"])
 	assert.True(t, used["loopOutput"])
-	
+
 	// Test WhileLoop
 	whileLoop := &parser.WhileLoop{
 		Condition: &parser.Identifier{Name: "whileCond"},
@@ -243,7 +243,7 @@ func TestAnalyzeUsedStatements(t *testing.T) {
 	analyzeUsed(whileLoop, used)
 	assert.True(t, used["whileCond"])
 	assert.True(t, used["whileOutput"])
-	
+
 	// Test ParallelBlock
 	parallelBlock := &parser.ParallelBlock{
 		Branches: [][]parser.Statement{
@@ -270,22 +270,22 @@ func TestStatementsEqualEdgeCases(t *testing.T) {
 	// Test with concrete statement types
 	assign1 := &parser.Assignment{
 		Target: &parser.Identifier{Name: "x"},
-		Value:  &parser.Literal{Value: 1},
+		Value:  &parser.Literal{Value: "1"},
 	}
 	assign2 := &parser.Assignment{
 		Target: &parser.Identifier{Name: "y"},
-		Value:  &parser.Literal{Value: 2},
+		Value:  &parser.Literal{Value: "2"},
 	}
 	output := &parser.OutputStatement{
 		Value: &parser.Identifier{Name: "x"},
 	}
-	
+
 	// Same type should be considered equal (simplistic implementation)
 	assert.True(t, statementsEqual(assign1, assign2))
-	
+
 	// Different types should not be equal
 	assert.False(t, statementsEqual(assign1, output))
-	
+
 	// Test with nil
 	assert.False(t, statementsEqual(assign1, nil))
 	assert.False(t, statementsEqual(nil, assign1))
@@ -296,27 +296,27 @@ func TestDebugFlagHandling(t *testing.T) {
 	// Save original env
 	originalDebug := os.Getenv("GRIMOIRE_DEBUG")
 	defer os.Setenv("GRIMOIRE_DEBUG", originalDebug)
-	
+
 	// Test with environment variable
 	os.Setenv("GRIMOIRE_DEBUG", "1")
-	
+
 	rootCmd := &cobra.Command{
 		Use:   "grimoire",
 		Short: i18n.T("cli.description_short"),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			debugFlag, _ := cmd.Flags().GetBool("debug")
-			if debugFlag || os.Getenv("GRIMOIRE_DEBUG") != "" {
-				// Would call grimoireErrors.EnableDebugMode() in real code
-			}
+			_ = debugFlag // Simulate using the flag
+			// In real code, would check debugFlag || os.Getenv("GRIMOIRE_DEBUG") != ""
+			// and call grimoireErrors.EnableDebugMode()
 			return nil
 		},
 	}
 	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug mode")
-	
+
 	// Test with debug flag
 	err := rootCmd.PersistentPreRunE(rootCmd, []string{})
 	assert.NoError(t, err)
-	
+
 	// Test with flag set
 	rootCmd.Flags().Set("debug", "true")
 	err = rootCmd.PersistentPreRunE(rootCmd, []string{})
@@ -341,22 +341,22 @@ func TestLanguageHandling(t *testing.T) {
 		},
 	}
 	rootCmd.PersistentFlags().StringP("lang", "l", "", "Language")
-	
+
 	// Test Japanese
 	rootCmd.Flags().Set("lang", "ja")
 	err := rootCmd.PersistentPreRunE(rootCmd, []string{})
 	assert.NoError(t, err)
-	
+
 	// Test English
 	rootCmd.Flags().Set("lang", "en")
 	err = rootCmd.PersistentPreRunE(rootCmd, []string{})
 	assert.NoError(t, err)
-	
+
 	// Test japanese (full name)
 	rootCmd.Flags().Set("lang", "japanese")
 	err = rootCmd.PersistentPreRunE(rootCmd, []string{})
 	assert.NoError(t, err)
-	
+
 	// Test english (full name)
 	rootCmd.Flags().Set("lang", "english")
 	err = rootCmd.PersistentPreRunE(rootCmd, []string{})
@@ -376,11 +376,11 @@ func TestFormatErrorEdgeCases(t *testing.T) {
 	// Test with permission denied error
 	err := formatError(&testError{msg: "permission denied"}, "/test/file.png")
 	assert.Contains(t, err.Error(), "ファイル読み込みエラー")
-	
+
 	// Test with access denied error
 	err = formatError(&testError{msg: "access is denied"}, "/test/file.png")
 	assert.Contains(t, err.Error(), "ファイル読み込みエラー")
-	
+
 	// Test with failed to open file error
 	err = formatError(&testError{msg: "failed to open file"}, "/test/file.png")
 	assert.Contains(t, err.Error(), "ファイル読み込みエラー")
