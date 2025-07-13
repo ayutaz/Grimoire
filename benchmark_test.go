@@ -24,7 +24,7 @@ func BenchmarkLargeScalePerformance(b *testing.B) {
 	if os.Getenv("CI") != "" {
 		b.Skip("Skipping large scale benchmark in CI")
 	}
-	
+
 	// Test with different symbol counts
 	symbolCounts := []int{100, 300, 500, 1000}
 
@@ -82,7 +82,7 @@ func BenchmarkOptimizedPipeline(b *testing.B) {
 	if os.Getenv("CI") != "" {
 		b.Skip("Skipping optimized pipeline benchmark in CI")
 	}
-	
+
 	symbolCounts := []int{100, 300, 500, 1000}
 
 	for _, count := range symbolCounts {
@@ -384,21 +384,21 @@ func encodePNG(file *os.File, img image.Image) error {
 func BenchmarkCIPerformance(b *testing.B) {
 	// Only test with 50 symbols for quick CI runs
 	img, _, _ := createLargeTestImage(b, 50)
-	
+
 	// Save image
 	tmpDir := b.TempDir()
 	imgPath := filepath.Join(tmpDir, "ci_test_50.png")
 	saveTestImage(b, img, imgPath)
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		// Test basic pipeline
 		symbols, connections, err := detector.DetectSymbols(imgPath)
 		if err != nil {
 			b.Fatalf("Detection failed: %v", err)
 		}
-		
+
 		p := parser.NewParser()
 		_, err = p.Parse(symbols, connections)
 		if err != nil {
