@@ -84,4 +84,3 @@ func drawCircle(img *image.RGBA, centerX, centerY, radius int, c color.Color) {
 		}
 	}
 }
-
