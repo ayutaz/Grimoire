@@ -132,10 +132,12 @@ func TestFormatErrorAdditional(t *testing.T) {
 	// Test with "access is denied" error
 	err := formatError(&testError{msg: "access is denied"}, "/test/file.png")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "FILE_READ_ERROR")
+	// Check for Japanese error message since formatError returns localized messages
+	assert.Contains(t, err.Error(), "ファイル読み込みエラー")
 
 	// Test with "failed to open file" error
 	err = formatError(&testError{msg: "failed to open file"}, "/test/file.png")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "FILE_READ_ERROR")
+	// Check for Japanese error message since formatError returns localized messages
+	assert.Contains(t, err.Error(), "ファイル読み込みエラー")
 }
