@@ -664,8 +664,8 @@ func TestRunCommandExecutionError(t *testing.T) {
 		}
 		// Check that the error mentions Python in some way
 		errStr := err.Error()
-		assert.True(t, strings.Contains(errStr, "Python") || strings.Contains(errStr, "python") || 
-			strings.Contains(errStr, "executable file not found"), 
+		assert.True(t, strings.Contains(errStr, "Python") || strings.Contains(errStr, "python") ||
+			strings.Contains(errStr, "executable file not found"),
 			"Error should be related to Python execution: %s", errStr)
 	}
 }
