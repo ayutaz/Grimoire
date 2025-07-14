@@ -131,6 +131,8 @@ async function showResult(result) {
         // Pyodideが利用可能な場合はPythonコードを実行
         if (pyodide && result.code) {
             try {
+                console.log("Generated Python code:", result.code);
+                
                 // 出力をキャプチャするための設定
                 pyodide.runPython(`
 import sys
@@ -147,8 +149,10 @@ sys.stdout = output_buffer
 output_buffer.getvalue()
                 `);
                 
+                console.log("Python output:", output);
                 outputContent.textContent = output || "（出力なし）";
             } catch (error) {
+                console.error("Python execution error:", error);
                 outputContent.textContent = `実行エラー: ${error.message}`;
             }
         } else {
