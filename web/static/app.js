@@ -47,6 +47,7 @@ async function initWasm() {
 async function initPyodide() {
     try {
         pyodide = await loadPyodide();
+        window.pyodide = pyodide; // E2Eテスト用にグローバルに公開
         console.log("Pyodide initialized successfully");
     } catch (error) {
         console.error("Failed to initialize Pyodide:", error);

@@ -8,9 +8,9 @@ module.exports = defineConfig({
   },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,  // Reduce retries in CI
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: process.env.CI ? 'list' : 'html',  // Use list reporter in CI
   use: {
     baseURL: 'http://localhost:8080',
     trace: 'on-first-retry',
@@ -28,5 +28,6 @@ module.exports = defineConfig({
     command: 'npx http-server .. -p 8080 -c-1',
     port: 8080,
     reuseExistingServer: !process.env.CI,
+    timeout: 60 * 1000,  // 60 seconds timeout for server startup
   },
 });
