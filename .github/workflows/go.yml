@@ -99,12 +99,15 @@ jobs:
       run: go test -v -race "-coverprofile=coverage.out" ./...
     
     - name: Upload coverage
-      if: matrix.go == '1.23'  # 最新版のみカバレッジ送信（全OS）
+      if: matrix.go == '1.23' && matrix.os == 'ubuntu-latest'  # Ubuntu/Go 1.23のみカバレッジ送信
       uses: codecov/codecov-action@v4
       with:
         file: ./coverage.out
         flags: unittests
-        name: codecov-${{ matrix.os }}-${{ matrix.go }}
+        name: codecov-umbrella
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: false
+        verbose: true
     
     - name: Run benchmarks (Unix)
       if: matrix.go == '1.23' && runner.os != 'Windows'  # 最新版のみベンチマーク（Windows以外）
