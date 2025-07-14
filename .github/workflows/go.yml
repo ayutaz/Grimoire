@@ -105,7 +105,7 @@ jobs:
         file: ./coverage.out
         flags: unittests
         name: codecov-umbrella
-        token: ${{ secrets.CODECOV_TOKEN }}
+        token: ${{ secrets.CODECOV_TOKEN }}  # パブリックリポジトリではオプション
         fail_ci_if_error: false
         verbose: true
     
