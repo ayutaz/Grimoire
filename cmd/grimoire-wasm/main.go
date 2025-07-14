@@ -1,3 +1,4 @@
+//go:build js && wasm
 // +build js,wasm
 
 package main
@@ -38,7 +39,7 @@ func processImage(this js.Value, args []js.Value) interface{} {
 
 	// Base64エンコードされた画像データを取得
 	imageDataBase64 := args[0].String()
-	
+
 	// Base64デコード
 	imageData, err := base64.StdEncoding.DecodeString(imageDataBase64)
 	if err != nil {
@@ -184,4 +185,3 @@ func createErrorResult(errorMsg string) map[string]interface{} {
 		"error":   errorMsg,
 	}
 }
-

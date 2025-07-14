@@ -130,7 +130,7 @@ func TestDiagonalLineDetection(t *testing.T) {
 						// Check if angle matches expected (with tolerance)
 						angleDiff := math.Abs(normalizeAngle(connAngle - tt.angle))
 						reverseDiff := math.Abs(normalizeAngle(connAngle - tt.angle + math.Pi))
-						
+
 						// Check both directions (A->B or B->A)
 						if angleDiff < math.Pi/8 || reverseDiff < math.Pi/8 { // 22.5° tolerance
 							foundDiagonal = true
