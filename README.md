@@ -54,8 +54,25 @@ Grimoireは、文字を一切使わず、純粋に記号と図形のみでプロ
 - [コンパイラアーキテクチャ](docs/compiler-spec-ja.md)
 - [チュートリアル](docs/tutorial-ja.md)
 - [実装ガイド](docs/implementation-guide-ja.md)
-- [サンプル集](examples/)
+- [サンプル集](docs/examples-ja.md)
 - [テスト戦略](docs/TEST_STRATEGY.md)
+
+### サンプルプログラム
+
+基本的なサンプル:
+- [Hello World](examples/hello-world.grim.md) - 基本的な出力
+- [電卓](examples/calculator.grim.md) - 四則演算
+- [フィボナッチ](examples/fibonacci.grim.md) - 再帰的な数列
+- [ループ](examples/loop.grim.md) - 繰り返し処理
+- [並列処理](examples/parallel.grim.md) - 並列実行
+- [変数操作](examples/variables.grim.md) - 変数の使い方
+
+アルゴリズムとデータ構造:
+- [バブルソート](examples/bubble-sort.grim.md) - ソートアルゴリズム
+- [素数判定](examples/prime-check.grim.md) - 数学的アルゴリズム
+- [文字列反転](examples/string-reverse.grim.md) - 文字列処理
+- [スタック実装](examples/stack-implementation.grim.md) - データ構造
+- [最大公約数](examples/euclidean-gcd.grim.md) - ユークリッドの互除法
 
 ## 🚀 インストール
 
