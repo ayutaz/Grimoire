@@ -1529,17 +1529,17 @@ func TestInferConnections(t *testing.T) {
 		check func(t *testing.T, p *Parser)
 	}{
 		{
-			name: "connect operator to nearby squares",
+			name: "connect operator to nearby squares - close enough",
 			setup: func() *Parser {
 				p := NewParser()
 				p.symbols = []*detector.Symbol{
 					{
 						Type:     detector.Square,
-						Position: detector.Position{X: 50, Y: 100},
+						Position: detector.Position{X: 95, Y: 100},
 					},
 					{
 						Type:     detector.Square,
-						Position: detector.Position{X: 150, Y: 100},
+						Position: detector.Position{X: 105, Y: 100},
 					},
 					{
 						Type:     detector.Convergence,
@@ -1559,21 +1559,23 @@ func TestInferConnections(t *testing.T) {
 				p.inferConnections()
 				// Check that squares are connected as parents of the operator
 				opNode := p.symbolGraph[2]
+				// distance function returns squared distance, and threshold is 150
+				// Distance: (5)^2 = 25 < 150, so connections should be made
 				assert.Len(t, p.getParents(opNode), 2)
 			},
 		},
 		{
-			name: "connect star to nearest expression above",
+			name: "connect star to nearest expression above - close enough",
 			setup: func() *Parser {
 				p := NewParser()
 				p.symbols = []*detector.Symbol{
 					{
 						Type:     detector.Square,
-						Position: detector.Position{X: 100, Y: 50},
+						Position: detector.Position{X: 100, Y: 90},
 					},
 					{
 						Type:     detector.Star,
-						Position: detector.Position{X: 100, Y: 150},
+						Position: detector.Position{X: 100, Y: 100},
 					},
 				}
 				p.symbolGraph = make(map[int]*symbolNode)
@@ -1589,6 +1591,9 @@ func TestInferConnections(t *testing.T) {
 				p.inferConnections()
 				// Check that star is connected to the square above
 				starNode := p.symbolGraph[1]
+				// distance function returns squared distance
+				// Y difference is 10, X difference is 0, so squared distance = 100
+				// Threshold is 150, so connection should be made (100 < 150)
 				assert.NotNil(t, starNode.parent)
 				assert.Equal(t, p.symbolGraph[0], starNode.parent)
 			},
