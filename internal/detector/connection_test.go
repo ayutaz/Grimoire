@@ -208,7 +208,6 @@ func drawTestSquare(img *image.RGBA, center image.Point, halfSize int, c color.C
 	}
 }
 
-
 func absInt(x int) int {
 	if x < 0 {
 		return -x
