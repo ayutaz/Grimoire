@@ -126,7 +126,24 @@ async function showResult(result) {
         
         // Pythonコードを表示
         codeContent.textContent = result.code || "// コードが生成されませんでした";
-        astContent.textContent = JSON.stringify(result.ast || {}, null, 2);
+        
+        // デバッグ情報とASTを表示
+        let debugDisplay = "";
+        if (result.debug) {
+            debugDisplay += "=== デバッグ情報 ===\n";
+            debugDisplay += `検出されたシンボル数: ${result.debug.symbolCount}\n`;
+            if (result.debug.symbols && result.debug.symbols.length > 0) {
+                debugDisplay += "シンボル一覧:\n";
+                result.debug.symbols.forEach((sym, i) => {
+                    debugDisplay += `  ${i}: ${sym.type} at (${sym.position.x}, ${sym.position.y})`;
+                    if (sym.pattern) debugDisplay += ` pattern: ${sym.pattern}`;
+                    debugDisplay += "\n";
+                });
+            }
+            debugDisplay += "\n=== AST ===\n";
+        }
+        debugDisplay += JSON.stringify(result.ast || {}, null, 2);
+        astContent.textContent = debugDisplay;
         
         // Pyodideが利用可能な場合はPythonコードを実行
         if (pyodide && result.code) {

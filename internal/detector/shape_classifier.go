@@ -219,6 +219,8 @@ func (d *Detector) classifyShape(contour Contour) SymbolType {
 		if d.isDoubleCircle(contour) {
 			return DoubleCircle
 		}
+		// Note: In the current detection system, double circles might be detected as circles with dot patterns
+		// The pattern detection step will handle this
 		return Circle
 	}
 

@@ -60,7 +60,25 @@ print("Hello from Grimoire!")
 print("魔法陣が正しく検出されませんでした。")
 print("検出されたシンボル数: 0")
 `
-		return createResult(true, "", pythonCode, "No symbols detected, showing demo code")
+		debugInfo := map[string]interface{}{
+			"symbolCount": 0,
+			"symbols":     []interface{}{},
+		}
+		return createResultWithDebug(true, "", pythonCode, nil, debugInfo, "No symbols detected, showing demo code")
+	}
+
+	// デバッグ情報を作成
+	symbolInfo := make([]map[string]interface{}, len(symbols))
+	for i, sym := range symbols {
+		symbolInfo[i] = map[string]interface{}{
+			"type":     string(sym.Type),
+			"position": map[string]float64{"x": sym.Position.X, "y": sym.Position.Y},
+			"pattern":  sym.Pattern,
+		}
+	}
+	debugInfo := map[string]interface{}{
+		"symbolCount": len(symbols),
+		"symbols":     symbolInfo,
 	}
 
 	// パース
@@ -74,7 +92,7 @@ print("検出されたシンボル数: %d")
 for i in range(5):
     print(f"カウント: {i}")
 `, err.Error(), len(symbols))
-		return createResult(true, "", pythonCode, "Parse error, showing demo code")
+		return createResultWithDebug(true, "", pythonCode, nil, debugInfo, "Parse error, showing demo code")
 	}
 
 	// コンパイル
@@ -85,16 +103,16 @@ for i in range(5):
 print("コンパイルエラー: %s")
 print("Hello from Grimoire!")
 `, err.Error())
-		return createResult(true, "", pythonCode, "Compile error, showing demo code")
+		return createResultWithDebug(true, "", pythonCode, ast, debugInfo, "Compile error, showing demo code")
 	}
 
 	// 実行（WebAssemblyでは制限あり）
 	output, err := executeInSandbox(pythonCode)
 	if err != nil {
-		return createResult(true, output, pythonCode, fmt.Sprintf("Code generated successfully, but execution is limited in browser: %v", err))
+		return createResultWithDebug(true, output, pythonCode, ast, debugInfo, fmt.Sprintf("Code generated successfully, but execution is limited in browser: %v", err))
 	}
 
-	return createResult(true, output, pythonCode, "")
+	return createResultWithDebug(true, output, pythonCode, ast, debugInfo, "")
 }
 
 // validateCode はGrimoireコードを検証する
@@ -123,6 +141,35 @@ func createResult(success bool, output, code, warning string) map[string]interfa
 		"success": success,
 		"output":  output,
 		"code":    code,
+	}
+	if warning != "" {
+		result["warning"] = warning
+	}
+	return result
+}
+
+// createResultWithAST は成功結果をASTと共に作成する
+func createResultWithAST(success bool, output, code string, ast interface{}, warning string) map[string]interface{} {
+	result := map[string]interface{}{
+		"success": success,
+		"output":  output,
+		"code":    code,
+		"ast":     ast,
+	}
+	if warning != "" {
+		result["warning"] = warning
+	}
+	return result
+}
+
+// createResultWithDebug は成功結果をデバッグ情報と共に作成する
+func createResultWithDebug(success bool, output, code string, ast interface{}, debugInfo map[string]interface{}, warning string) map[string]interface{} {
+	result := map[string]interface{}{
+		"success": success,
+		"output":  output,
+		"code":    code,
+		"ast":     ast,
+		"debug":   debugInfo,
 	}
 	if warning != "" {
 		result["warning"] = warning
