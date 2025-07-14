@@ -105,14 +105,14 @@ func TestExecute(t *testing.T) {
 			if tt.wantOut != "" {
 				assert.Contains(t, output, tt.wantOut)
 			}
-			
+
 			// Special handling for help text which can be in Japanese or English
 			if tt.name == "no arguments shows help" || tt.name == "help flag" {
-				japaneseHelp := strings.Contains(output, "Grimoireはプログラムを魔法陣として表現する") || 
+				japaneseHelp := strings.Contains(output, "Grimoireはプログラムを魔法陣として表現する") ||
 					strings.Contains(output, "呪文を描いて")
-				englishHelp := strings.Contains(output, "visual programming language") || 
+				englishHelp := strings.Contains(output, "visual programming language") ||
 					strings.Contains(output, "Draw your spells")
-				assert.True(t, japaneseHelp || englishHelp, 
+				assert.True(t, japaneseHelp || englishHelp,
 					"Should contain Japanese or English help text. Got: %s", output)
 			}
 		})
@@ -318,9 +318,9 @@ func TestFileValidation(t *testing.T) {
 				assert.Error(t, err)
 				// Check for either Japanese or English error message
 				japaneseError := strings.Contains(errOutput, "サポートされていない形式")
-				englishError := strings.Contains(errOutput, "UNSUPPORTED_FORMAT") || 
+				englishError := strings.Contains(errOutput, "UNSUPPORTED_FORMAT") ||
 					strings.Contains(errOutput, "Unsupported image format")
-				assert.True(t, japaneseError || englishError, 
+				assert.True(t, japaneseError || englishError,
 					"Should contain Japanese or English unsupported format error. Got: %s", errOutput)
 			}
 		})
@@ -527,7 +527,7 @@ func TestFormatErrorCoverage(t *testing.T) {
 			if tt.name == "non-existent file" {
 				japaneseError := strings.Contains(errOutput, tt.wantErr)
 				englishError := strings.Contains(errOutput, "FILE_NOT_FOUND")
-				assert.True(t, japaneseError || englishError, 
+				assert.True(t, japaneseError || englishError,
 					"Should contain Japanese (%s) or English error. Got: %s", tt.wantErr, errOutput)
 			} else {
 				assert.Contains(t, errOutput, tt.wantErr, "Should contain expected error")
@@ -601,15 +601,15 @@ func TestProcessImageCoverage(t *testing.T) {
 				japaneseError := strings.Contains(errOutput, tt.errorType)
 				englishError := false
 				if tt.name == "empty PNG" {
-					englishError = strings.Contains(errOutput, "NO_OUTER_CIRCLE") || 
+					englishError = strings.Contains(errOutput, "NO_OUTER_CIRCLE") ||
 						strings.Contains(errOutput, "No outer circle detected")
 				} else if tt.name == "corrupt file" {
-					englishError = strings.Contains(errOutput, "IMAGE_PROCESSING_ERROR") || 
+					englishError = strings.Contains(errOutput, "IMAGE_PROCESSING_ERROR") ||
 						strings.Contains(errOutput, "corrupted file") ||
 						strings.Contains(errOutput, "not a valid PNG")
 				}
-				assert.True(t, japaneseError || englishError, 
-					"Should contain expected error type (Japanese: %s) or English equivalent. Got: %s", 
+				assert.True(t, japaneseError || englishError,
+					"Should contain expected error type (Japanese: %s) or English equivalent. Got: %s",
 					tt.errorType, errOutput)
 			}
 		})
@@ -762,10 +762,10 @@ func TestFormatErrorAllPaths(t *testing.T) {
 			assert.Error(t, err, "Should return error")
 			// Check for either Japanese or English error messages
 			japaneseError := strings.Contains(errOutput, tt.wantErr)
-			englishError := strings.Contains(errOutput, "FILE_READ_ERROR") || 
+			englishError := strings.Contains(errOutput, "FILE_READ_ERROR") ||
 				strings.Contains(errOutput, "permission denied")
-			assert.True(t, japaneseError || englishError, 
-				"Should contain expected error type (Japanese: %s) or English equivalent. Got: %s", 
+			assert.True(t, japaneseError || englishError,
+				"Should contain expected error type (Japanese: %s) or English equivalent. Got: %s",
 				tt.wantErr, errOutput)
 		})
 	}

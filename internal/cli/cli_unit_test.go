@@ -130,7 +130,7 @@ func TestFormatErrorTypes(t *testing.T) {
 			case "generic error":
 				hasJapanese = strings.Contains(result.Error(), "実行エラー")
 			}
-			assert.True(t, hasEnglish || hasJapanese, 
+			assert.True(t, hasEnglish || hasJapanese,
 				"Should contain English (%s) or Japanese error. Got: %s", tt.expectInMsg, result.Error())
 		})
 	}

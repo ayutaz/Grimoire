@@ -35,7 +35,7 @@ func TestRunCommandWithInvalidFile(t *testing.T) {
 	// Check for either Japanese or English error message
 	japaneseError := strings.Contains(err.Error(), "ファイルが見つかりません")
 	englishError := strings.Contains(err.Error(), "FILE_NOT_FOUND")
-	assert.True(t, japaneseError || englishError, 
+	assert.True(t, japaneseError || englishError,
 		"Should contain Japanese or English error message. Got: %s", err.Error())
 }
 
@@ -247,7 +247,7 @@ func TestFormatErrorWithPermissionDenied(t *testing.T) {
 		// Check for either Japanese or English error message
 		japaneseError := strings.Contains(formattedErr.Error(), "ファイル読み込みエラー")
 		englishError := strings.Contains(formattedErr.Error(), "FILE_READ_ERROR")
-		assert.True(t, japaneseError || englishError, 
+		assert.True(t, japaneseError || englishError,
 			"Should contain Japanese or English error message. Got: %s", formattedErr.Error())
 	}
 }
