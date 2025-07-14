@@ -706,4 +706,3 @@ func drawTriangle(img *image.RGBA, cx, cy, size int, c color.Color) {
 	drawLine(img, x2, y2, x3, y3, c)
 	drawLine(img, x3, y3, x1, y1, c)
 }
-

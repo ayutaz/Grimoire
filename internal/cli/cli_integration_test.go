@@ -243,4 +243,3 @@ func TestFormatErrorWithPermissionDenied(t *testing.T) {
 		assert.Contains(t, formattedErr.Error(), "ファイル読み込みエラー")
 	}
 }
-

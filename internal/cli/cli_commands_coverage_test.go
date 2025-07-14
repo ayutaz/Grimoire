@@ -139,4 +139,3 @@ func TestFormatErrorAdditional(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "FILE_READ_ERROR")
 }
-

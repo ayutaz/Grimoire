@@ -122,4 +122,3 @@ func TestFormatErrorTypes(t *testing.T) {
 		})
 	}
 }
-

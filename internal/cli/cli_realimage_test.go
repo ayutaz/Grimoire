@@ -300,4 +300,3 @@ func TestOptimizeCommandAnalysis(t *testing.T) {
 			strings.Contains(output, "optimiz"), // English
 		"Output should contain optimization-related text")
 }
-
