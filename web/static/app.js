@@ -43,30 +43,42 @@ async function initWasm() {
 
 // 画像をBase64に変換
 async function imageToBase64(imageUrl) {
-    const response = await fetch(imageUrl);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const base64 = reader.result.split(',')[1];
-            resolve(base64);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
+    try {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        
+        // Blobを直接ArrayBufferに変換
+        const arrayBuffer = await blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        // Base64に手動でエンコード
+        let binary = '';
+        for (let i = 0; i < uint8Array.byteLength; i++) {
+            binary += String.fromCharCode(uint8Array[i]);
+        }
+        return btoa(binary);
+    } catch (error) {
+        console.error('Failed to convert image to base64:', error);
+        throw error;
+    }
 }
 
 // ファイルをBase64に変換
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const base64 = reader.result.split(',')[1];
-            resolve(base64);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
+async function fileToBase64(file) {
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        // Base64に手動でエンコード
+        let binary = '';
+        for (let i = 0; i < uint8Array.byteLength; i++) {
+            binary += String.fromCharCode(uint8Array[i]);
+        }
+        return btoa(binary);
+    } catch (error) {
+        console.error('Failed to convert file to base64:', error);
+        throw error;
+    }
 }
 
 // エラー表示
