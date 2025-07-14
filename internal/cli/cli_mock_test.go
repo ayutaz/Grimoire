@@ -21,28 +21,7 @@ type MockDetector struct {
 	Error       error
 }
 
-// createMockImageFile creates a minimal valid PNG file for testing
-func createMockImageFile(t *testing.T, name string) string {
-	tmpDir := t.TempDir()
-	imagePath := filepath.Join(tmpDir, name)
-	
-	// Create a minimal valid PNG (1x1 pixel)
-	pngData := []byte{
-		0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
-		0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR chunk
-		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-		0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
-		0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41,
-		0x54, 0x08, 0xD7, 0x63, 0xF8, 0x00, 0x00, 0x00,
-		0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x49,
-		0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
-	}
-	
-	err := os.WriteFile(imagePath, pngData, 0644)
-	require.NoError(t, err)
-	
-	return imagePath
-}
+// Removed unused function createMockImageFile
 
 // TestValidateCommandMocked tests validate command with mocked detector
 func TestValidateCommandMocked(t *testing.T) {
@@ -56,7 +35,7 @@ func TestFormatCommandBasic(t *testing.T) {
 	// Test with invalid file path (no detector needed)
 	cmd := &cobra.Command{}
 	cmd.Flags().StringP("output", "o", "", "")
-	
+
 	err := formatCommand(cmd, []string{"/nonexistent/file.png"})
 	assert.Error(t, err)
 }
@@ -66,7 +45,7 @@ func TestOptimizeCommandBasic(t *testing.T) {
 	// Test with invalid file path (no detector needed)
 	cmd := &cobra.Command{}
 	cmd.Flags().StringP("output", "o", "", "")
-	
+
 	err := optimizeCommand(cmd, []string{"/nonexistent/file.png"})
 	assert.Error(t, err)
 }
@@ -218,7 +197,7 @@ func TestStatementsEqualTypes(t *testing.T) {
 
 	// Same type
 	assert.True(t, statementsEqual(assign1, assign2))
-	
+
 	// Different types
 	assert.False(t, statementsEqual(assign1, output))
 	assert.False(t, statementsEqual(output, forLoop))
@@ -282,3 +261,4 @@ func TestCaptureOutput(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, buf.String(), "test output")
 }
+

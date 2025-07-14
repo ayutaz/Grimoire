@@ -15,7 +15,7 @@ func TestValidateCommandCoverage(t *testing.T) {
 	// Create a mock image file
 	tmpDir := t.TempDir()
 	imagePath := filepath.Join(tmpDir, "test.png")
-	
+
 	// Create minimal PNG
 	pngData := []byte{
 		0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
@@ -41,7 +41,7 @@ func TestFormatCommandCoverage(t *testing.T) {
 	// Create a mock image file
 	tmpDir := t.TempDir()
 	imagePath := filepath.Join(tmpDir, "test.png")
-	
+
 	// Create minimal PNG
 	pngData := []byte{
 		0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
@@ -73,7 +73,7 @@ func TestOptimizeCommandCoverage(t *testing.T) {
 	// Create a mock image file
 	tmpDir := t.TempDir()
 	imagePath := filepath.Join(tmpDir, "test.png")
-	
+
 	// Create minimal PNG
 	pngData := []byte{
 		0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
@@ -139,3 +139,4 @@ func TestFormatErrorAdditional(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "FILE_READ_ERROR")
 }
+

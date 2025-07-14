@@ -231,10 +231,10 @@ func TestFormatErrorWithPermissionDenied(t *testing.T) {
 	// Create a file with no read permissions
 	tmpDir := t.TempDir()
 	protectedFile := filepath.Join(tmpDir, "protected.png")
-	
+
 	err := os.WriteFile(protectedFile, []byte("test"), 0000)
 	require.NoError(t, err)
-	
+
 	// Try to read it (should fail with permission denied)
 	_, readErr := os.ReadFile(protectedFile)
 	if readErr != nil && strings.Contains(readErr.Error(), "permission denied") {
@@ -243,3 +243,4 @@ func TestFormatErrorWithPermissionDenied(t *testing.T) {
 		assert.Contains(t, formattedErr.Error(), "ファイル読み込みエラー")
 	}
 }
+

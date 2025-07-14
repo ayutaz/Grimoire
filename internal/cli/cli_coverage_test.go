@@ -662,3 +662,4 @@ func TestRunCommandExecutionError(t *testing.T) {
 	assert.Equal(t, grimoireErrors.ExecutionError, grimoireErr.Type)
 	assert.Contains(t, err.Error(), "Python")
 }
+

@@ -36,7 +36,7 @@ func TestValidateCommandWithRealImages(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			imagePath := filepath.Join(examplesDir, tc.imageName)
-			
+
 			// Skip if file doesn't exist
 			if _, err := os.Stat(imagePath); os.IsNotExist(err) {
 				t.Skipf("Example image not found: %s", imagePath)
@@ -76,9 +76,9 @@ func TestFormatCommandWithRealImages(t *testing.T) {
 	assert.NoError(t, err2)
 	projectRoot := filepath.Join(cwd2, "..", "..")
 	examplesDir := filepath.Join(projectRoot, "examples", "images")
-	
+
 	imagePath := filepath.Join(examplesDir, "hello_world.png")
-	
+
 	// Skip if file doesn't exist
 	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
 		t.Skip("Example image not found")
@@ -103,18 +103,18 @@ func TestFormatCommandWithRealImages(t *testing.T) {
 	// The command should execute successfully and provide analysis
 	assert.NoError(t, err)
 	assert.NotEmpty(t, output)
-	
+
 	// Test with output flag
 	tmpDir := t.TempDir()
 	outputPath := filepath.Join(tmpDir, "formatted.png")
 	cmd.Flags().Set("output", outputPath)
-	
-	r, w, _ = os.Pipe()
-	os.Stdout = w
+
+	r2, w2, _ := os.Pipe()
+	os.Stdout = w2
 	err = formatCommand(cmd, []string{imagePath})
-	w.Close()
+	w2.Close()
 	os.Stdout = oldStdout
-	
+
 	assert.NoError(t, err)
 }
 
@@ -124,9 +124,9 @@ func TestOptimizeCommandWithRealImages(t *testing.T) {
 	assert.NoError(t, err2)
 	projectRoot := filepath.Join(cwd2, "..", "..")
 	examplesDir := filepath.Join(projectRoot, "examples", "images")
-	
+
 	imagePath := filepath.Join(examplesDir, "variables.png")
-	
+
 	// Skip if file doesn't exist
 	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
 		t.Skip("Example image not found")
@@ -150,10 +150,10 @@ func TestOptimizeCommandWithRealImages(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, output)
-	
+
 	// Test with output to stdout
 	cmd.Flags().Set("output", "-")
-	
+
 	buf.Reset()
 	r, w, _ = os.Pipe()
 	os.Stdout = w
@@ -162,27 +162,27 @@ func TestOptimizeCommandWithRealImages(t *testing.T) {
 	os.Stdout = oldStdout
 	_, _ = buf.ReadFrom(r)
 	output = buf.String()
-	
+
 	assert.NoError(t, err)
-	assert.Contains(t, output, "def ")  // Should contain Python code
-	
+	assert.Contains(t, output, "def ") // Should contain Python code
+
 	// Test with output to file
 	tmpDir := t.TempDir()
 	outputPath := filepath.Join(tmpDir, "optimized.py")
 	cmd.Flags().Set("output", outputPath)
-	
-	r, w, _ = os.Pipe()
-	os.Stdout = w
+
+	r3, w3, _ := os.Pipe()
+	os.Stdout = w3
 	err = optimizeCommand(cmd, []string{imagePath})
-	w.Close()
+	w3.Close()
 	os.Stdout = oldStdout
-	
+
 	assert.NoError(t, err)
-	
+
 	// Check the file was created
 	content, err := os.ReadFile(outputPath)
 	assert.NoError(t, err)
-	assert.Contains(t, string(content), "def ")  // Should contain Python code
+	assert.Contains(t, string(content), "def ") // Should contain Python code
 }
 
 // TestCompileCommandRealImage tests compile command with output
@@ -191,9 +191,9 @@ func TestCompileCommandRealImage(t *testing.T) {
 	assert.NoError(t, err2)
 	projectRoot := filepath.Join(cwd2, "..", "..")
 	examplesDir := filepath.Join(projectRoot, "examples", "images")
-	
+
 	imagePath := filepath.Join(examplesDir, "hello_world.png")
-	
+
 	// Skip if file doesn't exist
 	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
 		t.Skip("Example image not found")
@@ -203,7 +203,7 @@ func TestCompileCommandRealImage(t *testing.T) {
 	// Test compile with output to file
 	tmpDir := t.TempDir()
 	outputPath := filepath.Join(tmpDir, "output.py")
-	
+
 	var buf bytes.Buffer
 	oldStdout := os.Stdout
 	r, w, _ := os.Pipe()
@@ -212,19 +212,19 @@ func TestCompileCommandRealImage(t *testing.T) {
 	cmd := &cobra.Command{}
 	cmd.Flags().StringP("output", "o", "", "")
 	cmd.Flags().Set("output", outputPath)
-	
+
 	err := compileCommand(cmd, []string{imagePath})
 
 	w.Close()
 	os.Stdout = oldStdout
 	_, _ = buf.ReadFrom(r)
-	
+
 	assert.NoError(t, err)
-	
+
 	// Check the file was created
 	content, err := os.ReadFile(outputPath)
 	assert.NoError(t, err)
-	assert.Contains(t, string(content), "print")  // Hello world should contain print
+	assert.Contains(t, string(content), "print") // Hello world should contain print
 }
 
 // TestRunCommandSuccess tests run command with a simple program
@@ -232,11 +232,11 @@ func TestRunCommandSuccess(t *testing.T) {
 	// Create a simple test image that should generate valid Python
 	tmpDir := t.TempDir()
 	pythonFile := filepath.Join(tmpDir, "test.py")
-	
+
 	// Write a simple Python program that will be executed
 	err := os.WriteFile(pythonFile, []byte("print('test success')"), 0644)
 	assert.NoError(t, err)
-	
+
 	// Mock processImage to return our test code
 	// Since we can't easily mock, we'll skip this test
 	t.Skip("Run command requires mocking processImage")
@@ -247,14 +247,14 @@ func TestExecutePythonWriteFailure(t *testing.T) {
 	// Create a directory where we can't write
 	tmpDir := t.TempDir()
 	readOnlyDir := filepath.Join(tmpDir, "readonly")
-	err := os.Mkdir(readOnlyDir, 0555)  // Read-only directory
+	err := os.Mkdir(readOnlyDir, 0555) // Read-only directory
 	assert.NoError(t, err)
-	
+
 	// Set TMPDIR to the read-only directory
 	oldTmpDir := os.Getenv("TMPDIR")
 	os.Setenv("TMPDIR", readOnlyDir)
 	defer os.Setenv("TMPDIR", oldTmpDir)
-	
+
 	// This should fail when trying to create temp file
 	err = executePython("print('test')")
 	if err == nil {
@@ -270,7 +270,7 @@ func TestOptimizeCommandAnalysis(t *testing.T) {
 	// produce code with unused variables
 	projectRoot := filepath.Join("..", "..")
 	imagePath := filepath.Join(projectRoot, "examples", "images", "variables.png")
-	
+
 	// Skip if file doesn't exist
 	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
 		t.Skip("Example image not found")
@@ -293,8 +293,9 @@ func TestOptimizeCommandAnalysis(t *testing.T) {
 
 	assert.NoError(t, err)
 	// The optimize command should provide some analysis
-	assert.True(t, 
+	assert.True(t,
 		strings.Contains(output, "最適化") || // Japanese
-		strings.Contains(output, "optimiz"),  // English
+			strings.Contains(output, "optimiz"), // English
 		"Output should contain optimization-related text")
 }
+

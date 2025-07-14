@@ -66,7 +66,7 @@ func TestAnalyzeUsedExprBasic(t *testing.T) {
 func TestStatementsEqualBasic(t *testing.T) {
 	// Test nil cases
 	assert.True(t, statementsEqual(nil, nil))
-	
+
 	assign := &parser.Assignment{
 		Target: &parser.Identifier{Name: "x"},
 		Value:  &parser.Literal{Value: "1"},
@@ -122,3 +122,4 @@ func TestFormatErrorTypes(t *testing.T) {
 		})
 	}
 }
+
