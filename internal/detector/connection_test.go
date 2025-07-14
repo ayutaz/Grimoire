@@ -208,48 +208,6 @@ func drawTestSquare(img *image.RGBA, center image.Point, halfSize int, c color.C
 	}
 }
 
-func drawTestLine(img *image.RGBA, from, to image.Point, c color.Color) {
-	// Bresenham's line algorithm
-	dx := absInt(to.X - from.X)
-	dy := absInt(to.Y - from.Y)
-	sx := 1
-	if from.X > to.X {
-		sx = -1
-	}
-	sy := 1
-	if from.Y > to.Y {
-		sy = -1
-	}
-	err := dx - dy
-
-	x, y := from.X, from.Y
-	for {
-		// Draw with thickness
-		for tx := -1; tx <= 1; tx++ {
-			for ty := -1; ty <= 1; ty++ {
-				px := x + tx
-				py := y + ty
-				if px >= 0 && px < img.Bounds().Dx() && py >= 0 && py < img.Bounds().Dy() {
-					img.Set(px, py, c)
-				}
-			}
-		}
-
-		if x == to.X && y == to.Y {
-			break
-		}
-
-		e2 := 2 * err
-		if e2 > -dy {
-			err -= dy
-			x += sx
-		}
-		if e2 < dx {
-			err += dx
-			y += sy
-		}
-	}
-}
 
 func absInt(x int) int {
 	if x < 0 {
