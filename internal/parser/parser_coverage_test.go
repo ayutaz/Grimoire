@@ -303,10 +303,10 @@ func TestParseFunctionCall(t *testing.T) {
 // TestParseAssignmentOp tests assignment operator parsing
 func TestParseAssignmentOp(t *testing.T) {
 	tests := []struct {
-		name        string
-		setup       func() *Parser
-		node        *symbolNode
-		expectNil   bool
+		name      string
+		setup     func() *Parser
+		node      *symbolNode
+		expectNil bool
 	}{
 		{
 			name: "assignment with target and value",
@@ -338,7 +338,7 @@ func TestParseAssignmentOp(t *testing.T) {
 					parent: transferNode,
 				}
 				transferNode.children = []*symbolNode{valueNode}
-				
+
 				p.symbolGraph[0] = transferNode
 				p.symbolGraph[1] = targetNode
 				p.symbolGraph[2] = valueNode
@@ -378,7 +378,7 @@ func TestParseAssignmentOp(t *testing.T) {
 			p := tt.setup()
 			// Get the node from the symbolGraph that was set up
 			actualNode := p.symbolGraph[0]
-			
+
 			result := p.parseAssignmentOp(actualNode)
 			if tt.expectNil {
 				assert.Nil(t, result)
@@ -426,7 +426,7 @@ func TestParseLoopImproved(t *testing.T) {
 					parent: loopNode,
 				}
 				loopNode.children = []*symbolNode{bodyNode}
-				
+
 				p.symbolGraph[0] = loopNode
 				p.symbolGraph[1] = counterNode
 				p.symbolGraph[2] = bodyNode
@@ -473,7 +473,7 @@ func TestParseLoopImproved(t *testing.T) {
 					parent: loopNode,
 				}
 				loopNode.children = []*symbolNode{condNode, bodyNode}
-				
+
 				p.symbolGraph[0] = loopNode
 				p.symbolGraph[1] = condNode
 				p.symbolGraph[2] = bodyNode
@@ -509,7 +509,7 @@ func TestParseLoopImproved(t *testing.T) {
 					parent: loopNode,
 				}
 				loopNode.children = []*symbolNode{bodyNode}
-				
+
 				p.symbolGraph[0] = loopNode
 				p.symbolGraph[1] = bodyNode
 				return p
@@ -590,7 +590,7 @@ func TestParseIfStatementImproved(t *testing.T) {
 					parent: ifNode,
 				}
 				ifNode.children = []*symbolNode{condNode, thenNode, elseNode}
-				
+
 				p.symbolGraph[0] = ifNode
 				p.symbolGraph[1] = condNode
 				p.symbolGraph[2] = thenNode
@@ -632,7 +632,7 @@ func TestParseIfStatementImproved(t *testing.T) {
 					parent: ifNode,
 				}
 				ifNode.children = []*symbolNode{condNode, thenNode}
-				
+
 				p.symbolGraph[0] = ifNode
 				p.symbolGraph[1] = condNode
 				p.symbolGraph[2] = thenNode
@@ -673,7 +673,7 @@ func TestParseIfStatementImproved(t *testing.T) {
 					parent: ifNode,
 				}
 				ifNode.children = []*symbolNode{thenNode}
-				
+
 				p.symbolGraph[0] = ifNode
 				p.symbolGraph[1] = condNode
 				p.symbolGraph[2] = thenNode
@@ -707,7 +707,7 @@ func TestParseIfStatementImproved(t *testing.T) {
 					parent: ifNode,
 				}
 				ifNode.children = []*symbolNode{thenNode}
-				
+
 				p.symbolGraph[0] = ifNode
 				p.symbolGraph[1] = thenNode
 				return p
@@ -769,7 +769,7 @@ func TestParseCondition(t *testing.T) {
 					parent: parentNode,
 				}
 				parentNode.children = []*symbolNode{compNode}
-				
+
 				p.symbolGraph[0] = parentNode
 				p.symbolGraph[1] = compNode
 				return p
@@ -803,7 +803,7 @@ func TestParseCondition(t *testing.T) {
 					},
 					children: []*symbolNode{node},
 				}
-				
+
 				p.symbolGraph[0] = node
 				p.symbolGraph[1] = compNode
 				return p
@@ -829,7 +829,7 @@ func TestParseCondition(t *testing.T) {
 						Position: detector.Position{X: 100, Y: 100},
 					},
 				}
-				
+
 				p.symbolGraph[0] = node
 				return p
 			},
@@ -979,7 +979,7 @@ func TestParseExpressionFromParent(t *testing.T) {
 					children: []*symbolNode{childNode},
 				}
 				childNode.parent = parentNode
-				
+
 				p.symbolGraph[0] = childNode
 				p.symbolGraph[1] = parentNode
 				return p
@@ -1013,7 +1013,7 @@ func TestParseExpressionFromParent(t *testing.T) {
 					},
 					children: []*symbolNode{childNode},
 				}
-				
+
 				p.symbolGraph[0] = childNode
 				p.symbolGraph[1] = parentNode
 				return p
@@ -1038,7 +1038,7 @@ func TestParseExpressionFromParent(t *testing.T) {
 						Position: detector.Position{X: 100, Y: 100},
 					},
 				}
-				
+
 				p.symbolGraph[0] = starNode
 				return p
 			},
@@ -1063,7 +1063,7 @@ func TestParseExpressionFromParent(t *testing.T) {
 						Position: detector.Position{X: 100, Y: 100},
 					},
 				}
-				
+
 				p.symbolGraph[0] = node
 				return p
 			},
@@ -1216,15 +1216,15 @@ func TestGroupChildrenByAngle(t *testing.T) {
 // TestParse tests the main Parse function
 func TestParse(t *testing.T) {
 	tests := []struct {
-		name      string
-		symbols   []*detector.Symbol
+		name        string
+		symbols     []*detector.Symbol
 		connections []detector.Connection
 		expectError bool
 		checkResult func(t *testing.T, result *Program, err error)
 	}{
 		{
-			name: "empty symbols",
-			symbols: []*detector.Symbol{},
+			name:        "empty symbols",
+			symbols:     []*detector.Symbol{},
 			expectError: true,
 			checkResult: func(t *testing.T, result *Program, err error) {
 				assert.Nil(t, result)
@@ -1269,14 +1269,14 @@ func TestParse(t *testing.T) {
 				oldDebug := os.Getenv("GRIMOIRE_DEBUG")
 				os.Setenv("GRIMOIRE_DEBUG", "1")
 				defer os.Setenv("GRIMOIRE_DEBUG", oldDebug)
-				
+
 				// Parse again with debug enabled
 				p2 := NewParser()
 				result2, err2 := p2.Parse([]*detector.Symbol{
 					{Type: detector.OuterCircle, Position: detector.Position{X: 0, Y: 0}},
 					{Type: detector.DoubleCircle, Position: detector.Position{X: 100, Y: 100}},
 				}, []detector.Connection{})
-				
+
 				assert.NoError(t, err2)
 				assert.NotNil(t, result2)
 			},
@@ -1508,11 +1508,11 @@ func TestParseErrors(t *testing.T) {
 		},
 	}
 	p.buildSymbolGraph()
-	
+
 	// Parse the invalid binary op to trigger an error
 	node := p.symbolGraph[1]
 	_ = p.parseBinaryOp(node)
-	
+
 	// Now parse to trigger error aggregation
 	result, err := p.Parse(p.symbols, nil)
 	assert.Error(t, err)
@@ -1615,14 +1615,14 @@ func TestParseFunctionDef(t *testing.T) {
 			setup: func() (*Parser, *symbolNode) {
 				p := NewParser()
 				p.symbolGraph = make(map[int]*symbolNode)
-				
+
 				funcNode := &symbolNode{
 					symbol: &detector.Symbol{
 						Type:     detector.DoubleCircle,
 						Position: detector.Position{X: 100, Y: 100},
 					},
 				}
-				
+
 				// Add body statement
 				bodyNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -1632,10 +1632,10 @@ func TestParseFunctionDef(t *testing.T) {
 					parent: funcNode,
 				}
 				funcNode.children = []*symbolNode{bodyNode}
-				
+
 				p.symbolGraph[0] = funcNode
 				p.symbolGraph[1] = bodyNode
-				
+
 				return p, funcNode
 			},
 			check: func(t *testing.T, result *FunctionDef) {
@@ -1650,12 +1650,12 @@ func TestParseFunctionDef(t *testing.T) {
 			setup: func() (*Parser, *symbolNode) {
 				p := NewParser()
 				p.symbolGraph = make(map[int]*symbolNode)
-				
+
 				existingFunc := &FunctionDef{
 					Name:   "testFunc",
 					IsMain: false,
 				}
-				
+
 				funcNode := &symbolNode{
 					symbol: &detector.Symbol{
 						Type:     detector.Circle,
@@ -1664,9 +1664,9 @@ func TestParseFunctionDef(t *testing.T) {
 					visited: true,
 					astNode: existingFunc,
 				}
-				
+
 				p.symbolGraph[0] = funcNode
-				
+
 				return p, funcNode
 			},
 			check: func(t *testing.T, result *FunctionDef) {
@@ -1698,7 +1698,7 @@ func TestParseAssignment(t *testing.T) {
 			setup: func() (*Parser, *symbolNode) {
 				p := NewParser()
 				p.symbolGraph = make(map[int]*symbolNode)
-				
+
 				// Square node (assignment target)
 				squareNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -1707,7 +1707,7 @@ func TestParseAssignment(t *testing.T) {
 						Pattern:  "dot",
 					},
 				}
-				
+
 				// Expression child
 				exprNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -1717,12 +1717,12 @@ func TestParseAssignment(t *testing.T) {
 					},
 					parent: squareNode,
 				}
-				
+
 				squareNode.children = []*symbolNode{exprNode}
-				
+
 				p.symbolGraph[0] = squareNode
 				p.symbolGraph[1] = exprNode
-				
+
 				return p, squareNode
 			},
 			check: func(t *testing.T, result *Assignment) {
@@ -1739,7 +1739,7 @@ func TestParseAssignment(t *testing.T) {
 			setup: func() (*Parser, *symbolNode) {
 				p := NewParser()
 				p.symbolGraph = make(map[int]*symbolNode)
-				
+
 				squareNode := &symbolNode{
 					symbol: &detector.Symbol{
 						Type:     detector.Square,
@@ -1748,9 +1748,9 @@ func TestParseAssignment(t *testing.T) {
 					},
 					children: []*symbolNode{},
 				}
-				
+
 				p.symbolGraph[0] = squareNode
-				
+
 				return p, squareNode
 			},
 			check: func(t *testing.T, result *Assignment) {
@@ -1878,7 +1878,7 @@ func TestParseLiteralPatterns(t *testing.T) {
 func TestParseStatementPanicRecovery(t *testing.T) {
 	p := NewParser()
 	p.symbolGraph = make(map[int]*symbolNode)
-	
+
 	// Create a node that will cause a panic during parsing
 	node := &symbolNode{
 		symbol: &detector.Symbol{
@@ -1886,19 +1886,19 @@ func TestParseStatementPanicRecovery(t *testing.T) {
 			Position: detector.Position{X: 100, Y: 100},
 		},
 		// nil parent will cause panic in parseExpressionFromParent
-		parent: nil,
+		parent:   nil,
 		children: []*symbolNode{},
 	}
-	
+
 	// Override parseOutputStatement to trigger a panic
 	oldErrors := p.errors
 	p.errors = []error{}
-	
+
 	// This should recover from panic and add error
 	result := p.parseStatement(node)
-	assert.NotNil(t, result) // Should still return output statement
+	assert.NotNil(t, result)   // Should still return output statement
 	assert.Len(t, p.errors, 0) // No panic should be recorded as error in this case
-	
+
 	p.errors = oldErrors
 }
 
@@ -1914,7 +1914,7 @@ func TestParseLoop(t *testing.T) {
 			setup: func() (*Parser, *symbolNode) {
 				p := NewParser()
 				p.symbolGraph = make(map[int]*symbolNode)
-				
+
 				// Loop node
 				loopNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -1922,7 +1922,7 @@ func TestParseLoop(t *testing.T) {
 						Position: detector.Position{X: 100, Y: 100},
 					},
 				}
-				
+
 				// Condition as parent
 				condNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -1931,7 +1931,7 @@ func TestParseLoop(t *testing.T) {
 					},
 					children: []*symbolNode{loopNode},
 				}
-				
+
 				// Body statement
 				bodyNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -1940,13 +1940,13 @@ func TestParseLoop(t *testing.T) {
 					},
 					parent: loopNode,
 				}
-				
+
 				loopNode.children = []*symbolNode{bodyNode}
-				
+
 				p.symbolGraph[0] = loopNode
 				p.symbolGraph[1] = condNode
 				p.symbolGraph[2] = bodyNode
-				
+
 				return p, loopNode
 			},
 			check: func(t *testing.T, result Statement) {
@@ -1980,7 +1980,7 @@ func TestParseAssignmentOpAdditional(t *testing.T) {
 			setup: func() (*Parser, *symbolNode) {
 				p := NewParser()
 				p.symbolGraph = make(map[int]*symbolNode)
-				
+
 				// Transfer node
 				transferNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -1988,7 +1988,7 @@ func TestParseAssignmentOpAdditional(t *testing.T) {
 						Position: detector.Position{X: 100, Y: 100},
 					},
 				}
-				
+
 				// Target (parent)
 				targetNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -1997,7 +1997,7 @@ func TestParseAssignmentOpAdditional(t *testing.T) {
 					},
 					children: []*symbolNode{transferNode},
 				}
-				
+
 				// Value (child)
 				valueNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -2007,13 +2007,13 @@ func TestParseAssignmentOpAdditional(t *testing.T) {
 					},
 					parent: transferNode,
 				}
-				
+
 				transferNode.children = []*symbolNode{valueNode}
-				
+
 				p.symbolGraph[0] = transferNode
 				p.symbolGraph[1] = targetNode
 				p.symbolGraph[2] = valueNode
-				
+
 				return p, transferNode
 			},
 			check: func(t *testing.T, result Expression) {
@@ -2026,7 +2026,7 @@ func TestParseAssignmentOpAdditional(t *testing.T) {
 			setup: func() (*Parser, *symbolNode) {
 				p := NewParser()
 				p.symbolGraph = make(map[int]*symbolNode)
-				
+
 				// Transfer node
 				transferNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -2035,7 +2035,7 @@ func TestParseAssignmentOpAdditional(t *testing.T) {
 					},
 					children: []*symbolNode{}, // No children
 				}
-				
+
 				// Target (first parent)
 				targetNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -2044,7 +2044,7 @@ func TestParseAssignmentOpAdditional(t *testing.T) {
 					},
 					children: []*symbolNode{transferNode},
 				}
-				
+
 				// Value (second parent)
 				valueNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -2054,11 +2054,11 @@ func TestParseAssignmentOpAdditional(t *testing.T) {
 					},
 					children: []*symbolNode{transferNode},
 				}
-				
+
 				p.symbolGraph[0] = transferNode
 				p.symbolGraph[1] = targetNode
 				p.symbolGraph[2] = valueNode
-				
+
 				return p, transferNode
 			},
 			check: func(t *testing.T, result Expression) {
@@ -2071,7 +2071,7 @@ func TestParseAssignmentOpAdditional(t *testing.T) {
 			setup: func() (*Parser, *symbolNode) {
 				p := NewParser()
 				p.symbolGraph = make(map[int]*symbolNode)
-				
+
 				// Transfer node with no square parent
 				transferNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -2079,7 +2079,7 @@ func TestParseAssignmentOpAdditional(t *testing.T) {
 						Position: detector.Position{X: 100, Y: 100},
 					},
 				}
-				
+
 				// Non-square parent
 				parentNode := &symbolNode{
 					symbol: &detector.Symbol{
@@ -2088,10 +2088,10 @@ func TestParseAssignmentOpAdditional(t *testing.T) {
 					},
 					children: []*symbolNode{transferNode},
 				}
-				
+
 				p.symbolGraph[0] = transferNode
 				p.symbolGraph[1] = parentNode
-				
+
 				return p, transferNode
 			},
 			check: func(t *testing.T, result Expression) {
@@ -2112,9 +2112,9 @@ func TestParseAssignmentOpAdditional(t *testing.T) {
 // TestParseGlobalStatements tests parseGlobalStatements function
 func TestParseGlobalStatements(t *testing.T) {
 	tests := []struct {
-		name      string
-		setup     func() (*Parser, *FunctionDef)
-		check     func(t *testing.T, globals []Statement, mainEntry *FunctionDef)
+		name  string
+		setup func() (*Parser, *FunctionDef)
+		check func(t *testing.T, globals []Statement, mainEntry *FunctionDef)
 	}{
 		{
 			name: "main entry exists with body - no globals",
@@ -2128,15 +2128,15 @@ func TestParseGlobalStatements(t *testing.T) {
 				}
 				p.symbolGraph = make(map[int]*symbolNode)
 				p.symbolGraph[0] = &symbolNode{
-					symbol:   p.symbols[0],
-					visited:  false,
+					symbol:  p.symbols[0],
+					visited: false,
 				}
-				
+
 				mainEntry := &FunctionDef{
 					IsMain: true,
 					Body:   []Statement{&OutputStatement{}},
 				}
-				
+
 				return p, mainEntry
 			},
 			check: func(t *testing.T, globals []Statement, mainEntry *FunctionDef) {
@@ -2156,15 +2156,15 @@ func TestParseGlobalStatements(t *testing.T) {
 				}
 				p.symbolGraph = make(map[int]*symbolNode)
 				p.symbolGraph[0] = &symbolNode{
-					symbol:   p.symbols[0],
-					visited:  false,
+					symbol:  p.symbols[0],
+					visited: false,
 				}
-				
+
 				mainEntry := &FunctionDef{
 					IsMain: true,
 					Body:   []Statement{},
 				}
-				
+
 				return p, mainEntry
 			},
 			check: func(t *testing.T, globals []Statement, mainEntry *FunctionDef) {
@@ -2184,10 +2184,10 @@ func TestParseGlobalStatements(t *testing.T) {
 				}
 				p.symbolGraph = make(map[int]*symbolNode)
 				p.symbolGraph[0] = &symbolNode{
-					symbol:   p.symbols[0],
-					visited:  false,
+					symbol:  p.symbols[0],
+					visited: false,
 				}
-				
+
 				return p, nil
 			},
 			check: func(t *testing.T, globals []Statement, mainEntry *FunctionDef) {
@@ -2223,7 +2223,7 @@ func TestParseFunctions(t *testing.T) {
 			Position: detector.Position{X: 300, Y: 100},
 		},
 	}
-	
+
 	p.symbolGraph = make(map[int]*symbolNode)
 	for i, sym := range p.symbols {
 		p.symbolGraph[i] = &symbolNode{
@@ -2232,10 +2232,10 @@ func TestParseFunctions(t *testing.T) {
 			children: []*symbolNode{},
 		}
 	}
-	
+
 	// Mark one circle as visited
 	p.symbolGraph[1].visited = true
-	
+
 	functions := p.parseFunctions()
 	assert.Len(t, functions, 1) // Only one unvisited Circle should be parsed
 }
@@ -2253,14 +2253,14 @@ func TestApplyConnections(t *testing.T) {
 			Position: detector.Position{X: 100, Y: 150},
 		},
 	}
-	
+
 	p.connections = []detector.Connection{
 		{
 			From: p.symbols[0],
 			To:   p.symbols[1],
 		},
 	}
-	
+
 	p.symbolGraph = make(map[int]*symbolNode)
 	for i, sym := range p.symbols {
 		p.symbolGraph[i] = &symbolNode{
@@ -2268,9 +2268,9 @@ func TestApplyConnections(t *testing.T) {
 			children: []*symbolNode{},
 		}
 	}
-	
+
 	p.applyConnections()
-	
+
 	// Check connections were applied
 	assert.Len(t, p.symbolGraph[0].children, 1)
 	assert.Equal(t, p.symbolGraph[1], p.symbolGraph[0].children[0])
