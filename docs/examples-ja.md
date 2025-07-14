@@ -215,6 +215,110 @@
 ```
 階層的なデータ構造
 
+## アルゴリズムとデータ構造
+
+### 16. バブルソート
+```
+◎ main
+├─ □ []array = [5, 2, 8, 1, 9]
+├─ □ #n = array.length
+├─ ⬟ (i = 0; i < n; i++)
+│  └─ ⬟ (j = 0; j < n-i-1; j++)
+│     └─ △ (array[j] > array[j+1])
+│        └─true→ ○ swap
+│                ├─ □ #temp = array[j]
+│                ├─ □ array[j] = array[j+1]
+│                └─ □ array[j+1] = temp
+└─ ☆ "Sorted: " + array
+```
+
+### 17. 素数判定
+```
+○ isPrime(#n)
+├─ △ (n <= 1) → false
+├─ △ (n == 2) → true
+├─ △ (n % 2 == 0) → false
+├─ □ #sqrt_n = Math.sqrt(n)
+└─ ⬟ (i = 3; i <= sqrt_n; i += 2)
+   └─ △ (n % i == 0) → false
+   └─ ☆ true
+
+◎ main
+├─ □ []testNumbers = [2, 3, 4, 17, 20, 29, 100, 101]
+└─ ⬟ (num in testNumbers)
+   └─ △ isPrime(num)
+      ├─true→ ☆ num + " は素数"
+      └─false→ ☆ num + " は素数ではない"
+```
+
+### 18. 文字列反転
+```
+○ reverseString($str)
+├─ □ []chars = str.toArray()
+├─ □ #left = 0
+├─ □ #right = chars.length - 1
+└─ ⬟ (left < right)
+   ├─ □ #temp = chars[left]
+   ├─ □ chars[left] = chars[right]
+   ├─ □ chars[right] = temp
+   ├─ □ left++
+   └─ □ right--
+└─ ☆ chars.join("")
+
+◎ main
+├─ □ $text = "Grimoire"
+├─ □ $reversed = reverseString(text)
+└─ ☆ text + " → " + reversed
+```
+
+### 19. スタック実装
+```
+○ Stack()
+├─ □ []items = []
+├─ ○ push(element)
+│  └─ items.append(element)
+├─ ○ pop()
+│  ├─ △ isEmpty() → null
+│  └─ items.pop()
+├─ ○ peek()
+│  ├─ △ isEmpty() → null
+│  └─ items[-1]
+├─ ○ isEmpty()
+│  └─ items.length == 0
+└─ ○ size()
+   └─ items.length
+
+◎ main
+├─ □ stack = new Stack()
+├─ stack.push(10)
+├─ stack.push(20)
+├─ stack.push(30)
+├─ ☆ "Top: " + stack.peek()
+├─ ☆ "Popped: " + stack.pop()
+└─ ☆ "Size: " + stack.size()
+```
+
+### 20. ユークリッドの互除法（最大公約数）
+```
+○ gcd(#a, #b)
+└─ ⬟ (b != 0)
+   ├─ □ #remainder = a % b
+   ├─ □ a = b
+   └─ □ b = remainder
+└─ ☆ a
+
+○ lcm(#a, #b)
+└─ ☆ (a * b) / gcd(a, b)
+
+◎ main
+├─ □ #x = 48
+├─ □ #y = 18
+├─ □ #g = gcd(x, y)
+├─ □ #l = lcm(x, y)
+├─ ☆ "GCD(" + x + "," + y + ") = " + g
+└─ ☆ "LCM(" + x + "," + y + ") = " + l
+```
+
 ---
 
-これらの例は、Grimoireの表現力と視覚的な明確さを示しています。
+これらの例は、Grimoireの表現力と視覚的な明確さを示しています。各サンプルの詳細な説明は、`examples/`ディレクトリ内の対応する`.grim.md`ファイルを参照してください。
