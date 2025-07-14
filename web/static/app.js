@@ -1,6 +1,7 @@
 // WebAssembly関連の変数
 let wasmInstance = null;
 let selectedImage = null;
+let pyodide = null;
 
 // DOM要素の取得
 const fileInput = document.getElementById('file-input');
@@ -38,6 +39,17 @@ async function initWasm() {
     } catch (error) {
         console.error("Failed to initialize WebAssembly:", error);
         showError("WebAssemblyの初期化に失敗しました: " + error.message);
+    }
+}
+
+// Pyodideの初期化
+async function initPyodide() {
+    try {
+        pyodide = await loadPyodide();
+        console.log("Pyodide initialized successfully");
+    } catch (error) {
+        console.error("Failed to initialize Pyodide:", error);
+        console.log("Python execution will not be available");
     }
 }
 
@@ -107,17 +119,43 @@ function showPreview(imageUrl) {
 }
 
 // 実行結果の表示
-function showResult(result) {
+async function showResult(result) {
     if (result.success) {
         resultSection.style.display = 'block';
         errorSection.style.display = 'none';
         
-        outputContent.textContent = result.output || "実行完了";
+        // Pythonコードを表示
         codeContent.textContent = result.code || "// コードが生成されませんでした";
         astContent.textContent = JSON.stringify(result.ast || {}, null, 2);
         
-        if (result.warning) {
-            outputContent.textContent += "\n\n⚠️ " + result.warning;
+        // Pyodideが利用可能な場合はPythonコードを実行
+        if (pyodide && result.code) {
+            try {
+                // 出力をキャプチャするための設定
+                pyodide.runPython(`
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+                `);
+                
+                // Pythonコードを実行
+                pyodide.runPython(result.code);
+                
+                // 出力を取得
+                const output = pyodide.runPython(`
+output_buffer.getvalue()
+                `);
+                
+                outputContent.textContent = output || "（出力なし）";
+            } catch (error) {
+                outputContent.textContent = `実行エラー: ${error.message}`;
+            }
+        } else {
+            outputContent.textContent = result.output || "Python execution in browser requires Pyodide integration";
+            if (result.warning) {
+                outputContent.textContent += "\n\n⚠️ " + result.warning;
+            }
         }
     } else {
         showError(result.error || "不明なエラーが発生しました");
@@ -146,7 +184,7 @@ async function processImage() {
         
         // WebAssemblyの関数を呼び出し
         const result = processGrimoireImage(base64Image);
-        showResult(result);
+        await showResult(result);
         
     } catch (error) {
         showError("画像の処理中にエラーが発生しました: " + error.message);
@@ -200,5 +238,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 // 初期化
 document.addEventListener('DOMContentLoaded', async () => {
-    await initWasm();
+    showLoading();
+    await Promise.all([
+        initWasm(),
+        initPyodide()
+    ]);
+    hideLoading();
 });
