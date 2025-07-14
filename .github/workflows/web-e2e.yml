@@ -1,0 +1,64 @@
+name: Web E2E Tests
+
+on:
+  push:
+    branches: [ main, feature/fix-web-demo-output ]
+    paths:
+      - 'web/**'
+      - 'cmd/grimoire-wasm/**'
+      - 'internal/**'
+      - '.github/workflows/web-e2e.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'web/**'
+      - 'cmd/grimoire-wasm/**'
+      - 'internal/**'
+      - '.github/workflows/web-e2e.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+    
+    - name: Build WASM
+      run: |
+        GOOS=js GOARCH=wasm go build -o web/static/wasm/grimoire.wasm cmd/grimoire-wasm/main.go
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install dependencies
+      working-directory: web/e2e
+      run: |
+        npm install
+        npx playwright install chromium
+        
+    - name: Run E2E tests
+      working-directory: web/e2e
+      run: npm test
+      
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report
+        path: web/e2e/playwright-report/
+        retention-days: 7
+        
+    - name: Upload test screenshots
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: test-screenshots
+        path: web/e2e/test-results/
+        retention-days: 7
