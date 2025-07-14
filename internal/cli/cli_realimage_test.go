@@ -114,6 +114,7 @@ func TestFormatCommandWithRealImages(t *testing.T) {
 	err = formatCommand(cmd, []string{imagePath})
 	w2.Close()
 	os.Stdout = oldStdout
+	r2.Close() // Close reader
 
 	assert.NoError(t, err)
 }
@@ -176,6 +177,7 @@ func TestOptimizeCommandWithRealImages(t *testing.T) {
 	err = optimizeCommand(cmd, []string{imagePath})
 	w3.Close()
 	os.Stdout = oldStdout
+	r3.Close() // Close reader
 
 	assert.NoError(t, err)
 

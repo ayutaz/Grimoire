@@ -4,14 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/ayutaz/grimoire/internal/detector"
 	"github.com/ayutaz/grimoire/internal/parser"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // MockDetector provides mock symbol detection for testing
