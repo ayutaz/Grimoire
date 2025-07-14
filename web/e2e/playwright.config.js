@@ -25,7 +25,7 @@ module.exports = defineConfig({
   ],
 
   webServer: {
-    command: 'npx http-server ../static -p 8080 -c-1',
+    command: 'npx http-server .. -p 8080 -c-1',
     port: 8080,
     reuseExistingServer: !process.env.CI,
   },

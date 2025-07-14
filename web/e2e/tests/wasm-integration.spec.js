@@ -3,8 +3,10 @@ const { test, expect } = require('@playwright/test');
 test.describe('WASM Integration Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    // Wait for WASM to be fully initialized
     await page.waitForFunction(() => {
-      return window.wasmInstance !== undefined;
+      return window.wasmInstance !== undefined && 
+             window.processGrimoireImage !== undefined;
     }, { timeout: 30000 });
   });
 

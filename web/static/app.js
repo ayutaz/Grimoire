@@ -35,6 +35,7 @@ async function initWasm() {
         );
         go.run(result.instance);
         wasmInstance = result.instance;
+        window.wasmInstance = result.instance; // E2Eテスト用にグローバルに公開
         console.log("WebAssembly initialized successfully");
     } catch (error) {
         console.error("Failed to initialize WebAssembly:", error);
