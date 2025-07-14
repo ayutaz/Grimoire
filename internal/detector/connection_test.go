@@ -86,9 +86,8 @@ func createDiagonalTestImage(angle float64) image.Image {
 	center := image.Point{X: size / 2, Y: size / 2}
 	drawTestCircle(img, center, size/2-20, color.Black)
 
-	// Draw double circle (main entry point)
+	// Draw single circle (function)
 	drawTestCircle(img, image.Point{X: 50, Y: 50}, 25, color.Black)
-	drawTestCircle(img, image.Point{X: 50, Y: 50}, 20, color.Black)
 
 	// Calculate positions for squares based on angle
 	distance := 150.0

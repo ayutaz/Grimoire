@@ -389,6 +389,10 @@ func (p *Parser) parseStatement(node *symbolNode) Statement {
 			// These are handled as part of expressions
 			return nil
 		}
+		// Skip DoubleCircle as it's handled as main entry
+		if symbol.Type == detector.DoubleCircle {
+			return nil
+		}
 		// Report unexpected symbol
 		err := grimoireErrors.UnexpectedSymbolError(
 			string(symbol.Type), "statement symbol",
