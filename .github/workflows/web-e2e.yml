@@ -30,6 +30,7 @@ jobs:
     
     - name: Build WASM
       run: |
+        cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" web/static/
         GOOS=js GOARCH=wasm go build -o web/static/wasm/grimoire.wasm cmd/grimoire-wasm/main.go
         
     - name: Setup Node.js
