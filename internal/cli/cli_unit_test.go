@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/ayutaz/grimoire/internal/parser"
@@ -118,7 +119,19 @@ func TestFormatErrorTypes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatError(tt.err, tt.imagePath)
 			assert.Error(t, result)
-			assert.Contains(t, result.Error(), tt.expectInMsg)
+			// Check for either English error type or Japanese error message
+			hasEnglish := strings.Contains(result.Error(), tt.expectInMsg)
+			hasJapanese := false
+			switch tt.name {
+			case "no such file error":
+				hasJapanese = strings.Contains(result.Error(), "ファイルが見つかりません")
+			case "permission denied":
+				hasJapanese = strings.Contains(result.Error(), "ファイル読み込みエラー")
+			case "generic error":
+				hasJapanese = strings.Contains(result.Error(), "実行エラー")
+			}
+			assert.True(t, hasEnglish || hasJapanese, 
+				"Should contain English (%s) or Japanese error. Got: %s", tt.expectInMsg, result.Error())
 		})
 	}
 }

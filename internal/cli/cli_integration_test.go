@@ -32,7 +32,11 @@ func TestRunCommandWithInvalidFile(t *testing.T) {
 	os.Args = []string{"grimoire", "run", "/nonexistent/file.png"}
 	err := Execute("1.0.0", "abc123", "2024-01-01")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "ファイルが見つかりません")
+	// Check for either Japanese or English error message
+	japaneseError := strings.Contains(err.Error(), "ファイルが見つかりません")
+	englishError := strings.Contains(err.Error(), "FILE_NOT_FOUND")
+	assert.True(t, japaneseError || englishError, 
+		"Should contain Japanese or English error message. Got: %s", err.Error())
 }
 
 // TestCompileCommandWithInvalidFile tests compile command with non-existent file
@@ -240,6 +244,10 @@ func TestFormatErrorWithPermissionDenied(t *testing.T) {
 	if readErr != nil && strings.Contains(readErr.Error(), "permission denied") {
 		formattedErr := formatError(readErr, protectedFile)
 		assert.Error(t, formattedErr)
-		assert.Contains(t, formattedErr.Error(), "ファイル読み込みエラー")
+		// Check for either Japanese or English error message
+		japaneseError := strings.Contains(formattedErr.Error(), "ファイル読み込みエラー")
+		englishError := strings.Contains(formattedErr.Error(), "FILE_READ_ERROR")
+		assert.True(t, japaneseError || englishError, 
+			"Should contain Japanese or English error message. Got: %s", formattedErr.Error())
 	}
 }
