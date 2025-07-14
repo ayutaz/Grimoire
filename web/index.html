@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grimoire - 純粋記号プログラミング言語 Web Demo</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Grimoire</h1>
+            <p class="subtitle">純粋記号プログラミング言語 - Web Demo</p>
+        </header>
+
+        <main>
+            <section class="input-section">
+                <h2>魔法陣を選択</h2>
+                
+                <div class="input-options">
+                    <div class="option">
+                        <h3>サンプル画像から選択</h3>
+                        <div class="sample-grid">
+                            <div class="sample-item" data-sample="hello-world">
+                                <img src="static/samples/hello-world.png" alt="Hello World">
+                                <p>Hello World</p>
+                            </div>
+                            <div class="sample-item" data-sample="calculator">
+                                <img src="static/samples/calculator.png" alt="Calculator">
+                                <p>電卓</p>
+                            </div>
+                            <div class="sample-item" data-sample="fibonacci">
+                                <img src="static/samples/fibonacci.png" alt="Fibonacci">
+                                <p>フィボナッチ</p>
+                            </div>
+                            <div class="sample-item" data-sample="loop">
+                                <img src="static/samples/loop.png" alt="Loop">
+                                <p>ループ</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="option">
+                        <h3>画像をアップロード</h3>
+                        <div class="upload-area">
+                            <input type="file" id="file-input" accept="image/*" hidden>
+                            <button id="upload-btn" class="btn">
+                                画像を選択
+                            </button>
+                            <p class="hint">PNG/JPG形式の魔法陣画像をアップロード</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="preview-section" style="display: none;">
+                <h2>選択された魔法陣</h2>
+                <div class="preview-container">
+                    <img id="preview-image" alt="Preview">
+                </div>
+                <button id="execute-btn" class="btn btn-primary">
+                    実行する
+                </button>
+            </section>
+
+            <section class="result-section" style="display: none;">
+                <h2>実行結果</h2>
+                
+                <div class="result-tabs">
+                    <button class="tab-btn active" data-tab="output">出力</button>
+                    <button class="tab-btn" data-tab="code">生成コード</button>
+                    <button class="tab-btn" data-tab="ast">AST</button>
+                </div>
+                
+                <div class="tab-content">
+                    <div id="output-tab" class="tab-pane active">
+                        <pre id="output-content"></pre>
+                    </div>
+                    <div id="code-tab" class="tab-pane">
+                        <pre id="code-content"></pre>
+                    </div>
+                    <div id="ast-tab" class="tab-pane">
+                        <pre id="ast-content"></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section class="error-section" style="display: none;">
+                <div class="error-message">
+                    <h3>エラー</h3>
+                    <p id="error-content"></p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>
+                <a href="https://github.com/ayutaz/Grimoire" target="_blank">GitHub</a> |
+                <a href="https://github.com/ayutaz/Grimoire/blob/main/docs/tutorial-ja.md" target="_blank">チュートリアル</a> |
+                <a href="https://github.com/ayutaz/Grimoire/blob/main/docs/language-spec-ja.md" target="_blank">言語仕様</a>
+            </p>
+        </footer>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>処理中...</p>
+    </div>
+
+    <script src="static/wasm_exec.js"></script>
+    <script src="static/app.js"></script>
+</body>
+</html>

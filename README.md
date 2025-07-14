@@ -4,6 +4,8 @@
 
 Grimoireは、文字を一切使わず、純粋に記号と図形のみでプログラムを表現する実験的なビジュアルプログラミング言語です。手描きの魔法陣を画像認識によってコンパイルし、実行可能なプログラムを作成します。
 
+**[🎮 Webデモを試す](https://ayutaz.github.io/Grimoire/)**
+
 ![Build Status](https://github.com/ayutaz/Grimoire/actions/workflows/go.yml/badge.svg)
 ![Test Coverage](https://img.shields.io/badge/coverage-70%25-brightgreen)
 ![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-00ADD8)

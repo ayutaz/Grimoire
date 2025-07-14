@@ -1,6 +1,7 @@
 package detector
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/color"
@@ -120,6 +121,44 @@ func (d *Detector) Detect(imagePath string) ([]*Symbol, []Connection, error) {
 	if err := d.validateResults(symbols, imagePath); err != nil {
 		return nil, nil, err
 	}
+
+	return symbols, connections, nil
+}
+
+// DetectFromBytes detects symbols from image bytes
+func (d *Detector) DetectFromBytes(imageData []byte) ([]*Symbol, []Connection, error) {
+	// Decode image from bytes
+	img, _, err := image.Decode(bytes.NewReader(imageData))
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to decode image: %w", err)
+	}
+
+	// Convert to grayscale
+	gray := d.toGrayscale(img)
+
+	// Preprocess image
+	binary := d.preprocessImage(gray)
+
+	// Try to find outer circle in original grayscale image
+	outerCircle := d.findOuterCircleFromGrayscale(gray)
+
+	// Find contours
+	contours := d.findContours(binary)
+
+	// Add outer circle if found
+	if outerCircle != nil {
+		contours = append([]Contour{*outerCircle}, contours...)
+	}
+
+	// Detect symbols from contours
+	symbols := d.detectSymbolsFromContours(contours, binary)
+
+	// Find connections between symbols
+	// TODO: Implement connection detection for WebAssembly
+	connections := []Connection{}
+
+	// Deduplicate nearby stars
+	symbols = d.deduplicateNearbyStars(symbols)
 
 	return symbols, connections, nil
 }
