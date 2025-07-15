@@ -422,6 +422,43 @@ async function runTests() {
         testsFailed++;
         throw error;
     }
+    
+    // 13. 実際のサンプル画像でのテスト
+    console.log('\nTesting with actual sample images...');
+    
+    try {
+        // hello-world.pngのBase64データを読み込む（実際のデータが必要）
+        const fs = require('fs');
+        const helloWorldPath = path.join(__dirname, 'static', 'samples', 'hello-world.png');
+        
+        if (fs.existsSync(helloWorldPath)) {
+            const imageBuffer = fs.readFileSync(helloWorldPath);
+            const base64Image = imageBuffer.toString('base64');
+            
+            console.log('  Processing hello-world.png...');
+            const result = global.processGrimoireImage(base64Image);
+            
+            console.log('  Result:', JSON.stringify(result, null, 2));
+            
+            assert(result && result.success === true, 'Should process hello-world.png successfully');
+            assert(typeof result.code === 'string', 'Should return Python code');
+            
+            // Hello Worldが含まれているか確認
+            assert(result.code.includes('print') || result.code.includes('Hello'), 
+                   'Hello world sample should generate print statement or Hello text');
+            
+            // while Falseループが含まれていないか確認
+            assert(!result.code.includes('while False'), 
+                   'Should not generate while False loops');
+        } else {
+            console.log('  (Skipping hello-world.png test - file not found)');
+        }
+        
+    } catch (error) {
+        console.error('Sample image test error:', error);
+        testsFailed++;
+        throw error;
+    }
 
     // クリーンアップ
     dom.window.close();
