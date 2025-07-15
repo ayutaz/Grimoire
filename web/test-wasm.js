@@ -390,6 +390,38 @@ async function runTests() {
         testsFailed++;
         throw error;
     }
+    
+    // 12. Go 1.21との互換性テスト（型変換の明示的チェック）
+    console.log('\nTesting Go type conversions...');
+    
+    try {
+        // 実際の画像処理をテストして、すべての数値が正しくfloat64に変換されているか確認
+        const testImage = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+        const result = global.processGrimoireImage(testImage);
+        
+        if (result.debug) {
+            const debugObj = JSON.parse(result.debug);
+            
+            // symbolCountが数値であることを確認
+            assert(typeof debugObj.symbolCount === 'number', 'symbolCount should be a number, not a Go int');
+            
+            // シンボルがある場合、座標が正しく数値に変換されているか確認
+            if (debugObj.symbols && debugObj.symbols.length > 0) {
+                debugObj.symbols.forEach((symbol, i) => {
+                    assert(typeof symbol.position.x === 'number', `Symbol ${i}: x should be number`);
+                    assert(typeof symbol.position.y === 'number', `Symbol ${i}: y should be number`);
+                    // 整数値でもJavaScriptでは浮動小数点として扱われることを確認
+                    assert(Number.isFinite(symbol.position.x), `Symbol ${i}: x should be finite number`);
+                    assert(Number.isFinite(symbol.position.y), `Symbol ${i}: y should be finite number`);
+                });
+            }
+        }
+        
+    } catch (error) {
+        console.error('Type conversion test error:', error);
+        testsFailed++;
+        throw error;
+    }
 
     // クリーンアップ
     dom.window.close();
