@@ -28,7 +28,16 @@ const sampleImages = {
 // WebAssemblyの初期化
 async function initWasm() {
     try {
+        // Goオブジェクトが利用可能か確認
+        if (typeof Go === 'undefined') {
+            console.error("Go is not defined. Checking window.Go:", window.Go);
+            throw new Error("Go is not defined. Please ensure wasm_exec.js is loaded.");
+        }
+        
+        console.log("Creating Go instance...");
         const go = new Go();
+        
+        console.log("Fetching WASM file from:", "static/wasm/grimoire.wasm");
         const result = await WebAssembly.instantiateStreaming(
             fetch("static/wasm/grimoire.wasm"), 
             go.importObject
@@ -261,12 +270,41 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
+// wasm_exec.jsの読み込みを待つ
+function waitForGo() {
+    return new Promise((resolve) => {
+        if (typeof Go !== 'undefined') {
+            resolve();
+        } else {
+            // Goオブジェクトが定義されるまで待つ
+            const checkInterval = setInterval(() => {
+                if (typeof Go !== 'undefined') {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100);
+            
+            // 5秒でタイムアウト
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                resolve(); // エラーを投げずに続行
+            }, 5000);
+        }
+    });
+}
+
 // 初期化
 document.addEventListener('DOMContentLoaded', async () => {
     showLoading();
+    
+    // wasm_exec.jsの読み込みを待つ
+    await waitForGo();
+    
+    // 並列で初期化
     await Promise.all([
         initWasm(),
         initPyodide()
     ]);
+    
     hideLoading();
 });
