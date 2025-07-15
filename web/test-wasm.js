@@ -174,13 +174,119 @@ async function runTests() {
         const jsonStr = JSON.stringify(result3);
         assert(!jsonStr.includes('null') || result3.ast === null, 'Should not have unexpected null values');
         
+        // debugInfoがある場合、それがJSON文字列であることを確認
+        if (result3.debug) {
+            assert(typeof result3.debug === 'string', 'debug should be a JSON string');
+            try {
+                const debugObj = JSON.parse(result3.debug);
+                assert(typeof debugObj === 'object', 'debug should be parseable as JSON');
+            } catch (e) {
+                assert(false, 'debug should be valid JSON: ' + e.message);
+            }
+        }
+        
+        // astがある場合、それがJSON文字列であることを確認
+        if (result3.ast) {
+            assert(typeof result3.ast === 'string', 'ast should be a JSON string');
+            try {
+                const astObj = JSON.parse(result3.ast);
+                assert(typeof astObj === 'object', 'ast should be parseable as JSON');
+            } catch (e) {
+                assert(false, 'ast should be valid JSON: ' + e.message);
+            }
+        }
+        
+        // JavaScriptに渡せない値が含まれていないか確認（ValueOfエラーの原因となる値）
+        function checkForInvalidValues(obj, path = '') {
+            if (obj === null || obj === undefined) return;
+            
+            for (const key in obj) {
+                const value = obj[key];
+                const currentPath = path ? `${path}.${key}` : key;
+                
+                // 値の型をチェック
+                const valueType = typeof value;
+                assert(
+                    valueType === 'string' || 
+                    valueType === 'number' || 
+                    valueType === 'boolean' || 
+                    valueType === 'object',
+                    `Invalid type at ${currentPath}: ${valueType}`
+                );
+                
+                // オブジェクトの場合は再帰的にチェック
+                if (valueType === 'object' && value !== null) {
+                    checkForInvalidValues(value, currentPath);
+                }
+            }
+        }
+        
+        checkForInvalidValues(result3);
+        
     } catch (error) {
         console.error('Function test error:', error);
         testsFailed++;
         throw error;
     }
 
-    // 8. メモリリークテスト（複数回実行）
+    // 8. より複雑な画像でのテスト（実際のGrimoireプログラムを模擬）
+    console.log('\nTesting with complex image data...');
+    
+    try {
+        // 100x100の白い画像（シンボルが検出される可能性のあるサイズ）
+        const canvas = require('canvas');
+        const createCanvas = canvas.createCanvas;
+        const imageCanvas = createCanvas(100, 100);
+        const ctx = imageCanvas.getContext('2d');
+        
+        // 白い背景
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, 100, 100);
+        
+        // 黒い円を描画（外側の円）
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(50, 50, 40, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Base64に変換
+        const imageData = imageCanvas.toDataURL().split(',')[1];
+        const result = global.processGrimoireImage(imageData);
+        
+        assert(result && typeof result === 'object', 'Should handle complex image');
+        assert(result.success === true, 'Should process complex image successfully');
+        
+        // debugInfoの構造を詳しくチェック
+        if (result.debug) {
+            const debugObj = JSON.parse(result.debug);
+            assert(typeof debugObj.symbolCount === 'number', 'symbolCount should be a number');
+            assert(Array.isArray(debugObj.symbols), 'symbols should be an array');
+            
+            // 各シンボルの構造をチェック
+            debugObj.symbols.forEach((symbol, index) => {
+                assert(typeof symbol.type === 'string', `Symbol ${index}: type should be string`);
+                assert(typeof symbol.position === 'object', `Symbol ${index}: position should be object`);
+                assert(typeof symbol.position.x === 'number', `Symbol ${index}: position.x should be number`);
+                assert(typeof symbol.position.y === 'number', `Symbol ${index}: position.y should be number`);
+                if (symbol.pattern !== undefined) {
+                    assert(typeof symbol.pattern === 'string', `Symbol ${index}: pattern should be string`);
+                }
+            });
+        }
+        
+    } catch (error) {
+        // canvas モジュールがない場合はスキップ
+        if (error.code === 'MODULE_NOT_FOUND') {
+            console.log('  (Skipping complex image test - canvas module not available)');
+        } else {
+            console.error('Complex image test error:', error);
+            testsFailed++;
+            throw error;
+        }
+    }
+    
+    // 9. メモリリークテスト（複数回実行）
     console.log('\nTesting memory stability...');
     
     try {
