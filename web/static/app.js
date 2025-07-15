@@ -30,7 +30,7 @@ async function initWasm() {
     try {
         const go = new Go();
         const result = await WebAssembly.instantiateStreaming(
-            fetch("wasm/grimoire.wasm"), 
+            fetch("static/wasm/grimoire.wasm"), 
             go.importObject
         );
         go.run(result.instance);
