@@ -1,5 +1,9 @@
 # Grimoire - 純粋記号プログラミング言語
 
+<p align="center">
+  <img src="docs/images/grimoire-logo.png" alt="Grimoire Logo" width="600">
+</p>
+
 > 「すべてのプログラムは魔法陣である」
 
 Grimoireは、文字を一切使わず、純粋に記号と図形のみでプログラムを表現する実験的なビジュアルプログラミング言語です。手描きの魔法陣を画像認識によってコンパイルし、実行可能なプログラムを作成します。
