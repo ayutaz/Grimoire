@@ -15,10 +15,20 @@ test.describe('Grimoire Web Demo', () => {
     
     console.log('Waiting for WebAssembly initialization...');
     // Wait for WebAssembly to initialize (Pyodide is optional)
-    await page.waitForFunction(() => {
-      return window.wasmInstance !== undefined;
-    }, { timeout: process.env.CI ? 60000 : 30000 });
-    console.log('WebAssembly initialized successfully');
+    try {
+      await page.waitForFunction(() => {
+        console.log('Checking wasmInstance:', typeof window.wasmInstance);
+        return window.wasmInstance !== undefined;
+      }, { timeout: process.env.CI ? 15000 : 30000 });  // Shorter timeout in CI
+      console.log('WebAssembly initialized successfully');
+    } catch (error) {
+      console.log('WASM initialization timeout, checking page state...');
+      const pageContent = await page.content();
+      console.log('Page title:', await page.title());
+      console.log('Has wasm_exec.js:', pageContent.includes('wasm_exec.js'));
+      console.log('Has app.js:', pageContent.includes('app.js'));
+      throw error;
+    }
   });
 
   test('should load the page correctly', async ({ page }) => {
