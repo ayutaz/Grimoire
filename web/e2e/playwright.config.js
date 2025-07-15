@@ -17,6 +17,8 @@ module.exports = defineConfig({
     screenshot: 'only-on-failure',
     video: process.env.CI ? 'retain-on-failure' : 'off',  // Record video in CI for debugging
     actionTimeout: process.env.CI ? 30000 : 10000,  // 30s action timeout in CI
+    headless: true,  // Always run in headless mode
+    viewport: { width: 1280, height: 720 },
   },
 
   projects: [

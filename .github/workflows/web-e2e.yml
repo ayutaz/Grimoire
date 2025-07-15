@@ -52,10 +52,13 @@ jobs:
       working-directory: web/e2e
       run: |
         echo "Starting E2E tests..."
-        DEBUG=pw:api npm test || (echo "Tests failed, showing server logs:" && cat server.log && exit 1)
+        echo "Checking Playwright browsers..."
+        npx playwright --version
+        ls -la ~/.cache/ms-playwright/ || echo "No cache directory"
+        ls -la node_modules/playwright-core/.local-browsers/ || echo "No local browsers directory"
+        DEBUG=pw:api npm test || (echo "Tests failed" && exit 1)
       env:
         CI: true
-        PLAYWRIGHT_BROWSERS_PATH: 0
       
     - name: Upload test results
       uses: actions/upload-artifact@v4
