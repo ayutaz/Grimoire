@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"syscall/js"
 
@@ -63,7 +64,7 @@ print("検出されたシンボル数: 0")
 `
 		debugInfo := map[string]interface{}{
 			"symbolCount": 0,
-			"symbols":     []interface{}{},
+			"symbols":     make([]interface{}, 0),
 		}
 		return createResultWithDebug(true, "", pythonCode, nil, debugInfo, "No symbols detected, showing demo code")
 	}
@@ -71,11 +72,18 @@ print("検出されたシンボル数: 0")
 	// デバッグ情報を作成
 	symbolInfo := make([]map[string]interface{}, len(symbols))
 	for i, sym := range symbols {
-		symbolInfo[i] = map[string]interface{}{
-			"type":     string(sym.Type),
-			"position": map[string]float64{"x": sym.Position.X, "y": sym.Position.Y},
-			"pattern":  sym.Pattern,
+		info := map[string]interface{}{
+			"type": string(sym.Type),
+			"position": map[string]interface{}{
+				"x": sym.Position.X,
+				"y": sym.Position.Y,
+			},
 		}
+		// Patternが空でない場合のみ設定
+		if sym.Pattern != "" {
+			info["pattern"] = sym.Pattern
+		}
+		symbolInfo[i] = info
 	}
 	debugInfo := map[string]interface{}{
 		"symbolCount": len(symbols),
@@ -155,8 +163,19 @@ func createResultWithAST(success bool, output, code string, ast interface{}, war
 		"success": success,
 		"output":  output,
 		"code":    code,
-		"ast":     ast,
 	}
+	
+	// astがnilでない場合のみ設定
+	if ast != nil {
+		// ASTをJSON文字列に変換してからセット
+		astJSON, err := json.Marshal(ast)
+		if err == nil {
+			result["ast"] = string(astJSON)
+		} else {
+			result["ast"] = fmt.Sprintf("AST serialization error: %v", err)
+		}
+	}
+	
 	if warning != "" {
 		result["warning"] = warning
 	}
@@ -169,9 +188,20 @@ func createResultWithDebug(success bool, output, code string, ast interface{}, d
 		"success": success,
 		"output":  output,
 		"code":    code,
-		"ast":     ast,
 		"debug":   debugInfo,
 	}
+	
+	// astがnilでない場合のみ設定
+	if ast != nil {
+		// ASTをJSON文字列に変換してからセット
+		astJSON, err := json.Marshal(ast)
+		if err == nil {
+			result["ast"] = string(astJSON)
+		} else {
+			result["ast"] = fmt.Sprintf("AST serialization error: %v", err)
+		}
+	}
+	
 	if warning != "" {
 		result["warning"] = warning
 	}
