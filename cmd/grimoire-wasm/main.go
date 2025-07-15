@@ -75,13 +75,13 @@ print("検出されたシンボル数: 0")
 		info := map[string]interface{}{
 			"type": string(sym.Type),
 			"position": map[string]interface{}{
-				"x": sym.Position.X,
-				"y": sym.Position.Y,
+				"x": float64(sym.Position.X), // 明示的にfloat64に変換
+				"y": float64(sym.Position.Y), // 明示的にfloat64に変換
 			},
 		}
 		// Patternが空でない場合のみ設定
 		if sym.Pattern != "" {
-			info["pattern"] = sym.Pattern
+			info["pattern"] = string(sym.Pattern) // 明示的にstringに変換
 		}
 		symbolInfo[i] = info
 	}
@@ -188,7 +188,17 @@ func createResultWithDebug(success bool, output, code string, ast interface{}, d
 		"success": success,
 		"output":  output,
 		"code":    code,
-		"debug":   debugInfo,
+	}
+	
+	// debugInfoが空でない場合のみ設定
+	if debugInfo != nil && len(debugInfo) > 0 {
+		// debugInfoをJSON文字列に変換してからセット（JavaScriptとの互換性のため）
+		debugJSON, err := json.Marshal(debugInfo)
+		if err == nil {
+			result["debug"] = string(debugJSON)
+		} else {
+			result["debug"] = fmt.Sprintf("Debug info serialization error: %v", err)
+		}
 	}
 	
 	// astがnilでない場合のみ設定
