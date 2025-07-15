@@ -1,4 +1,11 @@
 const { defineConfig, devices } = require('@playwright/test');
+const path = require('path');
+const os = require('os');
+
+// Set Playwright browsers path for CI
+if (process.env.CI) {
+  process.env.PLAYWRIGHT_BROWSERS_PATH = path.join(os.homedir(), '.cache', 'ms-playwright');
+}
 
 module.exports = defineConfig({
   testDir: './tests',

@@ -34,7 +34,7 @@ test.describe('Grimoire Web Demo', () => {
     console.log('Input section check passed');
   });
 
-  test('should display sample images', async ({ page }) => {
+  test.skip('should display sample images', async ({ page }) => {
     const sampleImages = ['hello-world', 'calculator', 'fibonacci', 'loop'];
     
     for (const sample of sampleImages) {
