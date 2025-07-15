@@ -58,7 +58,12 @@ jobs:
         echo "Checking Playwright browsers..."
         npx playwright --version
         ls -la ~/.cache/ms-playwright/ || echo "No cache directory"
-        ls -la node_modules/playwright-core/.local-browsers/ || echo "No local browsers directory"
+        echo "Checking web server files..."
+        ls -la ../
+        ls -la ../static/
+        ls -la ../static/wasm/ || echo "No wasm directory"
+        echo "Checking wasm_exec.js..."
+        ls -la ../static/wasm_exec.js || echo "No wasm_exec.js found"
         DEBUG=pw:api npm test || (echo "Tests failed" && exit 1)
       env:
         CI: true
