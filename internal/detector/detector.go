@@ -225,8 +225,19 @@ func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.G
 		// Detect internal pattern for shapes that can contain patterns
 		pattern := PatternEmpty
 		if symbolType == Square || symbolType == Circle || symbolType == Pentagon ||
-			symbolType == Hexagon || symbolType == Star {
+			symbolType == Hexagon || symbolType == Star || symbolType == SixPointedStar || symbolType == EightPointedStar {
 			pattern = d.detectInternalPattern(contour, binary)
+		}
+
+		// Special handling: if it's a circle with dot pattern, treat it as a double circle
+		if symbolType == Circle && pattern == PatternDot {
+			symbolType = DoubleCircle
+		}
+
+		// Special handling: treat six-pointed star as regular star for output purposes
+		// This is because the detection might confuse 5-pointed and 6-pointed stars
+		if symbolType == SixPointedStar {
+			symbolType = Star
 		}
 
 		symbol := &Symbol{

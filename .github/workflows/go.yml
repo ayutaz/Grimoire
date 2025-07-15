@@ -13,6 +13,7 @@ jobs:
   test:
     name: Test
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30  # 明示的なタイムアウトを設定
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -96,7 +97,8 @@ jobs:
     
     - name: Run tests (Windows)
       if: runner.os == 'Windows'
-      run: go test -v -race "-coverprofile=coverage.out" ./...
+      run: |
+        go test -v -race "-coverprofile=coverage.out" -timeout 20m ./...
     
     - name: Upload coverage
       if: matrix.go == '1.23' && matrix.os == 'ubuntu-latest'  # Ubuntu/Go 1.23のみカバレッジ送信

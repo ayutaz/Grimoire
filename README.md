@@ -193,6 +193,9 @@ go tool cover -html=coverage.out
 
 # ベンチマークの実行
 go test -bench=. ./...
+
+# WebデモのE2Eテスト
+make web-test
 ```
 
 ### コードフォーマット

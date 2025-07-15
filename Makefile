@@ -1,4 +1,4 @@
-.PHONY: all build test clean run-example install deps lint fmt check-version
+.PHONY: all build test clean run-example install deps lint fmt check-version web-build web-test
 
 # Go version check
 MIN_GO_VERSION = 1.21
@@ -127,6 +127,14 @@ profile: build
 docker-build:
 	docker build -t grimoire:latest .
 
+# Web WASM build
+web-build:
+	GOOS=js GOARCH=wasm go build -o web/static/wasm/grimoire.wasm cmd/grimoire-wasm/main.go
+
+# Web E2E tests
+web-test: web-build
+	cd web/e2e && ./run-tests.sh
+
 # Help target
 help:
 	@echo "Available targets:"
@@ -139,3 +147,5 @@ help:
 	@echo "  make install     - Install the binary"
 	@echo "  make run-example - Run hello world example"
 	@echo "  make dev         - Format, lint, test, and build"
+	@echo "  make web-build   - Build WASM for web demo"
+	@echo "  make web-test    - Run web E2E tests"

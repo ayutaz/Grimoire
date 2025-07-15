@@ -30,12 +30,15 @@ async function initWasm() {
     try {
         const go = new Go();
         const result = await WebAssembly.instantiateStreaming(
-            fetch("wasm/grimoire.wasm"), 
+            fetch("static/wasm/grimoire.wasm"), 
             go.importObject
         );
         go.run(result.instance);
         wasmInstance = result.instance;
+        window.wasmInstance = result.instance; // E2Eテスト用にグローバルに公開
+        window.processGrimoireImage = window.processGrimoireImage || processGrimoireImage; // E2Eテスト用
         console.log("WebAssembly initialized successfully");
+        console.log("processGrimoireImage function available:", typeof window.processGrimoireImage);
     } catch (error) {
         console.error("Failed to initialize WebAssembly:", error);
         showError("WebAssemblyの初期化に失敗しました: " + error.message);
@@ -46,6 +49,7 @@ async function initWasm() {
 async function initPyodide() {
     try {
         pyodide = await loadPyodide();
+        window.pyodide = pyodide; // E2Eテスト用にグローバルに公開
         console.log("Pyodide initialized successfully");
     } catch (error) {
         console.error("Failed to initialize Pyodide:", error);
@@ -126,7 +130,24 @@ async function showResult(result) {
         
         // Pythonコードを表示
         codeContent.textContent = result.code || "// コードが生成されませんでした";
-        astContent.textContent = JSON.stringify(result.ast || {}, null, 2);
+        
+        // デバッグ情報とASTを表示
+        let debugDisplay = "";
+        if (result.debug) {
+            debugDisplay += "=== デバッグ情報 ===\n";
+            debugDisplay += `検出されたシンボル数: ${result.debug.symbolCount}\n`;
+            if (result.debug.symbols && result.debug.symbols.length > 0) {
+                debugDisplay += "シンボル一覧:\n";
+                result.debug.symbols.forEach((sym, i) => {
+                    debugDisplay += `  ${i}: ${sym.type} at (${sym.position.x}, ${sym.position.y})`;
+                    if (sym.pattern) debugDisplay += ` pattern: ${sym.pattern}`;
+                    debugDisplay += "\n";
+                });
+            }
+            debugDisplay += "\n=== AST ===\n";
+        }
+        debugDisplay += JSON.stringify(result.ast || {}, null, 2);
+        astContent.textContent = debugDisplay;
         
         // Pyodideが利用可能な場合はPythonコードを実行
         if (pyodide && result.code) {
