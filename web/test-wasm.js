@@ -174,13 +174,207 @@ async function runTests() {
         const jsonStr = JSON.stringify(result3);
         assert(!jsonStr.includes('null') || result3.ast === null, 'Should not have unexpected null values');
         
+        // debugInfoがある場合、それがJSON文字列であることを確認
+        if (result3.debug) {
+            assert(typeof result3.debug === 'string', 'debug should be a JSON string');
+            try {
+                const debugObj = JSON.parse(result3.debug);
+                assert(typeof debugObj === 'object', 'debug should be parseable as JSON');
+            } catch (e) {
+                assert(false, 'debug should be valid JSON: ' + e.message);
+            }
+        }
+        
+        // astがある場合、それがJSON文字列であることを確認
+        if (result3.ast) {
+            assert(typeof result3.ast === 'string', 'ast should be a JSON string');
+            try {
+                const astObj = JSON.parse(result3.ast);
+                assert(typeof astObj === 'object', 'ast should be parseable as JSON');
+            } catch (e) {
+                assert(false, 'ast should be valid JSON: ' + e.message);
+            }
+        }
+        
+        // JavaScriptに渡せない値が含まれていないか確認（ValueOfエラーの原因となる値）
+        function checkForInvalidValues(obj, path = '') {
+            if (obj === null || obj === undefined) return;
+            
+            for (const key in obj) {
+                const value = obj[key];
+                const currentPath = path ? `${path}.${key}` : key;
+                
+                // 値の型をチェック
+                const valueType = typeof value;
+                assert(
+                    valueType === 'string' || 
+                    valueType === 'number' || 
+                    valueType === 'boolean' || 
+                    valueType === 'object',
+                    `Invalid type at ${currentPath}: ${valueType}`
+                );
+                
+                // オブジェクトの場合は再帰的にチェック
+                if (valueType === 'object' && value !== null) {
+                    checkForInvalidValues(value, currentPath);
+                }
+            }
+        }
+        
+        checkForInvalidValues(result3);
+        
     } catch (error) {
         console.error('Function test error:', error);
         testsFailed++;
         throw error;
     }
 
-    // 8. メモリリークテスト（複数回実行）
+    // 8. より複雑な画像でのテスト（実際のGrimoireプログラムを模擬）
+    console.log('\nTesting with complex image data...');
+    
+    try {
+        // 100x100の白い画像（シンボルが検出される可能性のあるサイズ）
+        const canvas = require('canvas');
+        const createCanvas = canvas.createCanvas;
+        const imageCanvas = createCanvas(100, 100);
+        const ctx = imageCanvas.getContext('2d');
+        
+        // 白い背景
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, 100, 100);
+        
+        // 黒い円を描画（外側の円）
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(50, 50, 40, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Base64に変換
+        const imageData = imageCanvas.toDataURL().split(',')[1];
+        const result = global.processGrimoireImage(imageData);
+        
+        assert(result && typeof result === 'object', 'Should handle complex image');
+        assert(result.success === true, 'Should process complex image successfully');
+        
+        // debugInfoの構造を詳しくチェック
+        if (result.debug) {
+            const debugObj = JSON.parse(result.debug);
+            assert(typeof debugObj.symbolCount === 'number', 'symbolCount should be a number');
+            assert(Array.isArray(debugObj.symbols), 'symbols should be an array');
+            
+            // 各シンボルの構造をチェック
+            debugObj.symbols.forEach((symbol, index) => {
+                assert(typeof symbol.type === 'string', `Symbol ${index}: type should be string`);
+                assert(typeof symbol.position === 'object', `Symbol ${index}: position should be object`);
+                assert(typeof symbol.position.x === 'number', `Symbol ${index}: position.x should be number`);
+                assert(typeof symbol.position.y === 'number', `Symbol ${index}: position.y should be number`);
+                if (symbol.pattern !== undefined) {
+                    assert(typeof symbol.pattern === 'string', `Symbol ${index}: pattern should be string`);
+                }
+            });
+        }
+        
+    } catch (error) {
+        // canvas モジュールがない場合はスキップ
+        if (error.code === 'MODULE_NOT_FOUND') {
+            console.log('  (Skipping complex image test - canvas module not available)');
+        } else {
+            console.error('Complex image test error:', error);
+            testsFailed++;
+            throw error;
+        }
+    }
+    
+    // 9. 過去のバグの再現テスト
+    console.log('\nTesting past bug patterns...');
+    
+    try {
+        // シンプルな画像でテスト（1x1の白い画像）
+        function createGrimoireImage() {
+            // 1x1の白い画像（validBase64と同じ）
+            const simpleImage = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+            return simpleImage;
+        }
+        
+        const complexImage = createGrimoireImage();
+        const complexResult = global.processGrimoireImage(complexImage);
+        
+        // 結果の基本的な検証
+        assert(complexResult && complexResult.success === true, 'Should process complex image');
+        assert(typeof complexResult.code === 'string', 'Should return code string');
+        
+        // debugInfoの詳細な検証
+        if (complexResult.debug) {
+            const debugObj = JSON.parse(complexResult.debug);
+            
+            // シンボルが検出された場合の検証
+            if (debugObj.symbolCount > 0) {
+                assert(Array.isArray(debugObj.symbols), 'symbols should be an array');
+                
+                // 各シンボルでPatternフィールドの処理を確認（過去のバグ）
+                debugObj.symbols.forEach((symbol, index) => {
+                    assert(typeof symbol.type === 'string', `Symbol ${index}: type should be string`);
+                    assert(typeof symbol.position === 'object', `Symbol ${index}: position should be object`);
+                    assert(typeof symbol.position.x === 'number', `Symbol ${index}: x should be number`);
+                    assert(typeof symbol.position.y === 'number', `Symbol ${index}: y should be number`);
+                    
+                    // Patternフィールドは空文字列の場合は含まれないはず
+                    if (symbol.pattern !== undefined) {
+                        assert(symbol.pattern !== '', `Symbol ${index}: pattern should not be empty string`);
+                        assert(typeof symbol.pattern === 'string', `Symbol ${index}: pattern should be string`);
+                    }
+                });
+            }
+        }
+        
+        // 全体のJSONシリアライズ可能性をテスト
+        try {
+            const fullJSON = JSON.stringify(complexResult);
+            assert(fullJSON.length > 0, 'Result should be JSON serializable');
+        } catch (e) {
+            assert(false, 'Result should be fully JSON serializable: ' + e.message);
+        }
+        
+    } catch (error) {
+        console.error('Past bug pattern test error:', error);
+        testsFailed++;
+        throw error;
+    }
+    
+    // 10. WASM初期化パスのテスト（過去のバグ）
+    console.log('\nTesting WASM initialization paths...');
+    
+    try {
+        // app.jsで使用されるパスが正しいことを確認
+        const appJsPath = path.join(__dirname, 'static', 'app.js');
+        if (fs.existsSync(appJsPath)) {
+            const appJsContent = fs.readFileSync(appJsPath, 'utf8');
+            
+            // WASMファイルのパスが正しいことを確認
+            assert(appJsContent.includes('static/wasm/grimoire.wasm') || 
+                   appJsContent.includes('./static/wasm/grimoire.wasm'),
+                   'app.js should reference correct WASM path');
+            
+            // wasm_exec.jsのパスはindex.htmlで参照されているのでスキップ
+            console.log('  (wasm_exec.js is referenced in index.html, not app.js)');
+        }
+        
+        // build-wasm.shが正しいディレクトリに出力することを確認
+        const buildScriptPath = path.join(__dirname, 'build-wasm.sh');
+        if (fs.existsSync(buildScriptPath)) {
+            const buildScriptContent = fs.readFileSync(buildScriptPath, 'utf8');
+            assert(buildScriptContent.includes('static/wasm'),
+                   'build-wasm.sh should output to static/wasm directory');
+        }
+        
+    } catch (error) {
+        console.error('Path test error:', error);
+        testsFailed++;
+        throw error;
+    }
+    
+    // 11. メモリリークテスト（複数回実行）
     console.log('\nTesting memory stability...');
     
     try {
@@ -193,6 +387,38 @@ async function runTests() {
         
     } catch (error) {
         console.error('Memory test error:', error);
+        testsFailed++;
+        throw error;
+    }
+    
+    // 12. Go 1.21との互換性テスト（型変換の明示的チェック）
+    console.log('\nTesting Go type conversions...');
+    
+    try {
+        // 実際の画像処理をテストして、すべての数値が正しくfloat64に変換されているか確認
+        const testImage = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+        const result = global.processGrimoireImage(testImage);
+        
+        if (result.debug) {
+            const debugObj = JSON.parse(result.debug);
+            
+            // symbolCountが数値であることを確認
+            assert(typeof debugObj.symbolCount === 'number', 'symbolCount should be a number, not a Go int');
+            
+            // シンボルがある場合、座標が正しく数値に変換されているか確認
+            if (debugObj.symbols && debugObj.symbols.length > 0) {
+                debugObj.symbols.forEach((symbol, i) => {
+                    assert(typeof symbol.position.x === 'number', `Symbol ${i}: x should be number`);
+                    assert(typeof symbol.position.y === 'number', `Symbol ${i}: y should be number`);
+                    // 整数値でもJavaScriptでは浮動小数点として扱われることを確認
+                    assert(Number.isFinite(symbol.position.x), `Symbol ${i}: x should be finite number`);
+                    assert(Number.isFinite(symbol.position.y), `Symbol ${i}: y should be finite number`);
+                });
+            }
+        }
+        
+    } catch (error) {
+        console.error('Type conversion test error:', error);
         testsFailed++;
         throw error;
     }

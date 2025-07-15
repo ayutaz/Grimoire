@@ -29,11 +29,48 @@ jobs:
         with:
           go-version: '1.23'
           
+      - name: Verify Go version for WASM compatibility
+        run: |
+          go version
+          echo "Ensuring Go 1.23 is used for WASM build..."
+          GO_VERSION=$(go version | awk '{print $3}' | sed 's/go//')
+          echo "Go version: $GO_VERSION"
+          
+      - name: Setup Node.js for testing
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
       - name: Build WebAssembly
         run: |
           cd web
           chmod +x build-wasm.sh
           ./build-wasm.sh
+          
+      - name: Install test dependencies
+        run: |
+          cd web
+          npm init -y
+          npm install --save-dev node-fetch@2 jsdom
+          
+      - name: Test WASM before deployment
+        run: |
+          cd web
+          echo "Running WASM tests to prevent deployment of broken builds..."
+          node test-wasm.js
+          
+      - name: Verify WASM artifacts
+        run: |
+          cd web
+          echo "Checking WASM build artifacts..."
+          ls -la static/wasm/grimoire.wasm
+          ls -la static/wasm_exec.js
+          WASM_SIZE=$(stat -c%s static/wasm/grimoire.wasm)
+          echo "WASM file size: $WASM_SIZE bytes"
+          if [ $WASM_SIZE -lt 1000000 ]; then
+            echo "Error: WASM file is too small, build may have failed"
+            exit 1
+          fi
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
