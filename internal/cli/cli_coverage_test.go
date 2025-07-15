@@ -621,8 +621,9 @@ func TestCompileCommandWriteError(t *testing.T) {
 	// Should get a file write error
 	assert.Error(t, err, "Should return error when output file can't be written")
 	grimoireErr, ok := err.(*grimoireErrors.GrimoireError)
-	assert.True(t, ok, "Should be a GrimoireError")
-	assert.Equal(t, grimoireErrors.FileWriteError, grimoireErr.Type)
+	if assert.True(t, ok, "Should be a GrimoireError") {
+		assert.Equal(t, grimoireErrors.FileWriteError, grimoireErr.Type)
+	}
 }
 
 // TestRunCommandExecutionError tests run command when Python execution fails
