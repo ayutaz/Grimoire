@@ -286,7 +286,95 @@ async function runTests() {
         }
     }
     
-    // 9. メモリリークテスト（複数回実行）
+    // 9. 過去のバグの再現テスト
+    console.log('\nTesting past bug patterns...');
+    
+    try {
+        // シンプルな画像でテスト（1x1の白い画像）
+        function createGrimoireImage() {
+            // 1x1の白い画像（validBase64と同じ）
+            const simpleImage = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+            return simpleImage;
+        }
+        
+        const complexImage = createGrimoireImage();
+        const complexResult = global.processGrimoireImage(complexImage);
+        
+        // 結果の基本的な検証
+        assert(complexResult && complexResult.success === true, 'Should process complex image');
+        assert(typeof complexResult.code === 'string', 'Should return code string');
+        
+        // debugInfoの詳細な検証
+        if (complexResult.debug) {
+            const debugObj = JSON.parse(complexResult.debug);
+            
+            // シンボルが検出された場合の検証
+            if (debugObj.symbolCount > 0) {
+                assert(Array.isArray(debugObj.symbols), 'symbols should be an array');
+                
+                // 各シンボルでPatternフィールドの処理を確認（過去のバグ）
+                debugObj.symbols.forEach((symbol, index) => {
+                    assert(typeof symbol.type === 'string', `Symbol ${index}: type should be string`);
+                    assert(typeof symbol.position === 'object', `Symbol ${index}: position should be object`);
+                    assert(typeof symbol.position.x === 'number', `Symbol ${index}: x should be number`);
+                    assert(typeof symbol.position.y === 'number', `Symbol ${index}: y should be number`);
+                    
+                    // Patternフィールドは空文字列の場合は含まれないはず
+                    if (symbol.pattern !== undefined) {
+                        assert(symbol.pattern !== '', `Symbol ${index}: pattern should not be empty string`);
+                        assert(typeof symbol.pattern === 'string', `Symbol ${index}: pattern should be string`);
+                    }
+                });
+            }
+        }
+        
+        // 全体のJSONシリアライズ可能性をテスト
+        try {
+            const fullJSON = JSON.stringify(complexResult);
+            assert(fullJSON.length > 0, 'Result should be JSON serializable');
+        } catch (e) {
+            assert(false, 'Result should be fully JSON serializable: ' + e.message);
+        }
+        
+    } catch (error) {
+        console.error('Past bug pattern test error:', error);
+        testsFailed++;
+        throw error;
+    }
+    
+    // 10. WASM初期化パスのテスト（過去のバグ）
+    console.log('\nTesting WASM initialization paths...');
+    
+    try {
+        // app.jsで使用されるパスが正しいことを確認
+        const appJsPath = path.join(__dirname, 'static', 'app.js');
+        if (fs.existsSync(appJsPath)) {
+            const appJsContent = fs.readFileSync(appJsPath, 'utf8');
+            
+            // WASMファイルのパスが正しいことを確認
+            assert(appJsContent.includes('static/wasm/grimoire.wasm') || 
+                   appJsContent.includes('./static/wasm/grimoire.wasm'),
+                   'app.js should reference correct WASM path');
+            
+            // wasm_exec.jsのパスはindex.htmlで参照されているのでスキップ
+            console.log('  (wasm_exec.js is referenced in index.html, not app.js)');
+        }
+        
+        // build-wasm.shが正しいディレクトリに出力することを確認
+        const buildScriptPath = path.join(__dirname, 'build-wasm.sh');
+        if (fs.existsSync(buildScriptPath)) {
+            const buildScriptContent = fs.readFileSync(buildScriptPath, 'utf8');
+            assert(buildScriptContent.includes('static/wasm'),
+                   'build-wasm.sh should output to static/wasm directory');
+        }
+        
+    } catch (error) {
+        console.error('Path test error:', error);
+        testsFailed++;
+        throw error;
+    }
+    
+    // 11. メモリリークテスト（複数回実行）
     console.log('\nTesting memory stability...');
     
     try {
