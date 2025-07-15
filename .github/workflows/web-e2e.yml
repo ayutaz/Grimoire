@@ -19,6 +19,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20  # Add explicit timeout
     
     steps:
     - uses: actions/checkout@v4
@@ -32,6 +33,9 @@ jobs:
       run: |
         cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" web/static/
         GOOS=js GOARCH=wasm go build -o web/static/wasm/grimoire.wasm cmd/grimoire-wasm/main.go
+        echo "WASM build completed"
+        ls -la web/static/wasm/
+        ls -la web/static/
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -43,10 +47,16 @@ jobs:
       run: |
         npm install
         npx playwright install chromium
+        npx playwright install-deps chromium
         
     - name: Run E2E tests
       working-directory: web/e2e
-      run: npm test
+      run: |
+        echo "Starting E2E tests..."
+        DEBUG=pw:api npm test || (echo "Tests failed, showing server logs:" && cat server.log && exit 1)
+      env:
+        CI: true
+        PLAYWRIGHT_BROWSERS_PATH: 0
       
     - name: Upload test results
       uses: actions/upload-artifact@v4
@@ -61,5 +71,13 @@ jobs:
       if: failure()
       with:
         name: test-screenshots
+        path: web/e2e/test-results/
+        retention-days: 7
+        
+    - name: Upload videos
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: test-videos
         path: web/e2e/test-results/
         retention-days: 7

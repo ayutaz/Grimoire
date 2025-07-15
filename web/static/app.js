@@ -36,7 +36,9 @@ async function initWasm() {
         go.run(result.instance);
         wasmInstance = result.instance;
         window.wasmInstance = result.instance; // E2Eテスト用にグローバルに公開
+        window.processGrimoireImage = window.processGrimoireImage || processGrimoireImage; // E2Eテスト用
         console.log("WebAssembly initialized successfully");
+        console.log("processGrimoireImage function available:", typeof window.processGrimoireImage);
     } catch (error) {
         console.error("Failed to initialize WebAssembly:", error);
         showError("WebAssemblyの初期化に失敗しました: " + error.message);
