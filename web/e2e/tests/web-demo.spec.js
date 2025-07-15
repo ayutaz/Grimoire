@@ -11,7 +11,7 @@ test.describe('Grimoire Web Demo', () => {
     }
     
     console.log('Navigating to page...');
-    await page.goto('/');
+    await page.goto('/web/');
     
     console.log('Waiting for WebAssembly initialization...');
     // Wait for WebAssembly to initialize (Pyodide is optional)

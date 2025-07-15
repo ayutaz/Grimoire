@@ -36,7 +36,7 @@ module.exports = defineConfig({
   ],
 
   webServer: {
-    command: 'npx http-server .. -p 8080 -c-1 --no-dotfiles',
+    command: 'npx http-server ../.. -p 8080 -c-1 --no-dotfiles',
     port: 8080,
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,  // 120 seconds timeout for server startup in CI

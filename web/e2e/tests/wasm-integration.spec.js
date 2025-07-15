@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 
 test.describe('WASM Integration Tests', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/web/');
     // Wait for WASM to be fully initialized
     await page.waitForFunction(() => {
       return window.wasmInstance !== undefined && 
