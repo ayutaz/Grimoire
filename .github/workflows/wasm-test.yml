@@ -1,0 +1,67 @@
+name: WASM Build and Test
+
+on:
+  push:
+    branches: [ main, 'feature/**', 'fix/**' ]
+    paths:
+      - 'cmd/grimoire-wasm/**'
+      - 'internal/**'
+      - 'web/**'
+      - '.github/workflows/wasm-test.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'cmd/grimoire-wasm/**'
+      - 'internal/**'
+      - 'web/**'
+      - '.github/workflows/wasm-test.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+    
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Build WASM
+      run: |
+        cd web
+        chmod +x build-wasm.sh
+        ./build-wasm.sh
+        echo "Checking WASM build artifacts:"
+        ls -la static/wasm/
+        ls -la static/wasm_exec.js
+        
+    - name: Test WASM size
+      run: |
+        WASM_SIZE=$(stat -c%s web/static/wasm/grimoire.wasm || stat -f%z web/static/wasm/grimoire.wasm)
+        echo "WASM file size: $WASM_SIZE bytes"
+        if [ $WASM_SIZE -lt 1000000 ]; then
+          echo "Warning: WASM file seems too small"
+          exit 1
+        fi
+        if [ $WASM_SIZE -gt 10000000 ]; then
+          echo "Warning: WASM file seems too large"
+          exit 1
+        fi
+        
+    - name: Install test dependencies
+      run: |
+        cd web
+        npm init -y
+        npm install --save-dev node-fetch@2 jsdom
+        
+    - name: Run WASM tests
+      run: |
+        cd web
+        node test-wasm.js
