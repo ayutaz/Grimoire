@@ -470,6 +470,14 @@ func (p *Parser) parseLoop(node *symbolNode) Statement {
 
 	// While loop
 	condition := p.parseCondition(node)
+
+	// If condition is literal false, skip creating a while loop
+	// This prevents "while False" loops that never execute
+	if lit, ok := condition.(*Literal); ok && lit.LiteralType == Boolean && !lit.Value.(bool) {
+		// Return nil to skip this statement entirely
+		return nil
+	}
+
 	return &WhileLoop{
 		Condition: condition,
 		Body:      body,
@@ -720,7 +728,7 @@ func (p *Parser) parseCondition(node *symbolNode) Expression {
 		}
 	}
 
-	// Default to false
+	// Default to false - this will be handled by the caller
 	return &Literal{Value: false, LiteralType: Boolean}
 }
 

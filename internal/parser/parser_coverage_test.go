@@ -520,18 +520,8 @@ func TestParseLoopImproved(t *testing.T) {
 				return p
 			},
 			checkResult: func(t *testing.T, result Statement) {
-				whileLoop, ok := result.(*WhileLoop)
-				assert.True(t, ok, "Expected WhileLoop")
-				if ok {
-					// Default condition should be false literal
-					lit, ok := whileLoop.Condition.(*Literal)
-					assert.True(t, ok, "Expected Literal condition")
-					if ok {
-						assert.Equal(t, false, lit.Value)
-						assert.Equal(t, Boolean, lit.LiteralType)
-					}
-					assert.Len(t, whileLoop.Body, 1)
-				}
+				// With the fix, false condition loops return nil to avoid "while False" loops
+				assert.Nil(t, result, "Expected nil for false condition loop")
 			},
 		},
 	}
@@ -543,7 +533,7 @@ func TestParseLoopImproved(t *testing.T) {
 			actualNode := p.symbolGraph[0]
 
 			result := p.parseLoop(actualNode)
-			assert.NotNil(t, result)
+			// Don't assert NotNil here - some tests expect nil result
 			if tt.checkResult != nil {
 				tt.checkResult(t, result)
 			}

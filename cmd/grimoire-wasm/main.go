@@ -48,7 +48,7 @@ func processImage(this js.Value, args []js.Value) interface{} {
 	}
 
 	// 画像からプログラムを検出
-	det := detector.NewDetector(detector.Config{Debug: false})
+	det := detector.NewDetector(detector.Config{Debug: true})
 	symbols, connections, err := det.DetectFromBytes(imageData)
 	if err != nil {
 		return createErrorResult(fmt.Sprintf("Failed to detect program: %v", err))

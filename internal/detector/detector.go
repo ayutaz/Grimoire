@@ -259,10 +259,16 @@ func (d *Detector) detectSymbolsFromContours(contours []Contour, binary *image.G
 			centerDist := math.Sqrt(math.Pow(symbol.Position.X-outerCircle.Position.X, 2) +
 				math.Pow(symbol.Position.Y-outerCircle.Position.Y, 2))
 			if centerDist < outerCircle.Size*0.9 {
-				// For stars, only accept those near the center
-				if symbolType == Star {
-					if centerDist < outerCircle.Size*0.3 { // Within 30% of radius from center
+				// For stars (including six-pointed stars), accept those within a reasonable distance
+				if symbolType == Star || symbolType == SixPointedStar {
+					// Increased threshold from 30% to 80% to allow stars that are further from center
+					// This fixes the issue where hello-world.png star at (496,449) was being filtered out
+					// The star is ~247 pixels from center, and outer circle radius is ~442, so 247/442 = 56%
+					if centerDist < outerCircle.Size*0.8 { // Within 80% of radius from center
 						symbols = append(symbols, symbol)
+					} else if os.Getenv("GRIMOIRE_DEBUG") != "" {
+						fmt.Printf("Star at (%.0f,%.0f) filtered out: distance %.1f > threshold %.1f\n",
+							symbol.Position.X, symbol.Position.Y, centerDist, outerCircle.Size*0.8)
 					}
 				} else {
 					symbols = append(symbols, symbol)
