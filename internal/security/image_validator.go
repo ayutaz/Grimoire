@@ -29,7 +29,7 @@ func NewImageValidator() *ImageValidator {
 		MaxFileSize:       50 * 1024 * 1024, // 50MB
 		MaxImageWidth:     10000,
 		MaxImageHeight:    10000,
-		AllowedExtensions: []string{".png", ".jpg", ".jpeg"},
+		AllowedExtensions: []string{".png", ".jpg", ".jpeg", ".gif", ".webp"},
 		WorkingDirectory:  ".",
 	}
 }
@@ -146,6 +146,24 @@ func (v *ImageValidator) ValidateFileHeader(filePath string) error {
 		jpegHeader := []byte{0xFF, 0xD8, 0xFF}
 		if !bytes.HasPrefix(header, jpegHeader) {
 			return fmt.Errorf("file extension is %s but content is not a valid JPEG", ext)
+		}
+	case ".gif":
+		// GIF magic numbers: GIF87a or GIF89a
+		gif87Header := []byte("GIF87a")
+		gif89Header := []byte("GIF89a")
+		if !bytes.HasPrefix(header, gif87Header) && !bytes.HasPrefix(header, gif89Header) {
+			return fmt.Errorf("file extension is .gif but content is not a valid GIF")
+		}
+	case ".webp":
+		// WebP magic number: RIFF....WEBP
+		// Check for RIFF header and WEBP signature
+		if len(header) < 12 {
+			return fmt.Errorf("file too small to be a valid WebP")
+		}
+		riffHeader := []byte("RIFF")
+		webpSignature := []byte("WEBP")
+		if !bytes.HasPrefix(header, riffHeader) || !bytes.Contains(header[8:12], webpSignature) {
+			return fmt.Errorf("file extension is .webp but content is not a valid WebP")
 		}
 	default:
 		return fmt.Errorf("unsupported file format: %s", ext)

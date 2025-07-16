@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	_ "image/gif"  // for gif image format support
 	_ "image/jpeg" // for jpeg image format support
 	_ "image/png"  // for png image format support
 	"math"
@@ -14,6 +15,7 @@ import (
 
 	grimoireErrors "github.com/ayutaz/grimoire/internal/errors"
 	"github.com/ayutaz/grimoire/internal/security"
+	_ "golang.org/x/image/webp" // for webp image format support
 )
 
 // Config holds detector configuration
