@@ -139,11 +139,19 @@ jobs:
     - name: Download dependencies
       run: go mod download
     
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v6
-      with:
-        version: latest
-        args: --timeout=5m
+    - name: List Go files
+      run: |
+        echo "Checking Go files in repository..."
+        find . -name "*.go" -type f | head -20
+        echo "Total Go files: $(find . -name '*.go' -type f | wc -l)"
+    
+    - name: Install golangci-lint
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.56.2
+    
+    - name: Run golangci-lint
+      run: |
+        $(go env GOPATH)/bin/golangci-lint run --timeout=5m ./...
 
   build:
     name: Build
