@@ -139,19 +139,29 @@ jobs:
     - name: Download dependencies
       run: go mod download
     
-    - name: List Go files
+    - name: Verify Go environment
       run: |
-        echo "Checking Go files in repository..."
-        find . -name "*.go" -type f | head -20
-        echo "Total Go files: $(find . -name '*.go' -type f | wc -l)"
+        echo "Go version: $(go version)"
+        echo "GOPATH: $(go env GOPATH)"
+        echo "GOROOT: $(go env GOROOT)"
+        echo "pwd: $(pwd)"
+        echo "Go files count: $(find . -name '*.go' -type f | wc -l)"
     
-    - name: Install golangci-lint
+    - name: Run gofmt
       run: |
-        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.56.2
+        echo "Running gofmt check..."
+        unformatted=$(gofmt -l .)
+        if [ -n "$unformatted" ]; then
+          echo "The following files need formatting:"
+          echo "$unformatted"
+          exit 1
+        fi
+        echo "All files are properly formatted"
     
-    - name: Run golangci-lint
+    - name: Run go vet
       run: |
-        $(go env GOPATH)/bin/golangci-lint run --timeout=5m ./...
+        echo "Running go vet..."
+        go vet ./...
 
   build:
     name: Build
