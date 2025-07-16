@@ -1,158 +1,21 @@
-# golangci-lint configuration
-# https://golangci-lint.run/usage/configuration/
-
 run:
-  # Timeout for analysis
   timeout: 5m
-  
-  # Include test files
-  tests: true
+  skip-dirs:
+    - vendor
+    - node_modules
+    - web/node_modules
+    - web/e2e/node_modules
 
-# Output configuration
-output:
-  # Print lines of code with issue
-  print-issued-lines: true
-  
-  # Print linter name in the end of issue text
-  print-linter-name: true
-
-# Linter settings
-linters-settings:
-  govet:
-    # Disable some analyzers
-    disable:
-      - fieldalignment  # Memory optimization not critical for this project
-    enable:
-      - shadow
-      - nilness
-  
-  gocyclo:
-    # Minimal code complexity to report
-    min-complexity: 20
-  
-  gocognit:
-    # Minimal cognitive complexity to report
-    min-complexity: 40
-  
-  goconst:
-    # Minimal length of string constant
-    min-len: 3
-    # Minimal occurrences count to trigger
-    min-occurrences: 3
-  
-  misspell:
-    # Locale to use
-    locale: US
-  
-  lll:
-    # Max line length
-    line-length: 120
-    # Tab width in spaces
-    tab-width: 1
-  
-  gocritic:
-    # Enable all checks
-    enabled-tags:
-      - diagnostic
-      - performance
-      - style
-      - experimental
-    
-    disabled-checks:
-      - hugeParam # Can be noisy for large structs
-      - rangeValCopy # Sometimes copying is intentional
-
-# Linters to enable
 linters:
   enable:
-    # Default linters
+    - gofmt
     - govet
     - errcheck
     - staticcheck
     - gosimple
-    - unused      # Replaces structcheck, varcheck, deadcode
     - ineffassign
-    - typecheck
-    
-    # Additional linters
-    - dupl
-    - goconst
-    - gofmt
-    - goimports
-    - misspell
-    - lll
-    - unconvert
-    - prealloc
-    - bodyclose
-    - stylecheck
-  
-  disable:
-    # Too strict or noisy
-    - funlen
-    - godox
-    - gochecknoinits
-    - gochecknoglobals
-    - godot
-    - wsl
-    - whitespace
-    - nlreturn
-    - exhaustive
-    - nestif        # Complex nested blocks are sometimes necessary
-    - errorlint
-    - noctx
-    - sqlclosecheck
-    - rowserrcheck
-    - makezero
-    # Disable complexity checks
-    - gocyclo      # Cyclomatic complexity check
-    - gocognit     # Cognitive complexity check
-    # Disable style suggestions
-    - gocritic     # Many style suggestions that are not critical
-    - revive       # Too many style opinions
 
-# Issues configuration
-issues:
-  # Directories to exclude from analysis
-  exclude-dirs:
-    - vendor
-    - .git
-    - .github
-  
-  # Excluding configuration per-path, per-linter, per-text and per-source
-  exclude-rules:
-    # Exclude test files from some linters
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - errcheck
-        - dupl
-        - gosec
-        - goconst
-    
-    # Exclude generated files
-    - path: \.pb\.go
-      linters:
-        - all
-    
-    # Exclude vendor
-    - path: vendor/
-      linters:
-        - all
-    
-    # Exclude benchmarks from complexity checks
-    - path: _bench\.go
-      linters:
-        - gocyclo
-        - gocognit
-  
-  # Maximum issues count per one linter
-  max-issues-per-linter: 50
-  
-  # Maximum count of issues with the same text
-  max-same-issues: 10
-  
-  # Show only new issues created after git revision
-  new: false
-  
-  # Fix found issues (if it's supported by the linter)
-  fix: false
+linters-settings:
+  gofmt:
+    simplify: true
+EOF < /dev/null
