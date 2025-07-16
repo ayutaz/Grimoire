@@ -15,6 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30  # 明示的なタイムアウトを設定
     strategy:
+      fail-fast: false  # すべてのテストを実行して結果を確認
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         go: ['1.21', '1.22', '1.23']  # 最低保証から最新まで
