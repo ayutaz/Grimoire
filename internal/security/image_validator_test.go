@@ -90,9 +90,14 @@ func TestImageValidator_ValidateFileExtension(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name:        "Invalid GIF extension",
+			name:        "Valid GIF extension",
 			filePath:    "test.gif",
-			expectError: true,
+			expectError: false,
+		},
+		{
+			name:        "Valid WebP extension",
+			filePath:    "test.webp",
+			expectError: false,
 		},
 		{
 			name:        "Invalid BMP extension",
@@ -290,7 +295,7 @@ func TestImageValidator_ValidateImage(t *testing.T) {
 		},
 		{
 			name:        "Invalid extension",
-			inputPath:   filepath.Join(tempDir, "test.gif"),
+			inputPath:   filepath.Join(tempDir, "test.bmp"),
 			expectError: true,
 			errorMsg:    "file not found", // File doesn't exist, so it fails at existence check first
 		},
