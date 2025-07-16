@@ -18,6 +18,8 @@ import (
 	_ "golang.org/x/image/webp" // for webp image format support
 )
 
+// Detector supports multiple image formats including PNG, JPEG, GIF, and WebP
+
 // Config holds detector configuration
 type Config struct {
 	Debug bool
