@@ -164,7 +164,7 @@ func createResultWithAST(success bool, output, code string, ast interface{}, war
 		"output":  output,
 		"code":    code,
 	}
-	
+
 	// astがnilでない場合のみ設定
 	if ast != nil {
 		// ASTをJSON文字列に変換してからセット
@@ -175,7 +175,7 @@ func createResultWithAST(success bool, output, code string, ast interface{}, war
 			result["ast"] = fmt.Sprintf("AST serialization error: %v", err)
 		}
 	}
-	
+
 	if warning != "" {
 		result["warning"] = warning
 	}
@@ -189,7 +189,7 @@ func createResultWithDebug(success bool, output, code string, ast interface{}, d
 		"output":  output,
 		"code":    code,
 	}
-	
+
 	// debugInfoが空でない場合のみ設定
 	if debugInfo != nil && len(debugInfo) > 0 {
 		// debugInfoをJSON文字列に変換してからセット（JavaScriptとの互換性のため）
@@ -200,7 +200,7 @@ func createResultWithDebug(success bool, output, code string, ast interface{}, d
 			result["debug"] = fmt.Sprintf("Debug info serialization error: %v", err)
 		}
 	}
-	
+
 	// astがnilでない場合のみ設定
 	if ast != nil {
 		// ASTをJSON文字列に変換してからセット
@@ -211,7 +211,7 @@ func createResultWithDebug(success bool, output, code string, ast interface{}, d
 			result["ast"] = fmt.Sprintf("AST serialization error: %v", err)
 		}
 	}
-	
+
 	if warning != "" {
 		result["warning"] = warning
 	}

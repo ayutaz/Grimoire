@@ -3,9 +3,12 @@ package security
 import (
 	"fmt"
 	"image"
+	_ "image/gif"  // Register GIF decoder
 	_ "image/jpeg" // Register JPEG decoder
 	_ "image/png"  // Register PNG decoder
 	"os"
+
+	_ "golang.org/x/image/webp" // Register WebP decoder
 )
 
 // SafeImageDecoder provides secure image decoding with size validation

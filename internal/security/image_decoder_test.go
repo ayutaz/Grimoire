@@ -2,8 +2,11 @@ package security
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/color"
+	"image/gif"
+	"image/jpeg"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -13,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createTestPNG(width, height int) ([]byte, error) {
+func createTestImage(width, height int) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	// Fill with a simple pattern
 	for y := 0; y < height; y++ {
@@ -21,14 +24,44 @@ func createTestPNG(width, height int) ([]byte, error) {
 			img.Set(x, y, color.RGBA{uint8(x % 256), uint8(y % 256), 0, 255})
 		}
 	}
+	return img
+}
 
+func createTestPNG(width, height int) ([]byte, error) {
+	img := createTestImage(width, height)
 	var buf bytes.Buffer
 	err := png.Encode(&buf, img)
 	if err != nil {
 		return nil, err
 	}
-
 	return buf.Bytes(), nil
+}
+
+func createTestJPEG(width, height int) ([]byte, error) {
+	img := createTestImage(width, height)
+	var buf bytes.Buffer
+	err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 90})
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func createTestGIF(width, height int) ([]byte, error) {
+	img := createTestImage(width, height)
+	var buf bytes.Buffer
+	err := gif.Encode(&buf, img, &gif.Options{})
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func createTestWebP(width, height int) ([]byte, error) {
+	// WebP encoding is not supported in golang.org/x/image/webp
+	// For testing purposes, we'll skip WebP creation and use a pre-made sample
+	// or return an error indicating WebP encoding is not available
+	return nil, fmt.Errorf("WebP encoding not available in test")
 }
 
 func TestSafeImageDecoder_DecodeImage(t *testing.T) {
@@ -145,4 +178,150 @@ func TestSafeImageDecoder_MemoryLimitCheck(t *testing.T) {
 	// This should fail due to corrupted data
 	_, err = decoder.DecodeImage(path)
 	assert.Error(t, err)
+}
+
+func TestSafeImageDecoder_MultipleFormats(t *testing.T) {
+	validator := NewImageValidator()
+	validator.MaxImageWidth = 100
+	validator.MaxImageHeight = 100
+	validator.MaxFileSize = 100 * 1024 // 100KB
+
+	decoder := NewSafeImageDecoder(validator)
+	tempDir := t.TempDir()
+	validator.WorkingDirectory = tempDir
+
+	tests := []struct {
+		name      string
+		format    string
+		createFn  func(int, int) ([]byte, error)
+		extension string
+	}{
+		{
+			name:      "PNG format",
+			format:    "png",
+			createFn:  createTestPNG,
+			extension: ".png",
+		},
+		{
+			name:      "JPEG format",
+			format:    "jpeg",
+			createFn:  createTestJPEG,
+			extension: ".jpg",
+		},
+		{
+			name:      "GIF format",
+			format:    "gif",
+			createFn:  createTestGIF,
+			extension: ".gif",
+		},
+		{
+			name:      "WebP format",
+			format:    "webp",
+			createFn:  createTestWebP,
+			extension: ".webp",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create test image
+			imageData, err := tt.createFn(50, 50)
+			if tt.format == "webp" {
+				// Skip WebP test for now as we don't have encoding support
+				t.Skip("WebP encoding not available in test")
+				return
+			}
+			require.NoError(t, err)
+
+			// Write to file
+			imagePath := filepath.Join(tempDir, "test"+tt.extension)
+			err = os.WriteFile(imagePath, imageData, 0644)
+			require.NoError(t, err)
+
+			// Decode image
+			img, err := decoder.DecodeImage(imagePath)
+			assert.NoError(t, err)
+			assert.NotNil(t, img)
+			assert.Equal(t, 50, img.Bounds().Dx())
+			assert.Equal(t, 50, img.Bounds().Dy())
+		})
+	}
+}
+
+func TestImageValidator_FileHeaders(t *testing.T) {
+	validator := NewImageValidator()
+	tempDir := t.TempDir()
+	validator.WorkingDirectory = tempDir
+
+	tests := []struct {
+		name      string
+		extension string
+		header    []byte
+		shouldErr bool
+	}{
+		{
+			name:      "Valid PNG header",
+			extension: ".png",
+			header:    []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00},
+			shouldErr: false,
+		},
+		{
+			name:      "Valid JPEG header",
+			extension: ".jpg",
+			header:    []byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46},
+			shouldErr: false,
+		},
+		{
+			name:      "Valid GIF87a header",
+			extension: ".gif",
+			header:    []byte("GIF87a"),
+			shouldErr: false,
+		},
+		{
+			name:      "Valid GIF89a header",
+			extension: ".gif",
+			header:    []byte("GIF89a"),
+			shouldErr: false,
+		},
+		{
+			name:      "Valid WebP header",
+			extension: ".webp",
+			header:    []byte{'R', 'I', 'F', 'F', 0x00, 0x00, 0x00, 0x00, 'W', 'E', 'B', 'P'},
+			shouldErr: false,
+		},
+		{
+			name:      "Invalid PNG header",
+			extension: ".png",
+			header:    []byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46},
+			shouldErr: true,
+		},
+		{
+			name:      "Invalid JPEG header",
+			extension: ".jpg",
+			header:    []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00},
+			shouldErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create file with header
+			filePath := filepath.Join(tempDir, "test"+tt.extension)
+
+			// Pad the header to make it at least 512 bytes
+			data := make([]byte, 512)
+			copy(data, tt.header)
+
+			err := os.WriteFile(filePath, data, 0644)
+			require.NoError(t, err)
+
+			// Validate header
+			err = validator.ValidateFileHeader(filePath)
+			if tt.shouldErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
 }

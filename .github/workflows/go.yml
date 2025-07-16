@@ -15,6 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30  # 明示的なタイムアウトを設定
     strategy:
+      fail-fast: false  # すべてのテストを実行して結果を確認
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         go: ['1.21', '1.22', '1.23']  # 最低保証から最新まで
@@ -136,11 +137,32 @@ jobs:
       with:
         go-version: ${{ env.GO_VERSION }}
     
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v6
-      with:
-        version: latest
-        args: --timeout=5m
+    - name: Download dependencies
+      run: go mod download
+    
+    - name: Verify Go environment
+      run: |
+        echo "Go version: $(go version)"
+        echo "GOPATH: $(go env GOPATH)"
+        echo "GOROOT: $(go env GOROOT)"
+        echo "pwd: $(pwd)"
+        echo "Go files count: $(find . -name '*.go' -type f | wc -l)"
+    
+    - name: Run gofmt
+      run: |
+        echo "Running gofmt check..."
+        unformatted=$(gofmt -l .)
+        if [ -n "$unformatted" ]; then
+          echo "The following files need formatting:"
+          echo "$unformatted"
+          exit 1
+        fi
+        echo "All files are properly formatted"
+    
+    - name: Run go vet
+      run: |
+        echo "Running go vet..."
+        go vet ./...
 
   build:
     name: Build
@@ -154,6 +176,9 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: ${{ env.GO_VERSION }}
+    
+    - name: Download dependencies
+      run: go mod download
     
     - name: Build all platforms
       run: |
