@@ -5,7 +5,6 @@ package main
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"syscall/js"
 
@@ -167,13 +166,7 @@ func createResultWithAST(success bool, output, code string, ast interface{}, war
 
 	// astがnilでない場合のみ設定
 	if ast != nil {
-		// ASTをJSON文字列に変換してからセット
-		astJSON, err := json.Marshal(ast)
-		if err == nil {
-			result["ast"] = string(astJSON)
-		} else {
-			result["ast"] = fmt.Sprintf("AST serialization error: %v", err)
-		}
+		result["ast"] = ast
 	}
 
 	if warning != "" {
@@ -192,24 +185,12 @@ func createResultWithDebug(success bool, output, code string, ast interface{}, d
 
 	// debugInfoが空でない場合のみ設定
 	if debugInfo != nil && len(debugInfo) > 0 {
-		// debugInfoをJSON文字列に変換してからセット（JavaScriptとの互換性のため）
-		debugJSON, err := json.Marshal(debugInfo)
-		if err == nil {
-			result["debug"] = string(debugJSON)
-		} else {
-			result["debug"] = fmt.Sprintf("Debug info serialization error: %v", err)
-		}
+		result["debug"] = debugInfo
 	}
 
 	// astがnilでない場合のみ設定
 	if ast != nil {
-		// ASTをJSON文字列に変換してからセット
-		astJSON, err := json.Marshal(ast)
-		if err == nil {
-			result["ast"] = string(astJSON)
-		} else {
-			result["ast"] = fmt.Sprintf("AST serialization error: %v", err)
-		}
+		result["ast"] = ast
 	}
 
 	if warning != "" {

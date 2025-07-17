@@ -143,11 +143,21 @@ async function showResult(result) {
         // デバッグ情報とASTを表示
         let debugDisplay = "";
         if (result.debug) {
+            // result.debugが文字列の場合はJSONパース
+            let debugInfo = result.debug;
+            if (typeof debugInfo === 'string') {
+                try {
+                    debugInfo = JSON.parse(debugInfo);
+                } catch (e) {
+                    console.error("Failed to parse debug info:", e);
+                }
+            }
+            
             debugDisplay += "=== デバッグ情報 ===\n";
-            debugDisplay += `検出されたシンボル数: ${result.debug.symbolCount}\n`;
-            if (result.debug.symbols && result.debug.symbols.length > 0) {
+            debugDisplay += `検出されたシンボル数: ${debugInfo.symbolCount}\n`;
+            if (debugInfo.symbols && debugInfo.symbols.length > 0) {
                 debugDisplay += "シンボル一覧:\n";
-                result.debug.symbols.forEach((sym, i) => {
+                debugInfo.symbols.forEach((sym, i) => {
                     debugDisplay += `  ${i}: ${sym.type} at (${sym.position.x}, ${sym.position.y})`;
                     if (sym.pattern) debugDisplay += ` pattern: ${sym.pattern}`;
                     debugDisplay += "\n";
