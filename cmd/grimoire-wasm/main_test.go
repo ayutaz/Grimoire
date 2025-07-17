@@ -162,12 +162,12 @@ func TestCreateResultWithAST(t *testing.T) {
 					t.Errorf("Expected ast to be map[string]interface{}, got %T", result["ast"])
 					return
 				}
-				
+
 				// AST内容の確認
 				if ast["type"] != "Program" {
 					t.Errorf("Expected ast.type to be 'Program', got %v", ast["type"])
 				}
-				
+
 				body, ok := ast["body"].([]interface{})
 				if !ok || len(body) != 1 {
 					t.Errorf("Expected ast.body to be array with 1 element, got %v", ast["body"])
@@ -320,7 +320,7 @@ func TestJSONCompatibility(t *testing.T) {
 	// JavaScript側でJSON.parseする必要がないことを確認
 	// （オブジェクトとして直接アクセス可能）
 	debug := result["debug"].(map[string]interface{})
-	
+
 	// オブジェクトをJSONにマーシャルして、正しい構造であることを確認
 	jsonBytes, err := json.Marshal(debug)
 	if err != nil {
@@ -337,3 +337,4 @@ func TestJSONCompatibility(t *testing.T) {
 		t.Errorf("Expected symbolCount to be 1, got %v", unmarshaled["symbolCount"])
 	}
 }
+
