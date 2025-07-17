@@ -2,7 +2,24 @@ const { test, expect } = require('@playwright/test');
 
 test.describe('WASM Integration Tests', () => {
   test.beforeEach(async ({ page }) => {
+    // Add console listener for debugging
+    page.on('console', msg => {
+      console.log(`Browser ${msg.type()}: ${msg.text()}`);
+    });
+    
     await page.goto('/web/');
+    
+    // Check WASM loading status
+    const wasmStatus = await page.evaluate(() => {
+      return {
+        goAvailable: typeof Go !== 'undefined',
+        wasmInstance: window.wasmInstance !== undefined,
+        processFunction: typeof window.processGrimoireImage,
+        pyodide: window.pyodide !== undefined
+      };
+    });
+    console.log('Initial WASM status:', wasmStatus);
+    
     // Wait for WASM to be fully initialized
     await page.waitForFunction(() => {
       return window.wasmInstance !== undefined && 
@@ -66,9 +83,11 @@ test.describe('WASM Integration Tests', () => {
     await page.waitForSelector('.result-section, .error-section', { state: 'visible', timeout: 30000 });
     
     // Check if error occurred
-    if (errorVisible) {
+    const actualErrorVisible = await page.isVisible('.error-section');
+    if (actualErrorVisible) {
       const errorText = await page.textContent('#error-content');
       console.log('Error occurred:', errorText);
+      throw new Error(`Unexpected error: ${errorText}`);
     }
     
     // Get the result object from WASM call
