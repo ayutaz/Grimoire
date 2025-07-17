@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"reflect"
 	"syscall/js"
 
 	"github.com/ayutaz/grimoire/internal/compiler"
@@ -111,16 +112,16 @@ for i in range(5):
 print("コンパイルエラー: %s")
 print("Hello from Grimoire!")
 `, err.Error())
-		return createResultWithDebug(true, "", pythonCode, nil, debugInfo, "Compile error, showing demo code")
+		return createResultWithDebug(true, "", pythonCode, ast, debugInfo, "Compile error, showing demo code")
 	}
 
 	// 実行（WebAssemblyでは制限あり）
 	output, err := executeInSandbox(pythonCode)
 	if err != nil {
-		return createResultWithDebug(true, output, pythonCode, nil, debugInfo, fmt.Sprintf("Code generated successfully, but execution is limited in browser: %v", err))
+		return createResultWithDebug(true, output, pythonCode, ast, debugInfo, fmt.Sprintf("Code generated successfully, but execution is limited in browser: %v", err))
 	}
 
-	return createResultWithDebug(true, output, pythonCode, nil, debugInfo, "")
+	return createResultWithDebug(true, output, pythonCode, ast, debugInfo, "")
 }
 
 // validateCode はGrimoireコードを検証する
@@ -166,7 +167,8 @@ func createResultWithAST(success bool, output, code string, ast interface{}, war
 
 	// astがnilでない場合のみ設定
 	if ast != nil {
-		result["ast"] = ast
+		// ASTを安全にJavaScript用に変換
+		result["ast"] = toJSValue(ast)
 	}
 
 	if warning != "" {
@@ -184,14 +186,15 @@ func createResultWithDebug(success bool, output, code string, ast interface{}, d
 	}
 
 	// debugInfoが空でない場合のみ設定
-	// if debugInfo != nil && len(debugInfo) > 0 {
-	// 	result["debug"] = debugInfo
-	// }
+	if debugInfo != nil && len(debugInfo) > 0 {
+		result["debug"] = debugInfo
+	}
 
 	// astがnilでない場合のみ設定
-	// if ast != nil {
-	// 	result["ast"] = ast
-	// }
+	if ast != nil {
+		// ASTを安全にJavaScript用に変換
+		result["ast"] = toJSValue(ast)
+	}
 
 	if warning != "" {
 		result["warning"] = warning
@@ -205,4 +208,82 @@ func createErrorResult(errorMsg string) map[string]interface{} {
 		"success": false,
 		"error":   errorMsg,
 	}
+}
+
+// toJSValue は任意のGo値をJavaScriptに安全に変換する
+func toJSValue(v interface{}) interface{} {
+	if v == nil {
+		return nil
+	}
+
+	val := reflect.ValueOf(v)
+	
+	switch val.Kind() {
+	case reflect.Invalid:
+		return nil
+	case reflect.Bool:
+		return val.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return float64(val.Int())
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return float64(val.Uint())
+	case reflect.Float32, reflect.Float64:
+		return val.Float()
+	case reflect.String:
+		return val.String()
+	case reflect.Slice, reflect.Array:
+		arr := make([]interface{}, val.Len())
+		for i := 0; i < val.Len(); i++ {
+			arr[i] = toJSValue(val.Index(i).Interface())
+		}
+		return arr
+	case reflect.Map:
+		m := make(map[string]interface{})
+		for _, key := range val.MapKeys() {
+			keyStr := fmt.Sprintf("%v", key.Interface())
+			m[keyStr] = toJSValue(val.MapIndex(key).Interface())
+		}
+		return m
+	case reflect.Struct:
+		return structToMap(val)
+	case reflect.Ptr:
+		if val.IsNil() {
+			return nil
+		}
+		return toJSValue(val.Elem().Interface())
+	case reflect.Interface:
+		if val.IsNil() {
+			return nil
+		}
+		return toJSValue(val.Elem().Interface())
+	default:
+		// その他の型は文字列として返す
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+// structToMap は構造体をマップに変換する
+func structToMap(v reflect.Value) map[string]interface{} {
+	result := make(map[string]interface{})
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := t.Field(i)
+		if field.PkgPath != "" {
+			// プライベートフィールドはスキップ
+			continue
+		}
+		
+		fieldValue := v.Field(i)
+		
+		// 型名を特別なフィールドとして追加
+		if i == 0 && t.Name() != "" {
+			result["_type"] = t.Name()
+		}
+		
+		// フィールドの値を変換
+		result[field.Name] = toJSValue(fieldValue.Interface())
+	}
+
+	return result
 }
