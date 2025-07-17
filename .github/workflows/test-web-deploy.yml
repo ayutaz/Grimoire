@@ -1,0 +1,89 @@
+name: Test Web Deployment
+
+on:
+  pull_request:
+    paths:
+      - 'web/**'
+      - 'cmd/grimoire-wasm/**'
+      - '.github/workflows/deploy-web.yml'
+      - '.github/workflows/test-web-deploy.yml'
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          
+      - name: Verify Go version for WASM compatibility
+        run: |
+          go version
+          echo "Ensuring Go 1.23 is used for WASM build..."
+          GO_VERSION=$(go version | awk '{print $3}' | sed 's/go//')
+          echo "Go version: $GO_VERSION"
+          
+      - name: Setup Node.js for testing
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Build WebAssembly
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "Web directory contents:"
+          ls -la web/
+          echo "Building WASM..."
+          cd web
+          chmod +x build-wasm.sh
+          # ビルドスクリプトの内容を表示
+          echo "Build script contents:"
+          cat build-wasm.sh
+          # Goモジュールの依存関係を取得
+          cd ..
+          go mod download
+          cd web
+          # ビルドを実行
+          ./build-wasm.sh || (echo "Build failed with exit code $?"; exit 1)
+          
+      - name: Install test dependencies
+        run: |
+          cd web
+          npm init -y
+          npm install --save-dev node-fetch@2 jsdom
+          
+      - name: Test WASM before deployment
+        run: |
+          cd web
+          echo "Running WASM tests to ensure build is successful..."
+          node test-wasm.js
+          
+      - name: Verify WASM artifacts
+        run: |
+          cd web
+          echo "Checking WASM build artifacts..."
+          ls -la static/wasm/grimoire.wasm
+          ls -la static/wasm_exec.js
+          WASM_SIZE=$(stat -c%s static/wasm/grimoire.wasm)
+          echo "WASM file size: $WASM_SIZE bytes"
+          if [ $WASM_SIZE -lt 1000000 ]; then
+            echo "Error: WASM file is too small, build may have failed"
+            exit 1
+          fi
+          
+      - name: Summary
+        run: |
+          echo "✅ Web deployment tests passed!"
+          echo "The following checks were successful:"
+          echo "- Go 1.23 is properly installed"
+          echo "- WASM build completed successfully"
+          echo "- WASM tests passed"
+          echo "- WASM file size is valid"
+          echo ""
+          echo "This PR is ready for deployment to GitHub Pages."
