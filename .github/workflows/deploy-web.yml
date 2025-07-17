@@ -43,8 +43,6 @@ jobs:
           
       - name: Build WebAssembly
         run: |
-          # Goモジュールの依存関係を先に取得
-          go mod download
           cd web
           chmod +x build-wasm.sh
           ./build-wasm.sh
