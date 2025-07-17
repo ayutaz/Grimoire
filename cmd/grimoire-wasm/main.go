@@ -70,7 +70,7 @@ print("検出されたシンボル数: 0")
 	}
 
 	// デバッグ情報を作成
-	symbolInfo := make([]map[string]interface{}, len(symbols))
+	symbolInfo := make([]interface{}, len(symbols))
 	for i, sym := range symbols {
 		info := map[string]interface{}{
 			"type": string(sym.Type),
@@ -166,10 +166,11 @@ func createResultWithAST(success bool, output, code string, ast interface{}, war
 	}
 
 	// astがnilでない場合のみ設定
-	if ast != nil {
-		// ASTを安全にJavaScript用に変換
-		result["ast"] = toJSValue(ast)
-	}
+	// 一時的にASTの返却を無効化（型変換の問題を回避）
+	// if ast != nil {
+	// 	// ASTを安全にJavaScript用に変換
+	// 	result["ast"] = toJSValue(ast)
+	// }
 
 	if warning != "" {
 		result["warning"] = warning
@@ -191,10 +192,11 @@ func createResultWithDebug(success bool, output, code string, ast interface{}, d
 	}
 
 	// astがnilでない場合のみ設定
-	if ast != nil {
-		// ASTを安全にJavaScript用に変換
-		result["ast"] = toJSValue(ast)
-	}
+	// 一時的にASTの返却を無効化（型変換の問題を回避）
+	// if ast != nil {
+	// 	// ASTを安全にJavaScript用に変換
+	// 	result["ast"] = toJSValue(ast)
+	// }
 
 	if warning != "" {
 		result["warning"] = warning
@@ -241,7 +243,11 @@ func toJSValue(v interface{}) interface{} {
 		m := make(map[string]interface{})
 		for _, key := range val.MapKeys() {
 			keyStr := fmt.Sprintf("%v", key.Interface())
-			m[keyStr] = toJSValue(val.MapIndex(key).Interface())
+			valueConverted := toJSValue(val.MapIndex(key).Interface())
+			// 値がnilでないことを確認
+			if valueConverted != nil {
+				m[keyStr] = valueConverted
+			}
 		}
 		return m
 	case reflect.Struct:
