@@ -174,26 +174,23 @@ async function runTests() {
         const jsonStr = JSON.stringify(result3);
         assert(!jsonStr.includes('null') || result3.ast === null, 'Should not have unexpected null values');
         
-        // debugInfoがある場合、それがJSON文字列であることを確認
+        // debugInfoがある場合、それがオブジェクトであることを確認
         if (result3.debug) {
-            assert(typeof result3.debug === 'string', 'debug should be a JSON string');
-            try {
-                const debugObj = JSON.parse(result3.debug);
-                assert(typeof debugObj === 'object', 'debug should be parseable as JSON');
-            } catch (e) {
-                assert(false, 'debug should be valid JSON: ' + e.message);
+            assert(typeof result3.debug === 'object', 'debug should be an object');
+            assert(result3.debug !== null, 'debug should not be null');
+            // symbolCountとsymbolsが存在することを確認
+            if (result3.debug.symbolCount !== undefined) {
+                assert(typeof result3.debug.symbolCount === 'number', 'symbolCount should be a number');
+            }
+            if (result3.debug.symbols !== undefined) {
+                assert(Array.isArray(result3.debug.symbols), 'symbols should be an array');
             }
         }
         
-        // astがある場合、それがJSON文字列であることを確認
+        // astがある場合、それがオブジェクトであることを確認
         if (result3.ast) {
-            assert(typeof result3.ast === 'string', 'ast should be a JSON string');
-            try {
-                const astObj = JSON.parse(result3.ast);
-                assert(typeof astObj === 'object', 'ast should be parseable as JSON');
-            } catch (e) {
-                assert(false, 'ast should be valid JSON: ' + e.message);
-            }
+            assert(typeof result3.ast === 'object', 'ast should be an object');
+            assert(result3.ast !== null, 'ast should not be null');
         }
         
         // JavaScriptに渡せない値が含まれていないか確認（ValueOfエラーの原因となる値）
@@ -255,7 +252,11 @@ async function runTests() {
         
         // debugInfoの詳細な検証
         if (complexResult.debug) {
-            const debugObj = JSON.parse(complexResult.debug);
+            // debugがJSON文字列の場合はパース、オブジェクトの場合はそのまま使用
+            let debugObj = complexResult.debug;
+            if (typeof debugObj === 'string') {
+                debugObj = JSON.parse(debugObj);
+            }
             
             // シンボルが検出された場合の検証
             if (debugObj.symbolCount > 0) {
@@ -349,7 +350,11 @@ async function runTests() {
         const result = global.processGrimoireImage(testImage);
         
         if (result.debug) {
-            const debugObj = JSON.parse(result.debug);
+            // debugがJSON文字列の場合はパース、オブジェクトの場合はそのまま使用
+            let debugObj = result.debug;
+            if (typeof debugObj === 'string') {
+                debugObj = JSON.parse(debugObj);
+            }
             
             // symbolCountが数値であることを確認
             assert(typeof debugObj.symbolCount === 'number', 'symbolCount should be a number, not a Go int');
