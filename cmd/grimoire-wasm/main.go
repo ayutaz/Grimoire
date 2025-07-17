@@ -219,7 +219,7 @@ func toJSValue(v interface{}) interface{} {
 	}
 
 	val := reflect.ValueOf(v)
-	
+
 	switch val.Kind() {
 	case reflect.Invalid:
 		return nil
@@ -279,14 +279,14 @@ func structToMap(v reflect.Value) map[string]interface{} {
 			// プライベートフィールドはスキップ
 			continue
 		}
-		
+
 		fieldValue := v.Field(i)
-		
+
 		// 型名を特別なフィールドとして追加
 		if i == 0 && t.Name() != "" {
 			result["_type"] = t.Name()
 		}
-		
+
 		// フィールドの値を変換
 		result[field.Name] = toJSValue(fieldValue.Interface())
 	}
