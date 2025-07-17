@@ -337,4 +337,3 @@ func TestJSONCompatibility(t *testing.T) {
 		t.Errorf("Expected symbolCount to be 1, got %v", unmarshaled["symbolCount"])
 	}
 }
-

@@ -38,15 +38,34 @@ test.describe('WASM Integration Tests', () => {
   });
 
   test('should return debug information as object', async ({ page }) => {
+    // Add console listener to debug
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        console.log('Browser console error:', msg.text());
+      }
+    });
+    
     // Click on a sample image
     await page.click('[data-sample="hello-world"]');
     await page.click('#execute-btn');
+    
+    // Debug: check what sections exist
+    await page.waitForTimeout(2000); // Give some time for processing
+    const resultVisible = await page.isVisible('.result-section');
+    const errorVisible = await page.isVisible('.error-section');
+    console.log('Result section visible:', resultVisible);
+    console.log('Error section visible:', errorVisible);
+    
+    if (!resultVisible && !errorVisible) {
+      // Log the page content for debugging
+      const bodyText = await page.textContent('body');
+      console.log('Page body contains:', bodyText.substring(0, 500));
+    }
     
     // Wait for either result or error section
     await page.waitForSelector('.result-section, .error-section', { state: 'visible', timeout: 30000 });
     
     // Check if error occurred
-    const errorVisible = await page.isVisible('.error-section');
     if (errorVisible) {
       const errorText = await page.textContent('#error-content');
       console.log('Error occurred:', errorText);
