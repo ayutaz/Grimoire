@@ -34,9 +34,23 @@ jobs:
           
       - name: Build WebAssembly
         run: |
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "Web directory contents:"
+          ls -la web/
+          echo "Building WASM..."
           cd web
           chmod +x build-wasm.sh
-          ./build-wasm.sh
+          # ビルドスクリプトの内容を表示
+          echo "Build script contents:"
+          cat build-wasm.sh
+          # Goモジュールの依存関係を取得
+          cd ..
+          go mod download
+          cd web
+          # ビルドを実行
+          ./build-wasm.sh || (echo "Build failed with exit code $?"; exit 1)
           
       - name: Install test dependencies
         run: |
