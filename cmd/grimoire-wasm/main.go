@@ -184,14 +184,14 @@ func createResultWithDebug(success bool, output, code string, ast interface{}, d
 	}
 
 	// debugInfoが空でない場合のみ設定
-	if debugInfo != nil && len(debugInfo) > 0 {
-		result["debug"] = debugInfo
-	}
+	// if debugInfo != nil && len(debugInfo) > 0 {
+	// 	result["debug"] = debugInfo
+	// }
 
 	// astがnilでない場合のみ設定
-	if ast != nil {
-		result["ast"] = ast
-	}
+	// if ast != nil {
+	// 	result["ast"] = ast
+	// }
 
 	if warning != "" {
 		result["warning"] = warning
