@@ -5,8 +5,8 @@ package main
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
+	"reflect"
 	"syscall/js"
 
 	"github.com/ayutaz/grimoire/internal/compiler"
@@ -70,7 +70,7 @@ print("検出されたシンボル数: 0")
 	}
 
 	// デバッグ情報を作成
-	symbolInfo := make([]map[string]interface{}, len(symbols))
+	symbolInfo := make([]interface{}, len(symbols))
 	for i, sym := range symbols {
 		info := map[string]interface{}{
 			"type": string(sym.Type),
@@ -86,7 +86,7 @@ print("検出されたシンボル数: 0")
 		symbolInfo[i] = info
 	}
 	debugInfo := map[string]interface{}{
-		"symbolCount": len(symbols),
+		"symbolCount": float64(len(symbols)), // intをfloat64に変換
 		"symbols":     symbolInfo,
 	}
 
@@ -166,15 +166,11 @@ func createResultWithAST(success bool, output, code string, ast interface{}, war
 	}
 
 	// astがnilでない場合のみ設定
-	if ast != nil {
-		// ASTをJSON文字列に変換してからセット
-		astJSON, err := json.Marshal(ast)
-		if err == nil {
-			result["ast"] = string(astJSON)
-		} else {
-			result["ast"] = fmt.Sprintf("AST serialization error: %v", err)
-		}
-	}
+	// 一時的にASTの返却を無効化（型変換の問題を回避）
+	// if ast != nil {
+	// 	// ASTを安全にJavaScript用に変換
+	// 	result["ast"] = toJSValue(ast)
+	// }
 
 	if warning != "" {
 		result["warning"] = warning
@@ -192,25 +188,15 @@ func createResultWithDebug(success bool, output, code string, ast interface{}, d
 
 	// debugInfoが空でない場合のみ設定
 	if debugInfo != nil && len(debugInfo) > 0 {
-		// debugInfoをJSON文字列に変換してからセット（JavaScriptとの互換性のため）
-		debugJSON, err := json.Marshal(debugInfo)
-		if err == nil {
-			result["debug"] = string(debugJSON)
-		} else {
-			result["debug"] = fmt.Sprintf("Debug info serialization error: %v", err)
-		}
+		result["debug"] = debugInfo
 	}
 
 	// astがnilでない場合のみ設定
-	if ast != nil {
-		// ASTをJSON文字列に変換してからセット
-		astJSON, err := json.Marshal(ast)
-		if err == nil {
-			result["ast"] = string(astJSON)
-		} else {
-			result["ast"] = fmt.Sprintf("AST serialization error: %v", err)
-		}
-	}
+	// 一時的にASTの返却を無効化（型変換の問題を回避）
+	// if ast != nil {
+	// 	// ASTを安全にJavaScript用に変換
+	// 	result["ast"] = toJSValue(ast)
+	// }
 
 	if warning != "" {
 		result["warning"] = warning
@@ -224,4 +210,86 @@ func createErrorResult(errorMsg string) map[string]interface{} {
 		"success": false,
 		"error":   errorMsg,
 	}
+}
+
+// toJSValue は任意のGo値をJavaScriptに安全に変換する
+func toJSValue(v interface{}) interface{} {
+	if v == nil {
+		return nil
+	}
+
+	val := reflect.ValueOf(v)
+
+	switch val.Kind() {
+	case reflect.Invalid:
+		return nil
+	case reflect.Bool:
+		return val.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return float64(val.Int())
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return float64(val.Uint())
+	case reflect.Float32, reflect.Float64:
+		return val.Float()
+	case reflect.String:
+		return val.String()
+	case reflect.Slice, reflect.Array:
+		arr := make([]interface{}, val.Len())
+		for i := 0; i < val.Len(); i++ {
+			arr[i] = toJSValue(val.Index(i).Interface())
+		}
+		return arr
+	case reflect.Map:
+		m := make(map[string]interface{})
+		for _, key := range val.MapKeys() {
+			keyStr := fmt.Sprintf("%v", key.Interface())
+			valueConverted := toJSValue(val.MapIndex(key).Interface())
+			// 値がnilでないことを確認
+			if valueConverted != nil {
+				m[keyStr] = valueConverted
+			}
+		}
+		return m
+	case reflect.Struct:
+		return structToMap(val)
+	case reflect.Ptr:
+		if val.IsNil() {
+			return nil
+		}
+		return toJSValue(val.Elem().Interface())
+	case reflect.Interface:
+		if val.IsNil() {
+			return nil
+		}
+		return toJSValue(val.Elem().Interface())
+	default:
+		// その他の型は文字列として返す
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+// structToMap は構造体をマップに変換する
+func structToMap(v reflect.Value) map[string]interface{} {
+	result := make(map[string]interface{})
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := t.Field(i)
+		if field.PkgPath != "" {
+			// プライベートフィールドはスキップ
+			continue
+		}
+
+		fieldValue := v.Field(i)
+
+		// 型名を特別なフィールドとして追加
+		if i == 0 && t.Name() != "" {
+			result["_type"] = t.Name()
+		}
+
+		// フィールドの値を変換
+		result[field.Name] = toJSValue(fieldValue.Interface())
+	}
+
+	return result
 }
