@@ -166,11 +166,10 @@ func createResultWithAST(success bool, output, code string, ast interface{}, war
 	}
 
 	// astがnilでない場合のみ設定
-	// 一時的にASTの返却を無効化（型変換の問題を回避）
-	// if ast != nil {
-	// 	// ASTを安全にJavaScript用に変換
-	// 	result["ast"] = toJSValue(ast)
-	// }
+	if ast != nil {
+		// ASTを安全にJavaScript用に変換
+		result["ast"] = toJSValue(ast)
+	}
 
 	if warning != "" {
 		result["warning"] = warning
@@ -192,11 +191,10 @@ func createResultWithDebug(success bool, output, code string, ast interface{}, d
 	}
 
 	// astがnilでない場合のみ設定
-	// 一時的にASTの返却を無効化（型変換の問題を回避）
-	// if ast != nil {
-	// 	// ASTを安全にJavaScript用に変換
-	// 	result["ast"] = toJSValue(ast)
-	// }
+	if ast != nil {
+		// ASTを安全にJavaScript用に変換
+		result["ast"] = toJSValue(ast)
+	}
 
 	if warning != "" {
 		result["warning"] = warning
@@ -273,6 +271,11 @@ func structToMap(v reflect.Value) map[string]interface{} {
 	result := make(map[string]interface{})
 	t := v.Type()
 
+	// 型名を最初に追加（すべての構造体に対して）
+	if t.Name() != "" {
+		result["_type"] = t.Name()
+	}
+
 	for i := 0; i < v.NumField(); i++ {
 		field := t.Field(i)
 		if field.PkgPath != "" {
@@ -282,13 +285,12 @@ func structToMap(v reflect.Value) map[string]interface{} {
 
 		fieldValue := v.Field(i)
 
-		// 型名を特別なフィールドとして追加
-		if i == 0 && t.Name() != "" {
-			result["_type"] = t.Name()
-		}
-
 		// フィールドの値を変換
-		result[field.Name] = toJSValue(fieldValue.Interface())
+		convertedValue := toJSValue(fieldValue.Interface())
+		// 値がnilでないことを確認
+		if convertedValue != nil {
+			result[field.Name] = convertedValue
+		}
 	}
 
 	return result

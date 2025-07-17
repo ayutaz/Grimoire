@@ -61,9 +61,13 @@ func TestCreateResultWithDebug(t *testing.T) {
 					t.Errorf("Expected symbols to be array with 1 element, got %v", debug["symbols"])
 				}
 
-				// ASTは一時的に無効化されているため、存在しないことを確認
-				if _, hasAst := result["ast"]; hasAst {
-					t.Error("Expected no ast field while AST is temporarily disabled")
+				// ASTがオブジェクトとして返されることを確認
+				ast, ok := result["ast"].(map[string]interface{})
+				if !ok {
+					t.Errorf("Expected ast to be map[string]interface{}, got %T", result["ast"])
+				}
+				if ast["_type"] != "Program" {
+					t.Errorf("Expected ast._type to be 'Program', got %v", ast["_type"])
 				}
 			},
 		},
@@ -152,9 +156,13 @@ func TestCreateResultWithAST(t *testing.T) {
 			},
 			warning: "",
 			validate: func(t *testing.T, result map[string]interface{}) {
-				// ASTは一時的に無効化されているため、存在しないことを確認
-				if _, hasAst := result["ast"]; hasAst {
-					t.Error("Expected no ast field while AST is temporarily disabled")
+				// ASTがオブジェクトとして返されることを確認
+				ast, ok := result["ast"].(map[string]interface{})
+				if !ok {
+					t.Errorf("Expected ast to be map[string]interface{}, got %T", result["ast"])
+				}
+				if ast["_type"] != "Program" {
+					t.Errorf("Expected ast._type to be 'Program', got %v", ast["_type"])
 				}
 			},
 		},
@@ -273,9 +281,14 @@ func TestNoJSONMarshalling(t *testing.T) {
 		t.Errorf("Expected x to be 10.5, got %v", position["x"])
 	}
 
-	// ASTは一時的に無効化されているため、存在しないことを確認
-	if _, hasAst := result["ast"]; hasAst {
-		t.Error("Expected no ast field while AST is temporarily disabled")
+	// ASTも同様に確認
+	ast, ok := result["ast"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected ast to be map[string]interface{}, got %T", result["ast"])
+	}
+
+	if ast["_type"] != "Program" {
+		t.Errorf("Expected ast._type to be 'Program', got %v", ast["_type"])
 	}
 }
 
