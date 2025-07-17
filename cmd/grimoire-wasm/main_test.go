@@ -29,7 +29,7 @@ func TestCreateResultWithDebug(t *testing.T) {
 				"body": []interface{}{},
 			},
 			debugInfo: map[string]interface{}{
-				"symbolCount": 3,
+				"symbolCount": float64(3),
 				"symbols": []interface{}{
 					map[string]interface{}{
 						"type": "circle",
@@ -49,10 +49,10 @@ func TestCreateResultWithDebug(t *testing.T) {
 					return
 				}
 
-				// symbolCountの確認
-				symbolCount, ok := debug["symbolCount"].(int)
+				// symbolCountの確認（JavaScriptでは数値はfloat64として扱われる）
+				symbolCount, ok := debug["symbolCount"].(float64)
 				if !ok || symbolCount != 3 {
-					t.Errorf("Expected symbolCount to be 3, got %v", debug["symbolCount"])
+					t.Errorf("Expected symbolCount to be 3, got %v (type: %T)", debug["symbolCount"], debug["symbolCount"])
 				}
 
 				// symbolsの確認
@@ -61,13 +61,9 @@ func TestCreateResultWithDebug(t *testing.T) {
 					t.Errorf("Expected symbols to be array with 1 element, got %v", debug["symbols"])
 				}
 
-				// ASTがオブジェクトとして返されることを確認
-				ast, ok := result["ast"].(map[string]interface{})
-				if !ok {
-					t.Errorf("Expected ast to be map[string]interface{}, got %T", result["ast"])
-				}
-				if ast["type"] != "Program" {
-					t.Errorf("Expected ast.type to be 'Program', got %v", ast["type"])
+				// ASTは一時的に無効化されているため、存在しないことを確認
+				if _, hasAst := result["ast"]; hasAst {
+					t.Error("Expected no ast field while AST is temporarily disabled")
 				}
 			},
 		},
@@ -156,21 +152,9 @@ func TestCreateResultWithAST(t *testing.T) {
 			},
 			warning: "",
 			validate: func(t *testing.T, result map[string]interface{}) {
-				// ASTがオブジェクトとして返されることを確認
-				ast, ok := result["ast"].(map[string]interface{})
-				if !ok {
-					t.Errorf("Expected ast to be map[string]interface{}, got %T", result["ast"])
-					return
-				}
-
-				// AST内容の確認
-				if ast["type"] != "Program" {
-					t.Errorf("Expected ast.type to be 'Program', got %v", ast["type"])
-				}
-
-				body, ok := ast["body"].([]interface{})
-				if !ok || len(body) != 1 {
-					t.Errorf("Expected ast.body to be array with 1 element, got %v", ast["body"])
+				// ASTは一時的に無効化されているため、存在しないことを確認
+				if _, hasAst := result["ast"]; hasAst {
+					t.Error("Expected no ast field while AST is temporarily disabled")
 				}
 			},
 		},
@@ -216,7 +200,7 @@ func TestCreateResultWithAST(t *testing.T) {
 func TestNoJSONMarshalling(t *testing.T) {
 	// 複雑なオブジェクト構造を作成
 	complexDebugInfo := map[string]interface{}{
-		"symbolCount": 5,
+		"symbolCount": float64(5),
 		"symbols": []interface{}{
 			map[string]interface{}{
 				"type": "circle",
@@ -289,21 +273,16 @@ func TestNoJSONMarshalling(t *testing.T) {
 		t.Errorf("Expected x to be 10.5, got %v", position["x"])
 	}
 
-	// ASTも同様に確認
-	ast, ok := result["ast"].(map[string]interface{})
-	if !ok {
-		t.Fatalf("Expected ast to be map[string]interface{}, got %T", result["ast"])
-	}
-
-	if ast["type"] != "Program" {
-		t.Errorf("Expected ast.type to be 'Program', got %v", ast["type"])
+	// ASTは一時的に無効化されているため、存在しないことを確認
+	if _, hasAst := result["ast"]; hasAst {
+		t.Error("Expected no ast field while AST is temporarily disabled")
 	}
 }
 
 // 以前の実装（JSON文字列として返す）との互換性をテストするための確認
 func TestJSONCompatibility(t *testing.T) {
 	debugInfo := map[string]interface{}{
-		"symbolCount": 1,
+		"symbolCount": float64(1),
 		"symbols": []interface{}{
 			map[string]interface{}{
 				"type": "star",
