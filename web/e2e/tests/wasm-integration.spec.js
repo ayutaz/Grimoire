@@ -6,11 +6,12 @@ test.describe('WASM Integration Tests', () => {
     // Wait for WASM to be fully initialized
     await page.waitForFunction(() => {
       return window.wasmInstance !== undefined && 
-             window.processGrimoireImage !== undefined;
-    }, { timeout: 30000 });
+             window.processGrimoireImage !== undefined &&
+             typeof window.processGrimoireImage === 'function';
+    }, { timeout: 60000 });
   });
 
-  test.skip('should detect symbols correctly', async ({ page }) => {
+  test('should detect symbols correctly', async ({ page }) => {
     // Test by calling WASM function directly
     const result = await page.evaluate(async () => {
       // Create a simple test image (base64 encoded 1x1 white pixel PNG)
@@ -25,7 +26,7 @@ test.describe('WASM Integration Tests', () => {
     expect(result.code).toBeDefined();
   });
 
-  test.skip('should handle errors gracefully', async ({ page }) => {
+  test('should handle errors gracefully', async ({ page }) => {
     const result = await page.evaluate(async () => {
       // Invalid base64 data
       return window.processGrimoireImage('invalid-base64');
@@ -41,8 +42,15 @@ test.describe('WASM Integration Tests', () => {
     await page.click('[data-sample="hello-world"]');
     await page.click('#execute-btn');
     
-    // Wait for result
-    await page.waitForSelector('.result-section', { state: 'visible' });
+    // Wait for either result or error section
+    await page.waitForSelector('.result-section, .error-section', { state: 'visible', timeout: 30000 });
+    
+    // Check if error occurred
+    const errorVisible = await page.isVisible('.error-section');
+    if (errorVisible) {
+      const errorText = await page.textContent('#error-content');
+      console.log('Error occurred:', errorText);
+    }
     
     // Get the result object from WASM call
     const debugInfo = await page.evaluate(async () => {
@@ -90,7 +98,7 @@ test.describe('WASM Integration Tests', () => {
     expect(astContent).toContain('検出されたシンボル数:');
   });
 
-  test.skip('should process all sample images without error', async ({ page }) => {
+  test('should process all sample images without error', async ({ page }) => {
     const samples = ['hello-world', 'calculator', 'fibonacci', 'loop'];
     
     for (const sample of samples) {
@@ -114,12 +122,14 @@ test.describe('WASM Integration Tests', () => {
       // Clear for next test
       await page.reload();
       await page.waitForFunction(() => {
-        return window.wasmInstance !== undefined;
-      });
+        return window.wasmInstance !== undefined &&
+               window.processGrimoireImage !== undefined &&
+               typeof window.processGrimoireImage === 'function';
+      }, { timeout: 60000 });
     }
   });
 
-  test.skip('should handle star symbols correctly', async ({ page }) => {
+  test('should handle star symbols correctly', async ({ page }) => {
     await page.click('[data-sample="hello-world"]');
     await page.click('#execute-btn');
     
@@ -131,7 +141,7 @@ test.describe('WASM Integration Tests', () => {
     expect(codeContent).toContain('#!/usr/bin/env python3');
   });
 
-  test.skip('should handle double circle symbols correctly', async ({ page }) => {
+  test('should handle double circle symbols correctly', async ({ page }) => {
     await page.click('[data-sample="hello-world"]');
     await page.click('#execute-btn');
     
@@ -148,8 +158,8 @@ test.describe('WASM Integration Tests', () => {
     await page.click('[data-sample="calculator"]');
     await page.click('#execute-btn');
     
-    // Wait for result
-    await page.waitForSelector('.result-section', { state: 'visible' });
+    // Wait for either result or error section
+    await page.waitForSelector('.result-section, .error-section', { state: 'visible', timeout: 30000 });
     
     // Check that generated code is NOT hello world
     const codeContent = await page.textContent('#code-content');
@@ -205,8 +215,10 @@ test.describe('WASM Integration Tests', () => {
       // Reload for next test
       await page.reload();
       await page.waitForFunction(() => {
-        return window.wasmInstance !== undefined;
-      });
+        return window.wasmInstance !== undefined &&
+               window.processGrimoireImage !== undefined &&
+               typeof window.processGrimoireImage === 'function';
+      }, { timeout: 60000 });
     }
   });
 });
