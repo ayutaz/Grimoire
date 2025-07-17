@@ -85,7 +85,7 @@ print("検出されたシンボル数: 0")
 		symbolInfo[i] = info
 	}
 	debugInfo := map[string]interface{}{
-		"symbolCount": len(symbols),
+		"symbolCount": float64(len(symbols)), // intをfloat64に変換
 		"symbols":     symbolInfo,
 	}
 
@@ -111,16 +111,16 @@ for i in range(5):
 print("コンパイルエラー: %s")
 print("Hello from Grimoire!")
 `, err.Error())
-		return createResultWithDebug(true, "", pythonCode, ast, debugInfo, "Compile error, showing demo code")
+		return createResultWithDebug(true, "", pythonCode, nil, debugInfo, "Compile error, showing demo code")
 	}
 
 	// 実行（WebAssemblyでは制限あり）
 	output, err := executeInSandbox(pythonCode)
 	if err != nil {
-		return createResultWithDebug(true, output, pythonCode, ast, debugInfo, fmt.Sprintf("Code generated successfully, but execution is limited in browser: %v", err))
+		return createResultWithDebug(true, output, pythonCode, nil, debugInfo, fmt.Sprintf("Code generated successfully, but execution is limited in browser: %v", err))
 	}
 
-	return createResultWithDebug(true, output, pythonCode, ast, debugInfo, "")
+	return createResultWithDebug(true, output, pythonCode, nil, debugInfo, "")
 }
 
 // validateCode はGrimoireコードを検証する
